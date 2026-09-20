@@ -141,6 +141,36 @@
   outline-offset: 1px;
 }
 
+.access-panel select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  padding: .55rem 2.5rem .55rem .9rem;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: .45rem;
+  color: #fff;
+  background-color: rgba(0, 0, 0, .2);
+  background-image: linear-gradient(45deg, transparent 50%, #f5820a 50%), linear-gradient(135deg, #f5820a 50%, transparent 50%);
+  background-position: calc(100% - 1.15rem) 1.25rem, calc(100% - .8rem) 1.25rem;
+  background-repeat: no-repeat;
+  background-size: .35rem .35rem, .35rem .35rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.access-panel select:focus {
+  border-color: var(--issell-orange);
+  outline: 2px solid rgba(245, 130, 10, .35);
+  outline-offset: 1px;
+}
+
+.access-panel select option {
+  color: #16283d;
+  background: #fff;
+  font-size: .9rem;
+}
+
 .password-field {
   position: relative;
 }

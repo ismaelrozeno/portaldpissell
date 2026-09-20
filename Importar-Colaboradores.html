@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Importação de colaboradores pelo Departamento Pessoal.">
+
+  <title>Importar colaboradores | Obra 369</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="site-overrides.css">
+
+  <link rel="stylesheet" href="Importar-Colaboradores.css">
+
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
+</head>
+
+<body class="import-page">
+
+  <div data-site-header></div>
+
+  <main class="import-content">
+
+    <div class="container-xl">
+
+      <a class="import-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="import-heading">
+
+        <div>
+
+          <p class="import-kicker">Departamento Pessoal · Obra 369</p>
+
+          <h1>Importar colaboradores</h1>
+
+          <p>Atualize a equipe a partir do relatório exportado pelo RM TOTVS.</p>
+
+        </div>
+
+        <span class="import-security">Área restrita ao DP</span>
+
+      </section>
+
+      <section class="import-notice" role="note">
+
+        <strong>Como funciona</strong>
+
+        <span>A matrícula será usada para identificar cada colaborador. Registros existentes serão atualizados e novos registros serão incluídos.</span>
+
+      </section>
+
+      <section class="import-layout">
+
+        <article class="import-card">
+
+          <span class="import-eyebrow">1 · Selecionar arquivo</span>
+
+          <h2>Relatório do RM</h2>
+
+          <p class="import-help">Formatos aceitos: Excel (.xlsx), CSV e XML. O arquivo será processado somente nesta área do DP.</p>
+
+          <label class="import-dropzone" for="employee-file">
+
+            <span class="import-upload-icon">↑</span>
+
+            <strong id="file-label">Escolher arquivo do RM</strong>
+
+            <small>ou arraste o arquivo para esta área</small>
+
+            <input id="employee-file" type="file" accept=".xlsx,.xls,.csv,.xml">
+
+          </label>
+
+          <p class="import-file-name" id="file-name" hidden></p>
+
+          <div class="import-requirements">
+
+            <strong>Colunas esperadas</strong>
+
+            <span>Matrícula · Nome · Função · Frente · Encarregado · Obra · Situação</span>
+
+          </div>
+
+        </article>
+
+        <aside class="import-card import-policy">
+
+          <span class="import-eyebrow">Política de sincronização</span>
+
+          <h2>Dados atuais</h2>
+          <a class="import-submit d-inline-block text-decoration-none mt-2" href="Cadastrar-Colaborador.html">Cadastrar colaborador manualmente</a>
+
+          <ul>
+
+            <li>Matriculados no relatório permanecem ativos.</li>
+
+            <li>Novas matrículas são adicionadas.</li>
+
+            <li>Dados atualizados substituem os anteriores.</li>
+
+            <li>Desligados serão removidos conforme a política definida.</li>
+
+          </ul>
+
+        </aside>
+
+      </section>
+
+      <section class="import-preview import-card" id="import-preview" hidden>
+
+        <div class="import-preview-heading">
+
+          <div><span class="import-eyebrow">2 · Conferir prévia</span><h2>Registros encontrados</h2></div>
+
+          <span class="import-count" id="preview-count"></span>
+
+        </div>
+
+        <div class="table-responsive">
+
+          <table class="import-table">
+
+            <thead><tr><th>Matrícula</th><th>Nome</th><th>Função</th><th>Frente</th><th>Situação</th></tr></thead>
+
+            <tbody id="preview-body"></tbody>
+
+          </table>
+
+        </div>
+
+        <p class="import-warning" id="import-warning" hidden></p>
+
+        <div class="import-actions">
+
+          <button class="import-secondary" id="clear-file" type="button">Escolher outro arquivo</button>
+
+          <button class="import-submit" id="confirm-import" type="button">Confirmar importação</button>
+
+        </div>
+
+        <p class="import-result" id="import-result" role="status" hidden></p>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth8"></script>
+
+  <script src="firebase-config.example.js"></script>
+
+  <script src="firebase-init.js"></script>
+
+  <script src="firebase-schema.js"></script>
+  <script src="portal-local-store.js"></script>
+  <script src="Importar-Colaboradores.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
+
+

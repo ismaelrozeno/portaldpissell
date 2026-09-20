@@ -12,6 +12,7 @@
   const confirmation = document.querySelector("#recovery-confirmation");
   const status = document.querySelector("#recovery-status");
   const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+  const fixedAdministratorMessage = "A senha do Administrador Analista só pode ser alterada diretamente no código.";
 
   const setState = (input, valid, showMessage) => {
     const help = document.getElementById(input.getAttribute("aria-describedby"));
@@ -70,6 +71,13 @@
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (window.portalAuthDemo?.isFixedAdministratorIdentifier(email.value)) {
+      status.hidden = false;
+      status.textContent = fixedAdministratorMessage;
+      verification.hidden = true;
+      email.readOnly = false;
+      return;
+    }
     if (verification.hidden) {
       if (!validateEmail(true)) {
         return;

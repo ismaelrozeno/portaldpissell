@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Conferência de liberações pelo Departamento Pessoal.">
+
+  <title>Liberações pendentes | Obra 369</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="site-overrides.css">
+
+  <link rel="stylesheet" href="DP-Liberacoes.css">
+
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
+</head>
+
+<body class="dp-release-page">
+
+  <div data-site-header></div>
+
+  <main class="dp-content">
+
+    <div class="container-xl">
+
+      <a class="dp-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="dp-heading">
+
+        <div>
+
+          <p class="dp-kicker">Departamento Pessoal · Obra 369</p>
+
+          <h1>Liberações pendentes</h1>
+
+          <p>Confira os dados enviados pelo encarregado e registre a autorização final.</p>
+
+        </div>
+
+        <span class="dp-date">20 de setembro de 2026</span>
+
+      </section>
+
+      <section class="dp-notice" role="note">
+
+        <strong>Antes de autorizar</strong>
+
+        <span>O colaborador precisa bater o ponto e procurar o Departamento Pessoal. A confirmação do ponto será integrada ao sistema em uma próxima etapa.</span>
+
+      </section>
+
+      <section class="dp-layout">
+
+        <article class="dp-card">
+
+          <div class="dp-card-header">
+
+            <div><span class="dp-eyebrow">Fila de conferência</span><h2>Solicitações recebidas</h2></div>
+
+            <span class="dp-counter" id="pending-counter">3 pendentes</span>
+
+          </div>
+
+          <div class="dp-filters">
+
+            <label for="status-filter">Filtrar status</label>
+
+            <select id="status-filter">
+
+              <option value="all">Todos</option>
+
+              <option value="pending">Pendentes</option>
+
+              <option value="authorized">Autorizadas</option>
+
+              <option value="denied">Negadas</option>
+
+            </select>
+            <button class="release-delete" id="clear-release-history" type="button">Limpar histórico</button>
+            <div id="clear-history-security" hidden>
+              <label for="clear-history-code">Código físico</label>
+              <input id="clear-history-code" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Digite o código">
+              <button class="release-delete" id="confirm-clear-history" type="button">Confirmar limpeza</button>
+              <small id="clear-history-message" role="alert"></small>
+            </div>
+          </div>
+
+          <div class="dp-list" id="release-list"></div>
+
+        </article>
+
+        <aside class="dp-card dp-summary">
+
+          <span class="dp-eyebrow">Resumo do fluxo</span><h2>Hoje</h2>
+
+          <dl>
+
+            <div><dt>Recebidas</dt><dd id="summary-received">0</dd></div>
+
+            <div><dt>Autorizadas</dt><dd id="summary-authorized">0</dd></div>
+
+            <div><dt>Aguardando</dt><dd id="summary-pending">0</dd></div>
+
+            <div><dt>Negadas</dt><dd id="summary-denied">0</dd></div>
+
+          </dl>
+
+          <a class="dp-secondary-link" href="Portal.html">Ver painel completo</a>
+
+        </aside>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <div class="release-preview-overlay" id="release-preview" hidden>
+    <section class="release-preview" role="dialog" aria-modal="true" aria-labelledby="release-preview-title">
+      <div class="release-preview-actions">
+        <button type="button" id="close-release-preview">Fechar</button>
+        <button type="button" id="print-release-preview">Imprimir / salvar PDF</button>
+      </div>
+      <article class="release-sheet">
+        <header class="release-sheet-header">
+          <strong>DIRECIONAL</strong>
+          <div><h2 id="release-preview-title">AUTORIZAÇÃO DE SAÍDA DE COLABORADORES</h2><span>DA FRENTE DE SERVIÇO</span></div>
+        </header>
+        <div class="release-sheet-grid">
+          <span><b>OBRA:</b> 369CG</span><span><b>DATA:</b> <i id="preview-date"></i></span>
+        </div>
+        <div class="release-sheet-line"><b>O Sr.:</b> <span id="preview-name"></span><b>Função:</b> <span>Colaborador</span></div>
+        <div class="release-sheet-line"><b>Está autorizado no dia de hoje a partir das:</b> <span id="preview-time"></span> hs</div>
+        <div class="release-sheet-checks"><b>Motivo da saída:</b> <span id="preview-reason"></span><span id="preview-hours"></span></div>
+        <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
+        <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
+        <div class="release-sheet-signature">Assinatura do colaborador: ______________________________________________</div>
+        <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i></span></footer>
+      </article>
+    </section>
+  </div>
+
+  <div data-site-footer></div>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
+  <script src="firebase-config.example.js"></script>
+
+  <script src="firebase-init.js"></script>
+
+  <script src="firebase-schema.js"></script>
+
+  <script src="portal-demo-store.js"></script>
+
+  <script src="DP-Liberacoes.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

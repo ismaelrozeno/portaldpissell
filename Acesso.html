@@ -37,13 +37,43 @@
             </div>
             <small class="password-help" id="senha-login-ajuda" aria-live="polite">Digite a senha da sua conta.</small>
             <button type="submit">Entrar no portal</button>
+            <small class="password-help" id="login-error" role="alert" aria-live="polite"></small>
           </form>
           <p class="access-note">Esqueceu a senha? <a href="Recuperar-Senha.html">Altere sua senha</a>.</p>
         </section>
         <section class="access-panel" id="registro" role="tabpanel" aria-labelledby="registro-tab" hidden>
           <form>
-            <label for="matricula-registro">Matrícula</label>
-            <input id="matricula-registro" name="matricula" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required placeholder="Digite sua matrícula" title="Informe sua matrícula com 7 números, sem letras ou pontos.">
+            <label for="nome-registro">Nome completo</label>
+            <input id="nome-registro" name="nome" type="text" autocomplete="name" required placeholder="Digite seu nome completo">
+            <label for="funcao-registro">Função</label>
+            <select id="funcao-registro" name="funcao" required>
+              <option value="">Selecione sua função</option>
+              <option value="dp">Departamento Pessoal</option>
+              <option value="encarregado">Encarregado</option>
+              <option value="engenheiro">Engenheiro responsável</option>
+              <option value="porteiro">Porteiro</option>
+            </select>
+            <div id="encarregado-especialidade-group" hidden>
+              <label for="encarregado-especialidade">Área de responsabilidade</label>
+              <select id="encarregado-especialidade" name="especialidade">
+                <option value="">Selecione o que você coordena</option>
+                <option value="geral">Encarregado Geral</option>
+                <option value="producao">Encarregado de Produção</option>
+                <option value="infraestrutura-terraplenagem">Encarregado de Infraestrutura / Terraplenagem</option>
+                <option value="eletrica">Encarregado de Elétrica</option>
+                <option value="hidraulica">Encarregado de Hidráulica</option>
+                <option value="alvenaria-estrutural">Encarregado de Alvenaria Estrutural</option>
+                <option value="formas-carpintaria">Encarregado de Formas / Carpintaria</option>
+                <option value="armacao-ferragem">Encarregado de Armação / Ferragem</option>
+                <option value="concretagem">Encarregado de Concretagem</option>
+                <option value="acabamento-revestimento">Encarregado de Acabamento / Revestimento</option>
+                <option value="logistica-almoxarifado">Encarregado de Logística / Almoxarifado</option>
+              </select>
+            </div>
+            <div id="matricula-registro-group">
+              <label for="matricula-registro">Matrícula</label>
+              <input id="matricula-registro" name="matricula" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required placeholder="Digite sua matrícula" title="Informe sua matrícula com 7 números, sem letras ou pontos.">
+            </div>
             <label for="email-registro">E-mail</label>
             <input id="email-registro" name="email" type="email" autocomplete="email" required placeholder="Digite seu e-mail" title="Informe um e-mail válido, como usuario@exemplo.com." aria-describedby="email-registro-ajuda">
             <small class="password-help" id="email-registro-ajuda" aria-live="polite">Digite um e-mail válido, como usuario@exemplo.com.</small>
@@ -70,10 +100,11 @@
               <span>Aceito os <a href="Termos.html#termos-de-uso">termos de uso</a> e a <a href="Termos.html#politica-de-privacidade">política de privacidade</a>.</span>
             </label>
             <button type="submit">Criar cadastro</button>
+            <small class="password-help" id="registration-message" role="alert" aria-live="polite"></small>
           </form>
           <p class="access-note">O cadastro será concluído após a validação do Departamento Pessoal.</p>
         </section>
-        <p class="access-preview">A autenticação e o cadastro serão conectados ao sistema em uma próxima etapa.</p>
+        <p class="access-preview">Acesso local ativo enquanto a autenticação definitiva não é conectada ao Firebase.</p>
       </section>
     </div>
   </main>
@@ -110,7 +141,9 @@
       </div>
     </div>
   </div>
-  <script src="shared-components.js"></script>
+  <script src="auth-demo.js"></script>
+  <script src="portal-local-store.js"></script>
+  <script src="shared-components.js?v=20260920-auth7"></script>
   <script src="access.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>

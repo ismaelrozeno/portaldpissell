@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Registrar autorização individual de saída da Obra 369.">
+
+  <title>Nova liberação | Obra 369</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="site-overrides.css">
+
+  <link rel="stylesheet" href="Liberacao.css">
+
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
+</head>
+
+<body class="release-page">
+
+  <div data-site-header></div>
+
+  <main class="release-content">
+
+    <div class="container">
+
+      <a class="release-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="release-card" aria-labelledby="release-title">
+
+        <div class="release-heading">
+
+          <div>
+
+            <p class="release-kicker">Encarregado · Obra 369</p>
+
+            <h1 id="release-title">Nova liberação</h1>
+
+            <p>Preencha os dados da saída individual do colaborador.</p>
+
+          </div>
+
+          <span class="release-stage">Etapa 1 de 3</span>
+
+        </div>
+
+
+
+        <div class="release-notice" role="note">
+
+          <strong>Atenção ao fluxo</strong>
+
+          <span>O colaborador deverá bater o ponto e procurar o Departamento Pessoal antes de seguir para a portaria.</span>
+
+        </div>
+
+
+
+        <form id="release-form" novalidate>
+
+          <div class="release-fields">
+
+            <div class="release-field release-field-wide">
+
+              <label for="employee">Colaborador <span aria-hidden="true">*</span></label>
+
+              <select id="employee" required>
+
+                <option value="">Selecione o colaborador</option>
+
+              </select>
+
+              <small>Somente colaboradores vinculados à sua equipe serão exibidos.</small>
+
+            </div>
+
+            <div class="release-field">
+
+              <label for="release-date">Data <span aria-hidden="true">*</span></label>
+
+              <input id="release-date" type="date" required>
+
+            </div>
+
+            <div class="release-field">
+
+              <label for="release-time">Horário <span aria-hidden="true">*</span></label>
+
+              <input id="release-time" type="time" required>
+
+            </div>
+
+            <fieldset class="release-field release-field-wide">
+
+              <legend>Motivo da saída <span aria-hidden="true">*</span></legend>
+
+              <div class="release-options">
+
+                <label><input type="radio" name="reason" value="tarefa" required> Tarefa</label>
+
+                <label><input type="radio" name="reason" value="particular"> Particular</label>
+
+              </div>
+
+            </fieldset>
+
+            <div class="release-field release-field-wide" id="particular-reason-field" hidden>
+
+              <label for="particular-reason">Informe o motivo particular <span aria-hidden="true">*</span></label>
+
+              <textarea id="particular-reason" rows="3" maxlength="300" placeholder="Descreva o motivo da saída"></textarea>
+
+            </div>
+
+            <fieldset class="release-field release-field-wide">
+
+              <legend>Tratamento das horas <span aria-hidden="true">*</span></legend>
+
+              <div class="release-options release-options-highlight">
+
+                <label><input type="radio" name="hours" value="abonado" required> Abonado</label>
+
+                <label><input type="radio" name="hours" value="nao-abonado"> Não abonado</label>
+
+              </div>
+
+              <small>Se for abonado, a autorização ficará pendente da assinatura individual do engenheiro.</small>
+
+            </fieldset>
+
+          </div>
+
+
+
+          <section class="signature-box" aria-labelledby="signature-title">
+
+            <div>
+
+              <span class="release-kicker">Assinatura eletrônica</span>
+
+              <h2 id="signature-title">Confirmar solicitação</h2>
+
+              <p>Ao enviar, seu nome, perfil, data e hora serão registrados como assinatura do encarregado.</p>
+
+            </div>
+
+            <label class="signature-check"><input id="signature-confirm" type="checkbox" required> Confirmo os dados e assino esta solicitação.</label>
+
+          </section>
+
+
+
+          <p class="release-error" id="release-error" role="alert" hidden></p>
+
+          <p class="release-success" id="release-success" role="status" hidden></p>
+
+          <div class="release-actions">
+
+            <a class="release-secondary" href="Portal.html">Cancelar</a>
+
+            <button class="release-submit" type="submit">Enviar para o DP</button>
+
+          </div>
+
+        </form>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
+  <script src="firebase-config.example.js"></script>
+
+  <script src="firebase-init.js"></script>
+
+  <script src="firebase-schema.js"></script>
+
+  <script src="portal-local-store.js"></script>
+
+  <script src="portal-demo-store.js"></script>
+
+  <script src="Liberacao.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
+
+

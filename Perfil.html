@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Perfil do usuário do portal.">
+  <title>Meu perfil | Portal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="Perfil.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="profile-page">
+  <div data-site-header></div>
+  <main class="profile-content">
+    <div class="container">
+      <section class="profile-card" aria-labelledby="profile-title">
+        <p class="profile-kicker">Conta fixa do sistema</p>
+        <h1 id="profile-title">Meu perfil</h1>
+        <div class="profile-avatar-large" id="profile-avatar">A</div>
+        <label class="profile-upload">Alterar foto<input id="profile-photo" type="file" accept="image/*"></label>
+        <form id="profile-form">
+          <label for="profile-name">Nome</label>
+          <input id="profile-name" type="text" required>
+          <label for="profile-email">E-mail</label>
+          <input id="profile-email" type="email" readonly>
+          <label for="profile-role">Função</label>
+          <input id="profile-role" type="text" readonly>
+          <button type="submit">Salvar alterações</button>
+        </form>
+        <button class="profile-password" id="change-password" type="button">Alterar senha com código</button>
+        <button class="profile-logout" id="logout" type="button">Sair da conta</button>
+        <p class="profile-message" id="profile-message" role="status" hidden></p>
+      </section>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="auth-demo.js"></script>
+  <script src="shared-components.js?v=20260920-auth7"></script>
+  <script src="Perfil.js"></script>
+</body>
+</html>

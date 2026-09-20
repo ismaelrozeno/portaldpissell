@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Assinatura de abonos pelo engenheiro responsável da Obra 369.">
+
+  <title>Abonos pendentes | Obra 369</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="site-overrides.css">
+
+  <link rel="stylesheet" href="Engenheiro.css">
+
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
+</head>
+
+<body class="engineer-page">
+
+  <div data-site-header></div>
+
+  <main class="engineer-content">
+
+    <div class="container-xl">
+
+      <a class="engineer-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="engineer-heading">
+
+        <div>
+
+          <p class="engineer-kicker">Engenheiro responsável · Obra 369</p>
+
+          <h1>Abonos pendentes</h1>
+
+          <p>Analise cada autorização e registre sua decisão sobre o abono.</p>
+
+        </div>
+
+        <span class="engineer-date">20 de setembro de 2026</span>
+
+      </section>
+
+      <section class="engineer-notice" role="note">
+
+        <strong>Assinatura individual</strong>
+
+        <span>O abono só será considerado válido depois da sua decisão e assinatura eletrônica em cada autorização.</span>
+        <div id="admin-bonus-security" hidden>
+          <label for="admin-bonus-code">Código físico para o Administrador Analista</label>
+          <div class="admin-bonus-security-fields">
+            <input id="admin-bonus-code" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Digite o código">
+            <button id="unlock-admin-bonus" type="button">Liberar assinatura</button>
+          </div>
+          <small id="admin-bonus-message" role="alert"></small>
+        </div>
+
+      </section>
+
+      <section class="engineer-layout">
+
+        <article class="engineer-card">
+
+          <div class="engineer-card-heading">
+
+            <div><span class="engineer-eyebrow">Fila de análise</span><h2>Autorizações para decisão</h2></div>
+
+            <span class="engineer-counter" id="engineer-counter">2 pendentes</span>
+
+          </div>
+
+          <div id="bonus-list" class="bonus-list"></div>
+
+        </article>
+
+        <aside class="engineer-card engineer-summary">
+
+          <span class="engineer-eyebrow">Resumo</span><h2>Suas assinaturas</h2>
+
+          <dl>
+
+            <div><dt>Pendentes</dt><dd id="summary-pending">2</dd></div>
+
+            <div><dt>Abonadas hoje</dt><dd id="summary-approved">3</dd></div>
+
+            <div><dt>Não abonadas</dt><dd id="summary-denied">1</dd></div>
+
+          </dl>
+
+          <a class="engineer-secondary-link" href="Portal.html">Ver painel completo</a>
+
+        </aside>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
+  <script src="firebase-config.example.js"></script>
+
+  <script src="firebase-init.js"></script>
+
+  <script src="firebase-schema.js"></script>
+
+  <script src="portal-demo-store.js"></script>
+
+  <script src="Engenheiro.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
+
+
+
+

@@ -77,7 +77,7 @@
     });
   }
 
-  if (loginForm && loginDevelopmentModal) {
+  if (loginForm && loginIdentifier && loginPassword) {
     loginForm.addEventListener("submit", (event) => {
       event.preventDefault();
 
@@ -86,11 +86,21 @@
         return;
       }
 
-      if (!window.bootstrap) {
-        throw new Error("Modal de login indisponível.");
-      }
-
-      bootstrap.Modal.getOrCreateInstance(loginDevelopmentModal).show();
+      const loginError = document.querySelector("#login-error");
+      window.portalAuthDemo.login(loginIdentifier.value, loginPassword.value).then((success) => {
+        if (!success) {
+          loginError.textContent = "Identificador ou senha inválidos.";
+          loginError.classList.add("is-visible");
+          return;
+        }
+        window.location.href = window.portalAuthDemo.getSession()?.roleValue === "administrador-analista"
+          ? "Administrador-Portal.html"
+          : "Portal.html";
+      }).catch((error) => {
+        console.error("Falha no login demonstrativo.", error);
+        loginError.textContent = "Não foi possível concluir o acesso.";
+        loginError.classList.add("is-visible");
+      });
     });
   }
 
@@ -114,12 +124,55 @@
   });
 
   const registrationForm = document.querySelector("#registro form");
+  const registrationName = document.querySelector("#nome-registro");
+  const registrationRole = document.querySelector("#funcao-registro");
+  const foremanSpecialtyGroup = document.querySelector("#encarregado-especialidade-group");
+  const foremanSpecialty = document.querySelector("#encarregado-especialidade");
+  const registrationEnrollment = document.querySelector("#matricula-registro");
+  const enrollmentGroup = document.querySelector("#matricula-registro-group");
   const registrationEmail = document.querySelector("#email-registro");
   const registrationPassword = document.querySelector("#senha-registro");
   const passwordConfirmation = document.querySelector("#senha-confirmacao-registro");
   const developmentModal = document.querySelector("#registration-development-modal");
+  const normalizeIdentity = window.portalAuthDemo?.normalizeIdentity || ((value) => value.trim().toUpperCase());
+  const normalizeIdentityWhileTyping = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .replace(/^\s+/, "");
 
-  if (registrationForm && registrationEmail && registrationPassword && passwordConfirmation) {
+  if (registrationForm && registrationName && registrationRole && foremanSpecialtyGroup && foremanSpecialty && registrationEnrollment && enrollmentGroup && registrationEmail && registrationPassword && passwordConfirmation) {
+    const updateEnrollmentVisibility = () => {
+      const isGatekeeper = registrationRole.value === "porteiro";
+      enrollmentGroup.hidden = isGatekeeper;
+      registrationEnrollment.required = !isGatekeeper;
+      if (isGatekeeper) registrationEnrollment.value = "";
+    };
+    const updateForemanSpecialtyVisibility = () => {
+      const isForeman = registrationRole.value === "encarregado";
+      foremanSpecialtyGroup.hidden = !isForeman;
+      foremanSpecialty.required = isForeman;
+      if (!isForeman) foremanSpecialty.value = "";
+    };
+    registrationRole.addEventListener("change", updateEnrollmentVisibility);
+    registrationRole.addEventListener("change", updateForemanSpecialtyVisibility);
+    const clearRegistrationFeedback = () => {
+      registrationEnrollment.setCustomValidity("");
+      registrationName.setCustomValidity("");
+      const message = document.querySelector("#registration-message");
+      message.textContent = "";
+      message.classList.remove("is-visible");
+    };
+    registrationName.addEventListener("input", () => {
+      registrationName.value = normalizeIdentityWhileTyping(registrationName.value);
+      registrationName.setCustomValidity("");
+      clearRegistrationFeedback();
+    });
+    registrationEnrollment.addEventListener("input", clearRegistrationFeedback);
+    registrationRole.addEventListener("change", clearRegistrationFeedback);
+    updateEnrollmentVisibility();
+    updateForemanSpecialtyVisibility();
     const updateEmailState = (showMessage) => {
       const hasValue = registrationEmail.value.length > 0;
       const help = passwordHelp(registrationEmail);
@@ -185,19 +238,67 @@
 
     registrationForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      const message = document.querySelector("#registration-message");
+      message.textContent = "";
+      message.classList.remove("is-visible");
+      [registrationName, registrationRole, foremanSpecialty, registrationEnrollment, registrationEmail, registrationPassword, passwordConfirmation]
+        .forEach((input) => input.setCustomValidity(""));
       updateEmailState(true);
       validatePasswordConfirmation(true);
 
       if (!registrationForm.checkValidity()) {
+        const invalidField = [registrationName, registrationRole, foremanSpecialty, registrationEnrollment, registrationEmail, registrationPassword, passwordConfirmation]
+          .find((input) => !input.validity.valid);
+        message.textContent = invalidField?.validationMessage || "Confira os campos obrigatórios antes de continuar.";
+        message.classList.add("is-visible");
         registrationForm.reportValidity();
         return;
       }
 
-      if (!window.bootstrap || !developmentModal) {
-        throw new Error("Modal de cadastro indisponível.");
+      const isPorter = registrationRole.value === "porteiro";
+      if (!isPorter && !window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value)) {
+        message.textContent = "Essa matrícula não está liberada para cadastro. Confira com o Administrador Analista.";
+        message.classList.add("is-visible");
+        registrationEnrollment.setCustomValidity("Matrícula não liberada para cadastro.");
+        registrationEnrollment.focus();
+        return;
       }
+      if (!isPorter && !window.portalAuthDemo.isRegistrationAllowedForRole(registrationEnrollment.value, registrationRole.value)) {
+        message.textContent = "Esta matrícula não está autorizada para o perfil selecionado. No Administrador, confira se a matrícula foi liberada para a mesma função.";
+        message.classList.add("is-visible");
+        registrationEnrollment.setCustomValidity("Matrícula não autorizada para este perfil.");
+        registrationEnrollment.focus();
+        return;
+      }
+      if (!isPorter && !window.portalAuthDemo.isRegistrationIdentityAllowed(
+        registrationEnrollment.value,
+        registrationName.value,
+        registrationRole.value
+      )) {
+        message.textContent = "O nome completo não corresponde à matrícula autorizada. Confira os dados com o Administrador Analista.";
+        registrationName.setCustomValidity("Nome não corresponde à matrícula autorizada.");
+        registrationName.focus();
+        return;
+      }
+      registrationName.setCustomValidity("");
 
-      bootstrap.Modal.getOrCreateInstance(developmentModal).show();
+      const registrationResult = window.portalAuthDemo.register({
+        name: normalizeIdentity(registrationName.value),
+        email: registrationEmail.value.trim(),
+        role: registrationRole.options[registrationRole.selectedIndex].textContent,
+        roleValue: registrationRole.value,
+        especialidade: foremanSpecialty.value,
+        matricula: registrationEnrollment.value
+      });
+      if (registrationResult === "pending-dp") {
+        message.textContent = "Cadastro enviado para aprovação do Departamento Pessoal.";
+        message.classList.add("is-visible");
+        registrationForm.reset();
+        updateEnrollmentVisibility();
+        updateForemanSpecialtyVisibility();
+        return;
+      }
+      window.location.href = "Portal.html";
     });
   }
 

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cadastro manual de colaboradores pelo Administrador Analista.">
+  <title>Cadastrar colaborador | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="Importar-Colaboradores.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="import-page">
+  <div data-site-header></div>
+  <main class="import-content">
+    <div class="container-xl">
+      <a class="import-back" href="Importar-Colaboradores.html">← Voltar para colaboradores</a>
+      <section class="import-heading">
+        <div>
+          <p class="import-kicker">Administrador Analista · Obra 369</p>
+          <h1>Cadastrar colaborador</h1>
+          <p>Use esta opção para inclusões emergenciais enquanto a importação do RM não estiver disponível.</p>
+        </div>
+        <span class="import-security">Área restrita ao perfil fixo</span>
+      </section>
+      <form class="import-card manual-employee-form" id="employee-form">
+        <label for="employee-registration">Matrícula</label>
+        <input id="employee-registration" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required>
+        <label for="employee-name">Nome completo</label>
+        <input id="employee-name" type="text" required>
+        <label for="employee-role">Função</label>
+        <input id="employee-role" type="text" placeholder="Ex.: Servente, Eletricista, Armador" required>
+        <label for="employee-team">Setor ou frente de trabalho</label>
+        <input id="employee-team" type="text" placeholder="Ex.: Elétrica, Hidráulica, Forma" required>
+        <label for="employee-foreman">Encarregado responsável</label>
+        <input id="employee-foreman" type="text" placeholder="Nome do encarregado" required>
+        <button class="import-submit" type="submit">Salvar colaborador</button>
+        <p class="import-result" id="employee-result" role="status" hidden></p>
+      </form>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="auth-demo.js"></script>
+  <script src="portal-local-store.js"></script>
+  <script src="shared-components.js?v=20260920-auth8"></script>
+  <script src="Cadastrar-Colaborador.js"></script>
+</body>
+</html>

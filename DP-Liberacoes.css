@@ -1,0 +1,46 @@
+:root { --dp-navy:#00142d; --dp-orange:#f5820a; --dp-blue:#1769aa; --dp-muted:#617188; --dp-line:#dfe7f0; --dp-bg:#f4f7fb; }
+body.dp-release-page { background:var(--dp-bg); color:#16283d; }
+.dp-release-page .site-header { position:relative; background:var(--dp-navy)!important; }
+.dp-content { min-height:calc(100vh - 180px); padding:2.5rem 0 3rem; }
+.dp-back { display:inline-block; margin-bottom:1.25rem; color:var(--dp-blue); font-size:.9rem; font-weight:700; text-decoration:none; }
+.dp-back:hover,.dp-secondary-link:hover { color:var(--dp-orange); }
+.dp-heading { display:flex; justify-content:space-between; align-items:end; gap:1.5rem; margin-bottom:1.5rem; }
+.dp-kicker,.dp-eyebrow { margin:0; color:var(--dp-orange); font-size:.75rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+.dp-heading h1 { margin:.4rem 0 .35rem; color:var(--dp-navy); font-size:clamp(1.8rem,4vw,2.5rem); }
+.dp-heading p { margin:0; color:var(--dp-muted); }
+.dp-date { padding:.55rem .8rem; border:1px solid var(--dp-line); border-radius:.5rem; color:var(--dp-muted); background:#fff; font-size:.8rem; white-space:nowrap; }
+.dp-notice { display:grid; gap:.2rem; margin-bottom:1.5rem; padding:1rem; border-left:4px solid var(--dp-orange); border-radius:.5rem; background:#fff7e8; }
+.dp-notice strong { color:#8b5515; font-size:.9rem; }.dp-notice span { color:#6e5b3d; font-size:.85rem; line-height:1.45; }
+.dp-layout { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:1.25rem; }
+.dp-card { min-width:0; padding:1.35rem; border:1px solid var(--dp-line); border-radius:1rem; background:#fff; box-shadow:0 8px 24px rgba(0,20,45,.04); }
+.dp-card-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; }
+.dp-card h2 { margin:.3rem 0 0; color:var(--dp-navy); font-size:1.2rem; }
+.dp-counter { padding:.35rem .6rem; border-radius:2rem; color:#8b5515; background:#fff2d9; font-size:.75rem; font-weight:800; white-space:nowrap; }
+.dp-filters { display:flex; align-items:center; gap:.6rem; margin-bottom:.8rem; }.dp-filters label { color:var(--dp-muted); font-size:.8rem; font-weight:700; }
+.dp-filters select { padding:.5rem .65rem; border:1px solid var(--dp-line); border-radius:.45rem; color:#16283d; background:#fff; }
+.dp-list { display:grid; gap:.75rem; }.release-item { padding:1rem; border:1px solid var(--dp-line); border-radius:.7rem; }
+.release-item-header { display:flex; justify-content:space-between; align-items:start; gap:1rem; }.release-item strong,.release-item small { display:block; }
+.release-item strong { color:var(--dp-navy); }.release-item small { margin-top:.2rem; color:var(--dp-muted); font-size:.78rem; }
+.release-status { padding:.3rem .55rem; border-radius:2rem; font-size:.7rem; font-weight:800; white-space:nowrap; }.release-status.pending { color:#8b5515; background:#fff2d9; }.release-status.authorized { color:#17613b; background:#def5e8; }.release-status.denied { color:#8b2930; background:#fde5e6; }
+.release-details { display:flex; flex-wrap:wrap; gap:.4rem 1rem; margin:.8rem 0; color:var(--dp-muted); font-size:.8rem; }.release-details span strong { display:inline; color:#16283d; font-size:.8rem; }
+.release-actions { display:flex; gap:.55rem; }.release-actions button { padding:.55rem .75rem; border-radius:.45rem; font-size:.78rem; font-weight:700; cursor:pointer; }.release-authorize { border:1px solid #4caa76; color:#17613b; background:#effbf4; }.release-deny { border:1px solid #e0a2a6; color:#8b2930; background:#fff; }.release-actions button:disabled { cursor:default; opacity:.55; }
+.dp-summary dl { margin:1.2rem 0; }.dp-summary dl div { display:flex; justify-content:space-between; padding:.7rem 0; border-bottom:1px solid var(--dp-line); }.dp-summary dt { color:var(--dp-muted); font-size:.85rem; }.dp-summary dd { margin:0; color:var(--dp-navy); font-weight:800; }
+.dp-secondary-link { color:var(--dp-blue); font-size:.82rem; font-weight:700; text-decoration:none; }.dp-empty { padding:1.5rem; color:var(--dp-muted); text-align:center; }
+.release-view { border:1px solid #1769aa; color:#1769aa; background:#eef7ff; }
+.release-preview-overlay { position:fixed; inset:0; z-index:20; overflow:auto; padding:2rem; background:rgba(0,20,45,.72); }
+.release-preview { width:min(820px,100%); margin:auto; }
+.release-preview-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-bottom:.75rem; }
+.release-preview-actions button { padding:.6rem .8rem; border:0; border-radius:.4rem; color:#fff; background:#1769aa; font-weight:700; cursor:pointer; }
+.release-preview-actions button:first-child { background:#617188; }
+.release-sheet { padding:2rem; color:#111; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.25); font-family:Arial,sans-serif; }
+.release-sheet-header { display:flex; align-items:center; gap:2rem; padding-bottom:1rem; border-bottom:1px dotted #222; text-align:center; }
+.release-sheet-header strong { color:#1262a0; font-size:1.5rem; letter-spacing:.05em; }
+.release-sheet-header h2 { margin:0; font-size:1.1rem; }.release-sheet-header span { font-size:.95rem; font-weight:700; }
+.release-sheet-grid,.release-sheet-line { display:flex; justify-content:space-between; gap:1rem; padding:1rem 0; border-bottom:1px dotted #222; }
+.release-sheet-line span { min-width:20%; border-bottom:1px solid #222; }.release-sheet-checks { display:flex; flex-wrap:wrap; gap:1rem; padding:1rem 0; }
+.release-sheet-block { min-height:100px; padding:1rem 0; border-bottom:1px dotted #222; }.release-sheet-block p { min-height:45px; margin:.5rem 0 0; border-bottom:1px dashed #777; }
+.release-sheet-hours { padding:1rem 0; border-bottom:1px dotted #222; }.release-sheet-hours strong { display:block; margin-top:.6rem; font-size:1.1rem; }.release-sheet-hours .bonus-approved { color:#16803c; }.release-sheet-hours .bonus-denied { color:#c62835; }.release-sheet-hours .bonus-pending { color:#8b5515; }
+.release-sheet-signature { padding:1.4rem 0; border-bottom:1px dotted #222; }.release-sheet footer { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; padding-top:1.5rem; text-align:center; font-size:.7rem; }.release-sheet footer i.signature-name { display:block; margin-top:.5rem; font-family:"Segoe Script","Bradley Hand",cursive; font-size:1.05rem; font-style:normal; font-weight:600; line-height:1.1; }
+@media print { body > *:not(#release-preview) { display:none!important; } .release-preview-overlay { position:static; padding:0; background:#fff; } .release-preview-actions { display:none; } .release-sheet { box-shadow:none; } }
+@media (max-width:760px) { .dp-heading { align-items:flex-start; flex-direction:column; }.dp-layout { grid-template-columns:1fr; } }
+@media (max-width:520px) { .dp-card-header,.release-item-header { align-items:flex-start; flex-direction:column; }.dp-counter,.release-status { align-self:flex-start; }.release-actions { flex-direction:column; }.release-actions button { width:100%; } }

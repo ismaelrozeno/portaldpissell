@@ -10,11 +10,21 @@
       <ul class="navbar-nav mx-auto mb-2 mb-md-0">
         <li class="nav-item"><a class="nav-link" href="./">Página Inicial</a></li>
         <li class="nav-item"><a class="nav-link" href="Planilhas-Automáticas.html">Planilhas Automáticas</a></li>
+        <li class="nav-item" data-auth-only hidden><a class="nav-link" href="Portal.html">Meu portal</a></li>
+        <li class="nav-item" data-admin-only hidden><a class="nav-link" href="Administrador-Portal.html">Administração</a></li>
       </ul>
     </nav>
-    <div class="d-flex gap-2" aria-label="Acesso ao portal">
+    <div class="d-flex gap-2" aria-label="Acesso ao portal" data-guest-actions>
       <a class="btn btn-light btn-sm" href="Acesso.html#login">Entrar</a>
       <a class="btn btn-light btn-sm" href="Acesso.html#registro">Registrar</a>
+    </div>
+    <div class="account-actions" data-account-actions hidden>
+      <a class="profile-link" data-profile-action href="Perfil.html" aria-label="Abrir perfil">
+        <span class="profile-avatar" aria-hidden="true">A</span><span data-profile-label>Perfil</span>
+      </a>
+      <button class="logout-button" data-logout-action type="button" aria-label="Sair da conta" title="Sair da conta">
+        <span aria-hidden="true">⏻</span>
+      </button>
     </div>
     <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobile-menu" aria-labelledby="mobile-menu-title">
       <div class="offcanvas-header">
@@ -25,6 +35,8 @@
         <ul class="navbar-nav gap-2">
           <li class="nav-item"><a class="nav-link" href="./">Página Inicial</a></li>
           <li class="nav-item"><a class="nav-link" href="Planilhas-Automáticas.html">Planilhas Automáticas</a></li>
+          <li class="nav-item" data-auth-only hidden><a class="nav-link" href="Portal.html">Meu portal</a></li>
+          <li class="nav-item" data-admin-only hidden><a class="nav-link" href="Administrador-Portal.html">Administração</a></li>
         </ul>
       </div>
     </div>

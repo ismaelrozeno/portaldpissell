@@ -1,63 +1,127 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
+
 <html lang="pt">
+
 <head>
+
   <meta charset="utf-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <meta name="description" content="Portal interno da Issell Informática com soluções e planilhas automatizadas para o Departamento Pessoal.">
+
   <title>Issell Informática | Portal do Departamento Pessoal</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link rel="stylesheet" href="site-overrides.css">
+
   <link rel="stylesheet" href="index.css">
+
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
   <meta name="theme-color" content="#f5820a">
+
 </head>
+
 <body>
+
   <div data-site-header></div>
+
   <main class="hero">
+
     <div class="hero__shell">
+
       <div class="hero__content">
+
         <p class="hero__eyebrow">ISSell Informática <span aria-hidden="true">·</span> Departamento Pessoal</p>
+
         <h1>Rotinas mais simples para um departamento mais eficiente.</h1>
+
         <p class="hero__lead">Um portal interno criado para organizar informações, reduzir tarefas repetitivas e apoiar as decisões do Departamento Pessoal.</p>
+
         <div class="hero__actions">
+
           <a class="btn btn-primary" href="Acesso.html#login">Acessar o portal</a>
+
           <a class="hero__text-link" href="Planilhas-Automáticas.html">Ver planilhas <span aria-hidden="true">→</span></a>
+
         </div>
+
         <p class="hero__notice">Este sistema é de uso exclusivo e interno. O acesso e o compartilhamento das informações são destinados somente a pessoas autorizadas.</p>
+
       </div>
+
       <div class="hero__visual" aria-label="Recursos do portal">
+
         <div class="hero__visual-header">
+
           <span class="hero__status"></span>
+
           <span>Visão geral do portal</span>
+
           <div class="hero__quick-nav dropdown">
-            <button class="hero__dots" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Abrir páginas do portal">•••</button>
+
+            <button class="hero__dots" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Abrir páginas do portal">’’’</button>
+
             <ul class="dropdown-menu dropdown-menu-end">
+
               <li><a class="dropdown-item" href="./">Página Inicial</a></li>
               <li><a class="dropdown-item" href="Planilhas-Automáticas.html">Planilhas Automáticas</a></li>
-              <li><a class="dropdown-item" href="Acesso.html#login">Acesso ao portal</a></li>
+              <li data-auth-only hidden><a class="dropdown-item" href="Portal.html">Meu portal</a></li>
+
             </ul>
+
           </div>
+
         </div>
+
         <div class="hero__metric">
+
           <span>Organização</span>
+
           <strong>Departamento Pessoal</strong>
+
           <small>Informações centralizadas</small>
+
         </div>
+
         <div class="hero__feature">
-          <span class="hero__feature-icon">▦</span>
+
+          <span class="hero__feature-icon">•</span>
+
           <span><strong>Planilhas automáticas</strong><small>Ferramentas para agilizar sua rotina</small></span>
+
           <a class="hero__arrow" href="Planilhas-Automáticas.html" aria-label="Abrir planilhas automáticas">↗</a>
+
         </div>
+
         <div class="hero__feature hero__feature--muted">
+
           <span class="hero__feature-icon">✓</span>
+
           <span><strong>Acesso controlado</strong><small>Ambiente interno e autorizado</small></span>
+
           <a class="hero__arrow" href="Acesso.html#login" aria-label="Abrir acesso ao portal">↗</a>
+
         </div>
+
       </div>
+
     </div>
+
   </main>
+
   <div data-site-footer></div>
-  <script src="shared-components.js"></script>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
+
 </html>
+
+

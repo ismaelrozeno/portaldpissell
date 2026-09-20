@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Administração local de matrículas e colaboradores.">
+  <title>Administração | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="Importar-Colaboradores.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="import-page">
+  <div data-site-header></div>
+  <main class="import-content">
+    <div class="container-xl">
+      <section class="import-heading">
+        <div>
+          <p class="import-kicker">Administrador Analista · Obra 369</p>
+          <h1>Administração local</h1>
+          <p>Cadastre colaboradores e autorize as matrículas que poderão criar acesso.</p>
+        </div>
+        <span class="import-security">Perfil fixo</span>
+      </section>
+      <div class="row g-4">
+        <section class="col-12">
+          <div class="import-card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h2 class="h4 mb-1">Cadastros de porteiro</h2>
+                <p class="text-muted mb-0">Analise as solicitações e aprove ou reprove cada cadastro.</p>
+              </div>
+              <span class="badge text-bg-warning" id="porter-pending-count">0 pendentes</span>
+            </div>
+            <div id="porter-request-list" class="mt-3"></div>
+          </div>
+        </section>
+        <section class="col-lg-5">
+          <form class="import-card manual-employee-form" id="allowed-registration-form">
+            <h2 class="h4">Liberar matrícula</h2>
+            <p class="text-muted">Somente pessoas autorizadas poderão criar acesso. Colaboradores de linha de frente não criam cadastro.</p>
+            <label for="allowed-registration">Matrícula</label>
+            <input id="allowed-registration" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required>
+            <label for="allowed-name">Nome completo do colaborador</label>
+            <input id="allowed-name" type="text" required placeholder="Digite o nome completo">
+            <small class="text-muted" id="allowed-lookup-message">Informe a matrícula e o nome que deverão ser usados no registro.</small>
+            <label for="allowed-role">Perfil que poderá se cadastrar</label>
+            <select id="allowed-role" required>
+              <option value="">Selecione o perfil</option>
+              <option value="dp">Departamento Pessoal</option>
+              <option value="encarregado">Encarregado</option>
+              <option value="engenheiro">Engenheiro responsável</option>
+            </select>
+            <button class="import-submit" id="allowed-submit" type="submit">Adicionar matrícula permitida</button>
+            <button class="btn btn-outline-secondary mt-2 w-100" id="allowed-cancel-edit" type="button" hidden>Cancelar edição</button>
+            <p class="import-result" id="allowed-result" role="status" hidden></p>
+          </form>
+          <div class="import-card mt-4">
+            <h2 class="h4">Matrículas permitidas</h2>
+            <ul id="allowed-list" class="list-group list-group-flush"></ul>
+          </div>
+        </section>
+        <section class="col-lg-7">
+          <form class="import-card manual-employee-form" id="employee-form">
+            <h2 class="h4">Cadastrar colaborador</h2>
+            <label for="employee-registration">Matrícula</label>
+            <input id="employee-registration" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required>
+            <label for="employee-name">Nome completo</label>
+            <input id="employee-name" type="text" required>
+            <label for="employee-role">Função</label>
+            <input id="employee-role" type="text" placeholder="Ex.: Servente, Eletricista, Armador" required>
+            <label for="employee-team">Setor ou frente de trabalho</label>
+            <input id="employee-team" type="text" placeholder="Ex.: Elétrica, Hidráulica, Forma" required>
+            <label for="employee-foreman">Encarregado responsável</label>
+            <input id="employee-foreman" type="text" placeholder="Nome do encarregado" required>
+            <button class="import-submit" id="employee-submit" type="submit">Salvar colaborador</button>
+            <button class="btn btn-outline-secondary mt-2 w-100" id="employee-cancel-edit" type="button" hidden>Cancelar edição</button>
+            <p class="import-result" id="employee-result" role="status" hidden></p>
+          </form>
+          <div class="import-card mt-4">
+            <h2 class="h4">Colaboradores cadastrados</h2>
+            <ul id="employee-list" class="list-group list-group-flush"></ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="auth-demo.js"></script>
+  <script src="portal-local-store.js"></script>
+  <script src="shared-components.js?v=20260920-admin1"></script>
+  <script src="Administrador-Portal.js"></script>
+</body>
+</html>

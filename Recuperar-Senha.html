@@ -1,65 +1,135 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
+
 <html lang="pt-BR">
+
 <head>
+
   <meta charset="utf-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <meta name="description" content="Recuperação de senha do portal.">
+
   <title>Recuperar senha | Issell Informática</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link rel="stylesheet" href="site-overrides.css">
+
   <link rel="stylesheet" href="Recuperar-Senha.css">
+
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
 </head>
+
 <body class="recovery-page">
+
   <div data-site-header></div>
+
   <main class="recovery-content">
+
     <div class="recovery-container">
+
       <p class="recovery-kicker">Acesso ao portal</p>
+
       <section class="recovery-card" aria-labelledby="recovery-title">
+
         <a class="recovery-back-link" href="Acesso.html#login">← Voltar para entrar</a>
+
         <h1 id="recovery-title">Esqueceu a senha?</h1>
-        <p class="recovery-intro">Informe seu e-mail para receber um código de verificação e criar uma nova senha.</p>
+
+        <p class="recovery-intro">Informe seu e-mail para receber um código de verificação e criar uma nova senha. A senha do Administrador Analista não pode ser alterada por este site.</p>
+
         <form id="recovery-form" novalidate>
+
           <label for="recovery-email">E-mail cadastrado</label>
+
           <input id="recovery-email" type="email" autocomplete="email" required placeholder="Digite seu e-mail" aria-describedby="recovery-email-help">
+
           <small class="recovery-help" id="recovery-email-help">Digite um e-mail válido.</small>
 
+
+
           <div class="recovery-verification" id="recovery-verification" hidden>
+
             <label for="recovery-code">Código de verificação</label>
+
             <input id="recovery-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Digite o código recebido" aria-describedby="recovery-code-help">
+
             <small class="recovery-help" id="recovery-code-help">Digite o código de 6 números recebido por e-mail.</small>
 
+
+
             <label for="recovery-password">Nova senha</label>
+
             <div class="recovery-password-field">
+
               <input id="recovery-password" type="password" minlength="8" placeholder="Crie uma nova senha" aria-describedby="recovery-password-help">
+
             <button class="recovery-password-toggle" type="button" aria-label="Mostrar senha" aria-controls="recovery-password" aria-pressed="false">
+
               <svg class="recovery-password-icon recovery-password-icon-visible" aria-hidden="true" viewBox="0 0 24 24"><path d="M2.1 12s3.6-6 9.9-6 9.9 6 9.9 6-3.6 6-9.9 6-9.9-6-9.9-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+
               <svg class="recovery-password-icon recovery-password-icon-hidden" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.3 0 9.9 6 9.9 6a18.4 18.4 0 0 1-3.2 3.7M6.2 6.8C3.6 8.4 2.1 12 2.1 12s3.6 6 9.9 6c1 0 1.9-.2 2.7-.4"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg>
+
             </button>
+
             </div>
+
             <small class="recovery-help" id="recovery-password-help">Use pelo menos 8 caracteres, com letra maiúscula, minúscula, número e caractere especial.</small>
 
+
+
             <label for="recovery-confirmation">Confirme a nova senha</label>
+
             <div class="recovery-password-field">
+
               <input id="recovery-confirmation" type="password" minlength="8" placeholder="Repita a nova senha" aria-describedby="recovery-confirmation-help">
+
             <button class="recovery-password-toggle" type="button" aria-label="Mostrar confirmação da senha" aria-controls="recovery-confirmation" aria-pressed="false">
+
               <svg class="recovery-password-icon recovery-password-icon-visible" aria-hidden="true" viewBox="0 0 24 24"><path d="M2.1 12s3.6-6 9.9-6 9.9 6 9.9 6-3.6 6-9.9 6-9.9-6-9.9-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+
               <svg class="recovery-password-icon recovery-password-icon-hidden" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.3 0 9.9 6 9.9 6a18.4 18.4 0 0 1-3.2 3.7M6.2 6.8C3.6 8.4 2.1 12 2.1 12s3.6 6 9.9 6c1 0 1.9-.2 2.7-.4"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg>
+
             </button>
+
             </div>
+
             <small class="recovery-help" id="recovery-confirmation-help">As senhas precisam ser iguais.</small>
+
           </div>
 
+
+
           <button class="recovery-submit" id="recovery-submit" type="submit">Enviar código por e-mail</button>
+
           <p class="recovery-status" id="recovery-status" role="status" aria-live="polite" hidden></p>
+
         </form>
+
         <p class="recovery-note">A alteração será conectada ao sistema de autenticação em uma próxima etapa.</p>
+
       </section>
+
     </div>
+
   </main>
+
   <div data-site-footer></div>
-  <script src="shared-components.js"></script>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
   <script src="recovery.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
+
 </html>
+
+
+
+

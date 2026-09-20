@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Consulta de autorizações pela portaria da Obra 369.">
+
+  <title>Consulta da portaria | Obra 369</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="site-overrides.css">
+
+  <link rel="stylesheet" href="Portaria.css">
+
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+
+</head>
+
+<body class="gate-page">
+
+  <div data-site-header></div>
+
+  <main class="gate-content">
+
+    <div class="container-xl">
+
+      <a class="gate-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="gate-heading">
+
+        <p class="gate-kicker">Portaria · Obra 369</p>
+
+        <h1>Consulta de autorizações</h1>
+
+        <p>Confirme a autorização antes de liberar a saída do colaborador.</p>
+
+      </section>
+
+      <section class="gate-notice" role="note">
+
+        <strong>Como consultar</strong>
+
+        <span>Pesquise pela matrícula ou pelo nome. A saída só pode ser liberada quando as duas autorizações estiverem registradas.</span>
+
+      </section>
+
+      <section class="gate-layout">
+
+        <article class="gate-card">
+
+          <div class="gate-card-heading">
+
+            <div><span class="gate-eyebrow">Consulta rápida</span><h2>Autorizações de hoje</h2></div>
+
+            <span class="gate-date">20/09/2026</span>
+
+          </div>
+
+          <label class="visually-hidden" for="gate-search">Pesquisar por matrícula ou nome</label>
+
+          <input class="gate-search" id="gate-search" type="search" placeholder="Digite a matrícula ou o nome do colaborador" autocomplete="off">
+
+          <div id="gate-results" class="gate-results"></div>
+
+        </article>
+
+        <aside class="gate-card gate-guide">
+
+          <span class="gate-eyebrow">Orientação</span>
+
+          <h2>Na dúvida, não libere</h2>
+
+          <p>Se não houver autorização completa, oriente o colaborador a procurar o Departamento Pessoal.</p>
+
+          <div class="gate-legend">
+
+            <span><i class="is-ready"></i>Autorizado para saída</span>
+
+            <span><i class="is-blocked"></i>Procurar o DP</span>
+
+          </div>
+
+        </aside>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="auth-demo.js"></script>
+
+  <script src="shared-components.js?v=20260920-auth7"></script>
+
+  <script src="firebase-config.example.js"></script>
+
+  <script src="firebase-init.js"></script>
+
+  <script src="firebase-schema.js"></script>
+
+  <script src="portal-demo-store.js"></script>
+
+  <script src="Portaria.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
+
+
+
+
+
