@@ -141,6 +141,79 @@
   outline-offset: 1px;
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 3.5rem;
+}
+
+.access-panel form .password-toggle {
+  position: absolute;
+  top: 50%;
+  right: .35rem;
+  margin: 0;
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: .35rem;
+  border: 0;
+  border-radius: .35rem;
+  color: #dbe3ed;
+  background: transparent;
+  transform: translateY(-50%);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.password-icon {
+  grid-area: 1 / 1;
+  width: 1.45rem;
+  height: 1.45rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.password-icon-hidden {
+  display: none;
+}
+
+.password-toggle.is-visible .password-icon-visible {
+  display: none;
+}
+
+.password-toggle.is-visible .password-icon-hidden {
+  display: block;
+}
+
+.access-panel form .password-toggle:hover,
+.access-panel form .password-toggle:focus-visible {
+  color: #fff;
+  background: rgba(245, 130, 10, .35);
+  box-shadow: none;
+}
+
+.access-panel form .password-toggle:focus-visible {
+  outline: 2px solid rgba(245, 130, 10, .65);
+  outline-offset: 1px;
+}
+
+.password-help {
+  display: none;
+  margin-top: -.2rem;
+  color: #bfc8d3;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+.password-help.is-visible {
+  display: block;
+}
+
 .access-panel input.password-invalid,
 .access-panel input.password-invalid:focus {
   border-color: #ff5c5c;
@@ -164,6 +237,11 @@
   font-weight: 400;
   line-height: 1.45;
   cursor: pointer;
+}
+
+.access-panel .access-terms a {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .access-panel .access-terms input {
@@ -200,6 +278,16 @@
 .access-note {
   margin: 1.5rem 0 0;
   font-size: .9rem;
+}
+
+.access-note a {
+  color: #fff;
+  font-weight: 700;
+}
+
+.access-note a:hover,
+.access-note a:focus-visible {
+  color: var(--issell-orange);
 }
 
 .access-preview {

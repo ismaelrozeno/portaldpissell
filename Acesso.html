@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Acesso ao Portal do Departamento Pessoal da Issell Informática.">
   <title>Acesso | Issell Informática</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="site-overrides.css">
   <link rel="stylesheet" href="Acesso.css" media="screen">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
@@ -23,28 +23,51 @@
           <button class="access-tab" id="registro-tab" type="button" role="tab" aria-selected="false" aria-controls="registro">Registrar</button>
         </div>
         <section class="access-panel is-active" id="login" role="tabpanel" aria-labelledby="login-tab">
-          <form>
-            <label for="matricula-login">Matrícula</label>
-            <input id="matricula-login" name="matricula" type="text" inputmode="numeric" placeholder="Digite sua matrícula">
+          <form id="login-form">
+            <label for="identificador-login">Matrícula ou e-mail</label>
+            <input id="identificador-login" name="identificador" type="text" autocomplete="username" required placeholder="Digite sua matrícula ou e-mail" title="Informe uma matrícula com 7 números ou um e-mail válido." aria-describedby="identificador-login-ajuda">
+            <small class="password-help" id="identificador-login-ajuda" aria-live="polite">Digite uma matrícula com 7 números ou um e-mail válido.</small>
             <label for="senha-login">Senha</label>
-            <input id="senha-login" name="senha" type="password" minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}" autocomplete="current-password" placeholder="Digite sua senha" title="A senha deve ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e caractere especial.">
+            <div class="password-field">
+              <input id="senha-login" name="senha" type="password" required autocomplete="current-password" placeholder="Digite sua senha" aria-describedby="senha-login-ajuda">
+              <button class="password-toggle" type="button" aria-label="Mostrar senha" aria-controls="senha-login" aria-pressed="false">
+                <svg class="password-icon password-icon-visible" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2.1 12s3.6-6 9.9-6 9.9 6 9.9 6-3.6 6-9.9 6-9.9-6-9.9-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+                <svg class="password-icon password-icon-hidden" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.3 0 9.9 6 9.9 6a18.4 18.4 0 0 1-3.2 3.7M6.2 6.8C3.6 8.4 2.1 12 2.1 12s3.6 6 9.9 6c1 0 1.9-.2 2.7-.4"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg>
+              </button>
+            </div>
+            <small class="password-help" id="senha-login-ajuda" aria-live="polite">Digite a senha da sua conta.</small>
             <button type="submit">Entrar no portal</button>
           </form>
-          <p class="access-note">Esqueceu a senha? Solicite a alteração pessoalmente ao Departamento Pessoal.</p>
+          <p class="access-note">Esqueceu a senha? <a href="Recuperar-Senha.html">Altere sua senha</a>.</p>
         </section>
         <section class="access-panel" id="registro" role="tabpanel" aria-labelledby="registro-tab" hidden>
           <form>
             <label for="matricula-registro">Matrícula</label>
-            <input id="matricula-registro" name="matricula" type="text" inputmode="numeric" placeholder="Digite sua matrícula">
+            <input id="matricula-registro" name="matricula" type="text" inputmode="numeric" pattern="[0-9]{7}" minlength="7" maxlength="7" required placeholder="Digite sua matrícula" title="Informe sua matrícula com 7 números, sem letras ou pontos.">
             <label for="email-registro">E-mail</label>
-            <input id="email-registro" name="email" type="email" autocomplete="email" placeholder="Digite seu e-mail">
+            <input id="email-registro" name="email" type="email" autocomplete="email" required placeholder="Digite seu e-mail" title="Informe um e-mail válido, como usuario@exemplo.com." aria-describedby="email-registro-ajuda">
+            <small class="password-help" id="email-registro-ajuda" aria-live="polite">Digite um e-mail válido, como usuario@exemplo.com.</small>
             <label for="senha-registro">Senha</label>
-            <input id="senha-registro" name="senha" type="password" minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}" autocomplete="new-password" placeholder="Crie uma senha de no mínimo 8 caracteres" title="A senha deve ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e caractere especial.">
+            <div class="password-field">
+              <input id="senha-registro" name="senha" type="password" minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}" autocomplete="new-password" required placeholder="Crie uma senha de no mínimo 8 caracteres" title="A senha deve ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e caractere especial." aria-describedby="senha-registro-ajuda">
+              <button class="password-toggle" type="button" aria-label="Mostrar senha" aria-controls="senha-registro" aria-pressed="false">
+                <svg class="password-icon password-icon-visible" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2.1 12s3.6-6 9.9-6 9.9 6 9.9 6-3.6 6-9.9 6-9.9-6-9.9-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+                <svg class="password-icon password-icon-hidden" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.3 0 9.9 6 9.9 6a18.4 18.4 0 0 1-3.2 3.7M6.2 6.8C3.6 8.4 2.1 12 2.1 12s3.6 6 9.9 6c1 0 1.9-.2 2.7-.4"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg>
+              </button>
+            </div>
+            <small class="password-help" id="senha-registro-ajuda" aria-live="polite">A senha deve ter pelo menos 8 caracteres, uma letra maiúscula, uma letra minúscula, um número e um caractere especial.</small>
             <label for="senha-confirmacao-registro">Repita a senha</label>
-            <input id="senha-confirmacao-registro" name="senha-confirmacao" type="password" minlength="8" autocomplete="new-password" placeholder="Repita sua senha" title="Repita exatamente a senha informada.">
+            <div class="password-field">
+              <input id="senha-confirmacao-registro" name="senha-confirmacao" type="password" minlength="8" autocomplete="new-password" required placeholder="Repita sua senha" title="Repita exatamente a senha informada." aria-describedby="senha-confirmacao-ajuda">
+              <button class="password-toggle" type="button" aria-label="Mostrar confirmação da senha" aria-controls="senha-confirmacao-registro" aria-pressed="false">
+                <svg class="password-icon password-icon-visible" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2.1 12s3.6-6 9.9-6 9.9 6 9.9 6-3.6 6-9.9 6-9.9-6-9.9-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+                <svg class="password-icon password-icon-hidden" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.3 0 9.9 6 9.9 6a18.4 18.4 0 0 1-3.2 3.7M6.2 6.8C3.6 8.4 2.1 12 2.1 12s3.6 6 9.9 6c1 0 1.9-.2 2.7-.4"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg>
+              </button>
+            </div>
+            <small class="password-help" id="senha-confirmacao-ajuda" aria-live="polite">As senhas precisam ser iguais.</small>
             <label class="access-terms" for="termos-registro">
               <input id="termos-registro" name="termos" type="checkbox" required>
-              <span>Aceito os termos de uso e a política de privacidade.</span>
+              <span>Aceito os <a href="Termos.html#termos-de-uso">termos de uso</a> e a <a href="Termos.html#politica-de-privacidade">política de privacidade</a>.</span>
             </label>
             <button type="submit">Criar cadastro</button>
           </form>
@@ -55,6 +78,22 @@
     </div>
   </main>
   <div data-site-footer></div>
+  <div class="modal fade access-modal" id="login-development-modal" tabindex="-1" aria-labelledby="login-development-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="login-development-title">Acesso em preparação</h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar mensagem"></button>
+        </div>
+        <div class="modal-body">
+          <p>O acesso será conectado ao sistema de autenticação em uma próxima etapa.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn access-modal-button" data-bs-dismiss="modal">Entendi</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="modal fade access-modal" id="registration-development-modal" tabindex="-1" aria-labelledby="registration-development-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -73,6 +112,6 @@
   </div>
   <script src="shared-components.js"></script>
   <script src="access.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
