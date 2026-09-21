@@ -11,17 +11,17 @@
   registration.addEventListener("input", () => {
     registration.value = registration.value.replace(/\D/g, "").slice(0, 7);
   });
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    window.portalEmployeeStore.upsert({
+    await window.portalEmployeeStore.upsert({
       matricula: registration.value,
       nome: document.querySelector("#employee-name").value.trim(),
       funcao: document.querySelector("#employee-role").value.trim(),
       setor: document.querySelector("#employee-team").value.trim(),
       encarregado: document.querySelector("#employee-foreman").value.trim()
     });
-    window.portalEmployeeStore.addAllowedRegistration(registration.value);
-    result.textContent = "Colaborador salvo na base local.";
+    await window.portalEmployeeStore.addAllowedRegistration(registration.value);
+    result.textContent = "Colaborador salvo.";
     result.hidden = false;
     form.reset();
   });

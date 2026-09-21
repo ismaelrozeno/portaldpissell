@@ -14,8 +14,9 @@
   const adminCode = document.querySelector("#admin-bonus-code");
   const unlockAdminBonus = document.querySelector("#unlock-admin-bonus");
   const adminMessage = document.querySelector("#admin-bonus-message");
-  function render() {
-    const bonuses = window.portalDemoStore.getReleases()
+  async function render() {
+    const releases = await window.portalDemoStore.getReleases();
+    const bonuses = releases
       .filter((release) => release.bonusStatus || release.hours === "Abonado" || release.hours === "abonado")
       .map((release) => ({
         ...release,
@@ -37,14 +38,15 @@
       </article>
     `).join("") : '<p class="engineer-empty">Nenhum abono pendente de assinatura.</p>';
   }
-  list.addEventListener("click", (event) => {
+  list.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-choice]");
     if (!button) return;
     if (!canSignBonus()) return;
-    const bonus = window.portalDemoStore.getReleases().find((item) => item.id === button.dataset.id);
+    const releases = await window.portalDemoStore.getReleases();
+    const bonus = releases.find((item) => item.id === button.dataset.id);
     if (!bonus) return;
     bonus.bonusStatus = button.dataset.choice;
-    window.portalDemoStore.updateRelease(bonus.id, {
+    await window.portalDemoStore.updateRelease(bonus.id, {
       bonusStatus: bonus.bonusStatus,
       hours: bonus.bonusStatus === "approved" ? "Abonado" : "Não abonado",
       engineer: window.portalAuthDemo?.getSession()?.name || "Engenheiro responsável"

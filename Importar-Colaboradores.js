@@ -35,11 +35,11 @@
     preview.hidden = true;
     result.hidden = true;
   });
-  confirmButton.addEventListener("click", () => {
-    demoRows.forEach(([matricula, nome, funcao, setor, status]) => {
-      window.portalEmployeeStore?.upsert({ matricula, nome, funcao, setor, encarregado: "", status: status.toLowerCase() === "ativo" ? "ativo" : "inativo" });
-    });
-    result.textContent = "Colaboradores incluídos ou atualizados na base local.";
+  confirmButton.addEventListener("click", async () => {
+    await Promise.all(demoRows.map(([matricula, nome, funcao, setor, status]) =>
+      window.portalEmployeeStore?.upsert({ matricula, nome, funcao, setor, encarregado: "", status: status.toLowerCase() === "ativo" ? "ativo" : "inativo" })
+    ));
+    result.textContent = "Colaboradores incluídos ou atualizados.";
     result.hidden = false;
     confirmButton.disabled = true;
   });

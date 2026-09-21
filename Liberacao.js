@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const form = document.querySelector("#release-form");
   const reasonInputs = document.querySelectorAll('input[name="reason"]');
   const particularField = document.querySelector("#particular-reason-field");
@@ -7,8 +8,17 @@
   const successMessage = document.querySelector("#release-success");
   const employee = document.querySelector("#employee");
 
-  function renderEmployees() {
-    const employees = window.portalEmployeeStore?.getAll().filter((item) => item.status === "ativo") || [];
+  function updateParticularField() {
+    const selected = document.querySelector('input[name="reason"]:checked');
+    const isParticular = selected?.value === "particular";
+    particularField.hidden = !isParticular;
+    particularReason.required = isParticular;
+    if (!isParticular) particularReason.value = "";
+  }
+
+  async function renderEmployees() {
+    const allEmployees = await window.portalEmployeeStore?.getAll() || [];
+    const employees = allEmployees.filter((item) => item.status === "ativo");
     employees.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.matricula;
@@ -16,7 +26,9 @@
       employee.append(option);
     });
     const editId = new URLSearchParams(window.location.search).get("edit");
-    const release = editId ? window.portalDemoStore?.getReleases().find((item) => item.id === editId) : null;
+    if (!editId) return;
+    const releases = await window.portalDemoStore?.getReleases() || [];
+    const release = releases.find((item) => item.id === editId);
     if (!release) return;
     const matchingEmployee = employees.find((item) => item.nome === release.name);
     if (matchingEmployee) employee.value = matchingEmployee.matricula;
@@ -32,19 +44,11 @@
     updateParticularField();
   }
 
-  renderEmployees();
-
-  function updateParticularField() {
-    const selected = document.querySelector('input[name="reason"]:checked');
-    const isParticular = selected?.value === "particular";
-    particularField.hidden = !isParticular;
-    particularReason.required = isParticular;
-    if (!isParticular) particularReason.value = "";
-  }
+  await renderEmployees();
 
   reasonInputs.forEach((input) => input.addEventListener("change", updateParticularField));
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     errorMessage.hidden = true;
     successMessage.hidden = true;
@@ -76,9 +80,9 @@
     };
     const editId = new URLSearchParams(window.location.search).get("edit");
     if (editId) {
-      window.portalDemoStore.updateRelease(editId, releaseData);
+      await window.portalDemoStore.updateRelease(editId, releaseData);
     } else {
-      window.portalDemoStore.saveRelease(releaseData);
+      await window.portalDemoStore.saveRelease(releaseData);
     }
     successMessage.textContent = pendingEngineer
       ? "Solicitação registrada. O abono ficará pendente da assinatura individual do engenheiro."

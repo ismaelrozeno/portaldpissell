@@ -169,11 +169,11 @@
       return this.getPorterRequests();
     },
 
-    isValidEmployee(matricula) {
-      return Boolean(window.portalEmployeeStore?.isRegistrationAllowed(matricula));
+    async isValidEmployee(matricula) {
+      return Boolean(await window.portalEmployeeStore?.isRegistrationAllowed(matricula));
     },
-    isRegistrationAllowedForRole(matricula, roleValue) {
-      const allowed = window.portalEmployeeStore?.getAllowedRegistration(matricula);
+    async isRegistrationAllowedForRole(matricula, roleValue) {
+      const allowed = await window.portalEmployeeStore?.getAllowedRegistration(matricula);
       if (!allowed) return false;
       const roleAliases = {
         dp: ["dp", "departamento pessoal"],
@@ -188,15 +188,15 @@
         .trim();
       return acceptedRoles.some((role) => role.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() === savedRole);
     },
-    isRegistrationIdentityAllowed(matricula, name, roleValue) {
-      const allowed = window.portalEmployeeStore?.getAllowedRegistration(matricula);
+    async isRegistrationIdentityAllowed(matricula, name, roleValue) {
+      const allowed = await window.portalEmployeeStore?.getAllowedRegistration(matricula);
       if (!allowed || allowed.roleValue !== roleValue) return false;
       return normalizeIdentity(allowed.nome) === normalizeIdentity(name);
     },
-    saveImportedEmployees(matriculas) {
-      const current = window.portalEmployeeStore?.getAll() || [];
+    async saveImportedEmployees(matriculas) {
+      const current = await window.portalEmployeeStore?.getAll() || [];
       const employees = matriculas.map((matricula) => current.find((employee) => employee.matricula === matricula) || { matricula, nome: "", funcao: "", setor: "", encarregado: "", status: "ativo" });
-      window.portalEmployeeStore?.replaceAll(employees);
+      await window.portalEmployeeStore?.replaceAll(employees);
     },
 
     async updateProfile(changes) {

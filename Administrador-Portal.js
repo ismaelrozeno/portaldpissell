@@ -30,21 +30,21 @@
   function normalizeNameInput(input) {
     input.value = String(input.value || "")
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[̀-ͯ]/g, "")
       .toUpperCase()
       .replace(/\s+/g, " ")
       .replace(/^\s+/, "");
   }
 
-  function renderAllowed() {
-    const registrations = window.portalEmployeeStore.getAllowedRegistrations();
+  async function renderAllowed() {
+    const registrations = await window.portalEmployeeStore.getAllowedRegistrations();
     allowedList.innerHTML = registrations.length
       ? registrations.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · Perfil: ${escapeHtml(item.role) || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : '<li class="list-group-item text-muted">Nenhuma matrícula liberada.</li>';
   }
 
-  function renderEmployees() {
-    const employees = window.portalEmployeeStore.getAll();
+  async function renderEmployees() {
+    const employees = await window.portalEmployeeStore.getAll();
     employeeList.innerHTML = employees.length
       ? employees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · ${escapeHtml(item.funcao) || "Função não informada"} · ${escapeHtml(item.setor) || "Setor não informado"}</small></span><span class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : '<li class="list-group-item text-muted">Nenhum colaborador cadastrado.</li>';
@@ -96,7 +96,7 @@
     input.addEventListener("input", () => normalizeNameInput(input));
   });
   allowInput.addEventListener("input", lookupAllowedEmployee);
-  allowForm.addEventListener("submit", (event) => {
+  allowForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     normalizeInput(allowInput);
     normalizeNameInput(allowName);
@@ -119,10 +119,10 @@
       role: allowRole.options[allowRole.selectedIndex].textContent
     };
     if (editingAllowedRegistration) {
-      window.portalEmployeeStore.updateAllowedRegistration(editingAllowedRegistration, changes);
+      await window.portalEmployeeStore.updateAllowedRegistration(editingAllowedRegistration, changes);
       allowResult.textContent = "Matrícula permitida atualizada.";
     } else {
-      window.portalEmployeeStore.addAllowedRegistration(allowInput.value, changes);
+      await window.portalEmployeeStore.addAllowedRegistration(allowInput.value, changes);
       allowResult.textContent = "Matrícula permitida adicionada.";
     }
     allowResult.hidden = false;
@@ -131,10 +131,10 @@
     allowInput.disabled = false;
     allowCancelEdit.hidden = true;
     allowSubmit.textContent = "Adicionar matrícula permitida";
-    renderAllowed();
-    renderEmployees();
+    await renderAllowed();
+    await renderEmployees();
   });
-  employeeForm.addEventListener("submit", (event) => {
+  employeeForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const employeeData = {
       matricula: employeeRegistration.value,
@@ -143,27 +143,28 @@
       setor: document.querySelector("#employee-team").value.trim(),
       encarregado: window.portalAuthDemo.normalizeIdentity(document.querySelector("#employee-foreman").value)
     };
-    window.portalEmployeeStore.upsert(employeeData);
+    await window.portalEmployeeStore.upsert(employeeData);
     employeeResult.textContent = editingEmployee
-      ? "Colaborador atualizado na base local."
-      : "Colaborador de linha de frente salvo na base local. Ele não recebeu acesso ao portal.";
+      ? "Colaborador atualizado."
+      : "Colaborador de linha de frente salvo. Ele não recebeu acesso ao portal.";
     employeeResult.hidden = false;
     employeeForm.reset();
     editingEmployee = null;
     employeeRegistration.disabled = false;
     employeeCancelEdit.hidden = true;
     employeeSubmit.textContent = "Salvar colaborador";
-    renderAllowed();
+    await renderEmployees();
   });
-  allowedList.addEventListener("click", (event) => {
+  allowedList.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-allowed-action]");
     if (!button) return;
-    const item = window.portalEmployeeStore.getAllowedRegistrations().find((entry) => entry.matricula === button.dataset.allowedId);
+    const registrations = await window.portalEmployeeStore.getAllowedRegistrations();
+    const item = registrations.find((entry) => entry.matricula === button.dataset.allowedId);
     if (!item) return;
     if (button.dataset.allowedAction === "delete") {
       if (!window.confirm("Apagar esta matrícula permitida?")) return;
-      window.portalEmployeeStore.removeAllowedRegistration(item.matricula);
-      renderAllowed();
+      await window.portalEmployeeStore.removeAllowedRegistration(item.matricula);
+      await renderAllowed();
       return;
     }
     editingAllowedRegistration = item.matricula;
@@ -190,7 +191,7 @@
     if (button.dataset.porterAction === "delete") {
       if (window.confirm("Apagar este cadastro de porteiro?")) {
         await window.portalAuthDemo.removePorterRequest(button.dataset.porterId);
-        renderPorterRequests();
+        await renderPorterRequests();
       }
       return;
     }
@@ -206,12 +207,12 @@
         name: window.portalAuthDemo.normalizeIdentity(name),
         email: email.trim()
       });
-      renderPorterRequests();
+      await renderPorterRequests();
       return;
     }
     const status = button.dataset.porterAction === "approve" ? "approved" : "rejected";
     await window.portalAuthDemo.updatePorterRequest(button.dataset.porterId, status);
-    renderPorterRequests();
+    await renderPorterRequests();
   });
   allowCancelEdit.addEventListener("click", () => {
     editingAllowedRegistration = null;
@@ -220,15 +221,16 @@
     allowCancelEdit.hidden = true;
     allowSubmit.textContent = "Adicionar matrícula permitida";
   });
-  document.querySelector("#employee-list")?.addEventListener("click", (event) => {
+  document.querySelector("#employee-list")?.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-employee-action]");
     if (!button) return;
-    const employee = window.portalEmployeeStore.getAll().find((item) => item.matricula === button.dataset.employeeId);
+    const employees = await window.portalEmployeeStore.getAll();
+    const employee = employees.find((item) => item.matricula === button.dataset.employeeId);
     if (!employee) return;
     if (button.dataset.employeeAction === "delete") {
       if (window.confirm("Apagar este colaborador?")) {
-        window.portalEmployeeStore.remove(employee.matricula);
-        renderEmployees();
+        await window.portalEmployeeStore.remove(employee.matricula);
+        await renderEmployees();
       }
       return;
     }

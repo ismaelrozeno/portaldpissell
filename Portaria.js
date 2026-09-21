@@ -2,8 +2,9 @@
   const search = document.querySelector("#gate-search");
   const results = document.querySelector("#gate-results");
   const statusText = { ready:"Autorizado para saída", blocked:"Procurar o DP" };
-  function render() {
-    const authorizations = window.portalDemoStore.getReleases().map((release) => ({
+  async function render() {
+    const releases = await window.portalDemoStore.getReleases();
+    const authorizations = releases.map((release) => ({
       name: release.name,
       registration: release.registration || "Matrícula não informada",
       team: release.team,

@@ -121,9 +121,9 @@
       : "<li>Nenhum colaborador vinculado a este encarregado.</li>";
   }
 
-  function renderRecords(profile) {
+  async function renderRecords(profile) {
     const session = window.portalAuthDemo?.getSession();
-    const releases = window.portalDemoStore?.getReleases() || [];
+    const releases = await window.portalDemoStore?.getReleases() || [];
     const profileReleases = profile === "encarregado" && session?.roleValue === "encarregado"
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
@@ -147,7 +147,7 @@
     `).join("");
   }
 
-  function renderProfile(profileKey) {
+  async function renderProfile(profileKey) {
     const profile = profiles[profileKey];
     elements.title.textContent = profile.title;
     elements.description.textContent = profile.description;
@@ -155,8 +155,8 @@
     elements.tableTitle.textContent = profile.tableTitle;
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref;
-    const employees = window.portalEmployeeStore?.getAll() || [];
-    const releases = window.portalDemoStore?.getReleases() || [];
+    const employees = await window.portalEmployeeStore?.getAll() || [];
+    const releases = await window.portalDemoStore?.getReleases() || [];
     const session = window.portalAuthDemo?.getSession();
     const foremanTeam = profileKey === "encarregado" && session?.roleValue === "encarregado"
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
@@ -171,7 +171,7 @@
       const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (profileKey === "encarregado" && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;
     }).join("");
-    renderRecords(profileKey);
+    await renderRecords(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
       <li><span class="activity-dot ${release.status === "authorized" ? "is-success" : release.status === "pending" ? "is-warning" : ""}"></span><div><strong>Liberação ${release.status === "authorized" ? "autorizada" : release.status === "denied" ? "negada" : "aguardando análise"}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>

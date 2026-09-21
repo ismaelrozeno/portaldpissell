@@ -47,8 +47,8 @@
     document.querySelector("#preview-dp").textContent = getDpSigner(release);
     preview.hidden = false;
   }
-  function render() {
-    const releases = window.portalDemoStore.getReleases();
+  async function render() {
+    const releases = await window.portalDemoStore.getReleases();
     const selected = filter.value;
     const visible = releases.filter((release) => selected === "all" || release.status === selected);
     list.innerHTML = visible.length ? visible.map((release) => `
@@ -64,10 +64,11 @@
     summary.pending.textContent = releases.filter((release) => release.status === "pending").length;
     summary.denied.textContent = releases.filter((release) => release.status === "denied").length;
   }
-  list.addEventListener("click", (event) => {
+  list.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
-    const release = window.portalDemoStore.getReleases().find((item) => item.id === button.dataset.id);
+    const releases = await window.portalDemoStore.getReleases();
+    const release = releases.find((item) => item.id === button.dataset.id);
     if (!release) return;
     if (button.dataset.action === "view") {
       showPreview(release);
@@ -75,12 +76,12 @@
     }
     if (button.dataset.action === "delete") {
       if (!window.confirm("Apagar esta liberação?")) return;
-      window.portalDemoStore.removeRelease(release.id);
+      await window.portalDemoStore.removeRelease(release.id);
       render();
       return;
     }
     release.status = button.dataset.action === "authorize" ? "authorized" : "denied";
-    window.portalDemoStore.updateRelease(release.id, {
+    await window.portalDemoStore.updateRelease(release.id, {
       status: release.status,
       dpSigner: session?.name || "Departamento Pessoal",
       dpDecisionAt: new Date().toISOString()
@@ -100,7 +101,7 @@
     securityCode.value = "";
     securityCode.focus();
   });
-  confirmClearHistory.addEventListener("click", () => {
+  confirmClearHistory.addEventListener("click", async () => {
     if (!canClearHistory) return;
     if (securityCode.value.trim() !== physicalSecurityCode) {
       securityMessage.textContent = "Código incorreto. O histórico não foi apagado.";
@@ -108,7 +109,7 @@
       securityCode.focus();
       return;
     }
-    window.portalDemoStore.clearHistory();
+    await window.portalDemoStore.clearHistory();
     securityBox.hidden = true;
     render();
   });

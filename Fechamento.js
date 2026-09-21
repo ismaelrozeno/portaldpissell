@@ -1,8 +1,8 @@
-(() => {
+(async () => {
   const exportButton = document.querySelector("#export-button");
   const confirmButton = document.querySelector("#confirm-closing");
   const result = document.querySelector("#closing-result");
-  const releases = window.portalDemoStore.getReleases();
+  const releases = await window.portalDemoStore.getReleases();
   const total = document.querySelector("#closing-total");
   const approved = document.querySelector("#closing-approved");
   const denied = document.querySelector("#closing-denied");

@@ -256,25 +256,25 @@
       }
 
       const isPorter = registrationRole.value === "porteiro";
-      if (!isPorter && !window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value)) {
+      if (!isPorter && !(await window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value))) {
         message.textContent = "Essa matrícula não está liberada para cadastro. Confira com o Administrador Analista.";
         message.classList.add("is-visible");
         registrationEnrollment.setCustomValidity("Matrícula não liberada para cadastro.");
         registrationEnrollment.focus();
         return;
       }
-      if (!isPorter && !window.portalAuthDemo.isRegistrationAllowedForRole(registrationEnrollment.value, registrationRole.value)) {
+      if (!isPorter && !(await window.portalAuthDemo.isRegistrationAllowedForRole(registrationEnrollment.value, registrationRole.value))) {
         message.textContent = "Esta matrícula não está autorizada para o perfil selecionado. No Administrador, confira se a matrícula foi liberada para a mesma função.";
         message.classList.add("is-visible");
         registrationEnrollment.setCustomValidity("Matrícula não autorizada para este perfil.");
         registrationEnrollment.focus();
         return;
       }
-      if (!isPorter && !window.portalAuthDemo.isRegistrationIdentityAllowed(
+      if (!isPorter && !(await window.portalAuthDemo.isRegistrationIdentityAllowed(
         registrationEnrollment.value,
         registrationName.value,
         registrationRole.value
-      )) {
+      ))) {
         message.textContent = "O nome completo não corresponde à matrícula autorizada. Confira os dados com o Administrador Analista.";
         registrationName.setCustomValidity("Nome não corresponde à matrícula autorizada.");
         registrationName.focus();
