@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const list = document.querySelector("#release-list");
   const filter = document.querySelector("#status-filter");
   const counter = document.querySelector("#pending-counter");
@@ -52,8 +53,8 @@
     const visible = releases.filter((release) => selected === "all" || release.status === selected);
     list.innerHTML = visible.length ? visible.map((release) => `
       <article class="release-item">
-        <div class="release-item-header"><div><strong>${release.name}</strong><small>Registro local · Solicitante: ${release.requester}</small></div><span class="release-status ${release.status}">${labels[release.status]}</span></div>
-        <div class="release-details"><span><strong>Frente:</strong> ${release.team}</span><span><strong>Horário:</strong> ${release.time}</span><span><strong>Motivo:</strong> ${release.reason}</span><span><strong>Horas:</strong> ${release.hours}</span></div>
+        <div class="release-item-header"><div><strong>${escapeHtml(release.name)}</strong><small>Registro local · Solicitante: ${escapeHtml(release.requester)}</small></div><span class="release-status ${release.status}">${labels[release.status]}</span></div>
+        <div class="release-details"><span><strong>Frente:</strong> ${escapeHtml(release.team)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Horas:</strong> ${escapeHtml(release.hours)}</span></div>
         <div class="release-actions"><button class="release-view" type="button" data-action="view" data-id="${release.id}">Visualizar liberação</button><button class="release-authorize" type="button" data-action="authorize" data-id="${release.id}" ${release.status !== "pending" ? "disabled" : ""}>Autorizar saída</button><button class="release-deny" type="button" data-action="deny" data-id="${release.id}" ${release.status !== "pending" ? "disabled" : ""}>Negar</button><a class="release-edit" href="Liberacao.html?edit=${encodeURIComponent(release.id)}">Editar</a><button class="release-delete" type="button" data-action="delete" data-id="${release.id}">Apagar</button></div>
       </article>
     `).join("") : '<p class="dp-empty">Nenhuma solicitação neste filtro.</p>';

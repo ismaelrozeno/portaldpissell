@@ -1,6 +1,7 @@
 window.portalDataModel = Object.freeze({
   collections: {
     users: "users",
+    matriculaIndex: "matriculaIndex",
     employees: "employees",
     releases: "releases",
     monthlyClosures: "monthlyClosures",

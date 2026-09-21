@@ -15,11 +15,18 @@
   pending.textContent = pendingCount;
   checklistPending.textContent = pendingCount;
   exportButton.addEventListener("click", () => {
-    const content = `Obra 369;Fechamento local\r\nPeríodo;Setembro de 2026\r\nAutorizações;${total.textContent}\r\nAbonos assinados;${approved.textContent}\r\nNão abonados;${denied.textContent}\r\nPendências;${pending.textContent}\r\n`;
+    const now = new Date();
+    const periodLabel = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const periodSlug = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase();
+    const content = `Obra 369;Fechamento local\r\nPeríodo;${periodLabel}\r\nAutorizações;${total.textContent}\r\nAbonos assinados;${approved.textContent}\r\nNão abonados;${denied.textContent}\r\nPendências;${pending.textContent}\r\n`;
     const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "fechamento-obra-369-setembro-2026.csv";
+    link.download = `fechamento-obra-369-${periodSlug}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
     result.textContent = "Arquivo mensal local gerado para download.";

@@ -1,30 +1,30 @@
-﻿<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Portal operacional da Obra 369.">
-  <title>Portal | Obra 369</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="site-overrides.css">
-  <link rel="stylesheet" href="Portal.css">
-  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
-</head>
-<body class="portal-page">
-  <div data-site-header></div>
-  <main class="portal-content">
-    <div class="container-xl">
-      <section class="portal-heading">
-        <div>
-          <p class="portal-kicker">Portal operacional</p>
-          <h1 id="portal-title">Painel do encarregado</h1>
-          <p id="portal-description">Acompanhe sua equipe e registre as liberações do dia.</p>
-        </div>
-        <div class="portal-context">
-          <span>Obra ativa</span>
-          <strong>Obra 369</strong>
-        </div>
-      </section>
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Portal operacional da Obra 369.">
+  <title>Portal | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="Portal.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="portal-page">
+  <div data-site-header></div>
+  <main class="portal-content">
+    <div class="container-xl">
+      <section class="portal-heading">
+        <div>
+          <p class="portal-kicker">Portal operacional</p>
+          <h1 id="portal-title">Painel do encarregado</h1>
+          <p id="portal-description">Acompanhe sua equipe e registre as liberações do dia.</p>
+        </div>
+        <div class="portal-context">
+          <span>Obra ativa</span>
+          <strong>Obra 369</strong>
+        </div>
+      </section>
 
       <section class="demo-switcher" id="admin-portal-switcher" hidden aria-labelledby="admin-portal-title">
         <div>
@@ -58,58 +58,62 @@
         <article><span>Liberações pendentes</span><strong id="stat-pending">0</strong><small>aguardando análise</small></article>
         <article><span>Autorizadas hoje</span><strong id="stat-approved">0</strong><small>registros concluídos</small></article>
         <article><span>Pendências de abono</span><strong id="stat-bonus">0</strong><small>aguardando engenheiro</small></article>
-      </section>
-
-      <section class="portal-grid">
-        <article class="portal-card portal-card-wide">
-          <div class="card-heading">
-            <div>
-              <span class="card-eyebrow" id="table-eyebrow">Minha equipe</span>
-              <h2 id="table-title">Liberações do dia</h2>
-            </div>
-            <a class="portal-button portal-button-primary" id="primary-action" href="Liberacao.html">Nova liberação</a>
-          </div>
-          <div class="table-responsive">
-            <table class="portal-table">
-              <thead><tr><th>Colaborador</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
-              <tbody id="records-table"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
-        </article>
-
-        <aside class="portal-card portal-card-alert">
-          <span class="card-eyebrow">Avisos importantes</span>
-          <h2>Fluxo de saída</h2>
-          <p>O colaborador deve bater o ponto antes de procurar o Departamento Pessoal para a autorização final.</p>
-          <p>Na portaria, somente saídas com as autorizações registradas poderão ser liberadas.</p>
-        </aside>
-
-        <article class="portal-card">
-          <span class="card-eyebrow">Atalhos</span>
-          <h2 id="shortcut-title">Operação</h2>
-          <div class="shortcut-list" id="shortcut-list"></div>
-        </article>
-
+      </section>
+
+      <section class="portal-grid">
+        <article class="portal-card portal-card-wide">
+          <div class="card-heading">
+            <div>
+              <span class="card-eyebrow" id="table-eyebrow">Minha equipe</span>
+              <h2 id="table-title">Liberações do dia</h2>
+            </div>
+            <a class="portal-button portal-button-primary" id="primary-action" href="Liberacao.html">Nova liberação</a>
+          </div>
+          <div class="table-responsive">
+            <table class="portal-table">
+              <thead><tr><th>Colaborador</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
+              <tbody id="records-table"></tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
+        </article>
+
+        <aside class="portal-card portal-card-alert">
+          <span class="card-eyebrow">Avisos importantes</span>
+          <h2>Fluxo de saída</h2>
+          <p>O colaborador deve bater o ponto antes de procurar o Departamento Pessoal para a autorização final.</p>
+          <p>Na portaria, somente saídas com as autorizações registradas poderão ser liberadas.</p>
+        </aside>
+
+        <article class="portal-card">
+          <span class="card-eyebrow">Atalhos</span>
+          <h2 id="shortcut-title">Operação</h2>
+          <div class="shortcut-list" id="shortcut-list"></div>
+        </article>
+
         <article class="portal-card">
           <span class="card-eyebrow">Última atividade</span>
           <h2>Histórico recente</h2>
           <ul class="activity-list" id="activity-list"></ul>
         </article>
-      </section>
-    </div>
-  </main>
-  <div data-site-footer></div>
-  <script src="auth-demo.js"></script>
-  <script src="shared-components.js?v=20260920-auth7"></script>
-  <script src="firebase-config.example.js"></script>
-  <script src="firebase-init.js"></script>
-  <script src="firebase-schema.js"></script>
+      </section>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="dom-utils.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-init.js"></script>
+<script src="firebase-schema.js"></script>
+<script src="firebase-auth.js"></script>
+  <script src="shared-components.js?v=20260920-auth7"></script>
   <script src="portal-local-store.js"></script>
   <script src="portal-demo-store.js"></script>
   <script src="Portal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+

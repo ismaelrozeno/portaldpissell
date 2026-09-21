@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const session = window.portalAuthDemo?.getSession();
   const isAdministrator = session?.roleValue === "administrador-analista";
   const isEngineer = session?.roleValue === "engenheiro";
@@ -27,9 +28,9 @@
     deniedSummary.textContent = bonuses.filter((bonus) => bonus.bonusStatus === "denied").length;
     list.innerHTML = bonuses.length ? bonuses.map((bonus) => `
       <article class="bonus-item">
-        <div class="bonus-item-head"><div><strong>${bonus.name}</strong><small>Registro local · Solicitante: ${bonus.requester}</small></div><span class="bonus-status ${bonus.bonusStatus === "approved" ? "is-approved" : bonus.bonusStatus === "denied" ? "is-denied" : "is-pending"}">${bonus.bonusStatus === "approved" ? "ABONADO" : bonus.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE"}</span></div>
-        <div class="bonus-details"><span><strong>Frente:</strong> ${bonus.team}</span><span><strong>Horário:</strong> ${bonus.time}</span><span><strong>Motivo:</strong> ${bonus.reason}</span></div>
-        <div class="bonus-signature">${bonus.engineer ? `Decisão registrada por ${bonus.engineer}.` : "Sua decisão será registrada com nome, perfil, data e hora."}</div>
+        <div class="bonus-item-head"><div><strong>${escapeHtml(bonus.name)}</strong><small>Registro local · Solicitante: ${escapeHtml(bonus.requester)}</small></div><span class="bonus-status ${bonus.bonusStatus === "approved" ? "is-approved" : bonus.bonusStatus === "denied" ? "is-denied" : "is-pending"}">${bonus.bonusStatus === "approved" ? "ABONADO" : bonus.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE"}</span></div>
+        <div class="bonus-details"><span><strong>Frente:</strong> ${escapeHtml(bonus.team)}</span><span><strong>Horário:</strong> ${escapeHtml(bonus.time)}</span><span><strong>Motivo:</strong> ${escapeHtml(bonus.reason)}</span></div>
+        <div class="bonus-signature">${bonus.engineer ? `Decisão registrada por ${escapeHtml(bonus.engineer)}.` : "Sua decisão será registrada com nome, perfil, data e hora."}</div>
         ${canSignBonus()
           ? '<div class="bonus-actions"><button class="bonus-yes" type="button" data-choice="approved" data-id="' + bonus.id + '">Assinar como abonado</button><button class="bonus-no" type="button" data-choice="denied" data-id="' + bonus.id + '">Assinar como não abonado</button></div>'
           : `<div class="bonus-signature">${isAdministrator ? "Informe o código físico para liberar a assinatura do Administrador Analista." : "Consulta permitida. Somente o engenheiro responsável pode registrar o abono."}</div>`}

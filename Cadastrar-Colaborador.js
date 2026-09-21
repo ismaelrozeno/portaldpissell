@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const session = window.portalAuthDemo?.getSession();
   if (session?.roleValue !== "administrador-analista" && session?.role !== "Administrador Analista") {
     window.location.replace("Portal.html");

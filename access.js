@@ -236,7 +236,7 @@
     registrationEmail.addEventListener("input", () => updateEmailState(false));
     registrationEmail.addEventListener("blur", () => updateEmailState(true));
 
-    registrationForm.addEventListener("submit", (event) => {
+    registrationForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const message = document.querySelector("#registration-message");
       message.textContent = "";
@@ -282,23 +282,35 @@
       }
       registrationName.setCustomValidity("");
 
-      const registrationResult = window.portalAuthDemo.register({
-        name: normalizeIdentity(registrationName.value),
-        email: registrationEmail.value.trim(),
-        role: registrationRole.options[registrationRole.selectedIndex].textContent,
-        roleValue: registrationRole.value,
-        especialidade: foremanSpecialty.value,
-        matricula: registrationEnrollment.value
-      });
-      if (registrationResult === "pending-dp") {
-        message.textContent = "Cadastro enviado para aprovação do Departamento Pessoal.";
+      const submitButton = registrationForm.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+      try {
+        const registrationResult = await window.portalAuthDemo.register({
+          name: normalizeIdentity(registrationName.value),
+          email: registrationEmail.value.trim(),
+          role: registrationRole.options[registrationRole.selectedIndex].textContent,
+          roleValue: registrationRole.value,
+          especialidade: foremanSpecialty.value,
+          matricula: registrationEnrollment.value
+        }, registrationPassword.value);
+        if (registrationResult === "pending-dp") {
+          message.textContent = "Cadastro enviado para aprovação do Departamento Pessoal.";
+          message.classList.add("is-visible");
+          registrationForm.reset();
+          updateEnrollmentVisibility();
+          updateForemanSpecialtyVisibility();
+          return;
+        }
+        window.location.href = "Portal.html";
+      } catch (error) {
+        message.textContent = error?.code === "auth/email-already-in-use"
+          ? "Já existe um cadastro com este e-mail."
+          : "Não foi possível concluir o cadastro. Tente novamente.";
         message.classList.add("is-visible");
-        registrationForm.reset();
-        updateEnrollmentVisibility();
-        updateForemanSpecialtyVisibility();
-        return;
+        console.error("Falha no cadastro.", error);
+      } finally {
+        if (submitButton) submitButton.disabled = false;
       }
-      window.location.href = "Portal.html";
     });
   }
 

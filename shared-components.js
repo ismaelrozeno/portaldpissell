@@ -4,6 +4,7 @@
     "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html"
   ]);
   const currentPage = window.location.pathname.split("/").pop();
+  await window.portalAuthDemo?.ready();
   const currentSession = window.portalAuthDemo?.getSession();
   if (protectedPages.has(currentPage) && !currentSession) {
     window.location.replace("Acesso.html#login");

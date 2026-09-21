@@ -8,6 +8,11 @@ body {
   background: var(--issell-navy);
 }
 
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 .site-header {
   position: absolute;
   top: 0;

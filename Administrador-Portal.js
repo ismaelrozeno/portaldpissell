@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const session = window.portalAuthDemo?.getSession();
   if (session?.role !== "Administrador Analista" && session?.roleValue !== "administrador-analista") return;
 
@@ -38,19 +39,19 @@
   function renderAllowed() {
     const registrations = window.portalEmployeeStore.getAllowedRegistrations();
     allowedList.innerHTML = registrations.length
-      ? registrations.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${item.nome || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${item.matricula} · Perfil: ${item.role || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${item.matricula}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${item.matricula}">Apagar</button></span></li>`).join("")
+      ? registrations.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · Perfil: ${escapeHtml(item.role) || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : '<li class="list-group-item text-muted">Nenhuma matrícula liberada.</li>';
   }
 
   function renderEmployees() {
     const employees = window.portalEmployeeStore.getAll();
     employeeList.innerHTML = employees.length
-      ? employees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${item.nome || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${item.matricula} · ${item.funcao || "Função não informada"} · ${item.setor || "Setor não informado"}</small></span><span class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${item.matricula}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${item.matricula}">Apagar</button></span></li>`).join("")
+      ? employees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · ${escapeHtml(item.funcao) || "Função não informada"} · ${escapeHtml(item.setor) || "Setor não informado"}</small></span><span class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : '<li class="list-group-item text-muted">Nenhum colaborador cadastrado.</li>';
   }
 
-  function renderPorterRequests() {
-    const requests = window.portalAuthDemo.getPorterRequests();
+  async function renderPorterRequests() {
+    const requests = await window.portalAuthDemo.getPorterRequests();
     const pending = requests.filter((request) => request.status === "pending-dp");
     porterPendingCount.textContent = `${pending.length} pendentes`;
     porterList.innerHTML = requests.length
@@ -58,8 +59,8 @@
         <article class="border rounded p-3 mb-2">
           <div class="d-flex justify-content-between gap-3 flex-wrap">
             <div>
-              <strong>${request.name || "Nome não informado"}</strong>
-              <small class="d-block text-muted">${request.email || "E-mail não informado"}</small>
+              <strong>${escapeHtml(request.name) || "Nome não informado"}</strong>
+              <small class="d-block text-muted">${escapeHtml(request.email) || "E-mail não informado"}</small>
               <small class="d-block text-muted">Função: Porteiro · Enviado em: ${new Date(request.createdAt).toLocaleString("pt-BR")}</small>
             </div>
             <span class="badge ${request.status === "pending-dp" ? "text-bg-warning" : request.status === "approved" ? "text-bg-success" : "text-bg-danger"}">
@@ -183,24 +184,25 @@
     employeeCancelEdit.hidden = true;
     employeeSubmit.textContent = "Salvar colaborador";
   });
-  porterList.addEventListener("click", (event) => {
+  porterList.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-porter-action]");
     if (!button) return;
     if (button.dataset.porterAction === "delete") {
       if (window.confirm("Apagar este cadastro de porteiro?")) {
-        window.portalAuthDemo.removePorterRequest(button.dataset.porterId);
+        await window.portalAuthDemo.removePorterRequest(button.dataset.porterId);
         renderPorterRequests();
       }
       return;
     }
     if (button.dataset.porterAction === "edit") {
-      const request = window.portalAuthDemo.getPorterRequests().find((item) => item.id === button.dataset.porterId);
+      const requests = await window.portalAuthDemo.getPorterRequests();
+      const request = requests.find((item) => item.id === button.dataset.porterId);
       if (!request) return;
       const name = window.prompt("Nome completo do porteiro:", request.name || "");
       if (name === null) return;
       const email = window.prompt("E-mail do porteiro:", request.email || "");
       if (email === null) return;
-      window.portalAuthDemo.updatePorterProfile(request.id, {
+      await window.portalAuthDemo.updatePorterProfile(request.id, {
         name: window.portalAuthDemo.normalizeIdentity(name),
         email: email.trim()
       });
@@ -208,7 +210,7 @@
       return;
     }
     const status = button.dataset.porterAction === "approve" ? "approved" : "rejected";
-    window.portalAuthDemo.updatePorterRequest(button.dataset.porterId, status);
+    await window.portalAuthDemo.updatePorterRequest(button.dataset.porterId, status);
     renderPorterRequests();
   });
   allowCancelEdit.addEventListener("click", () => {

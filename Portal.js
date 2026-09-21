@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo?.ready();
   const profiles = {
     encarregado: {
       title: "Painel do encarregado",
@@ -116,7 +117,7 @@
     elements.foremanSpecialty.textContent = specialty;
     elements.foremanTeamCount.textContent = `${team.length} ${team.length === 1 ? "colaborador" : "colaboradores"}`;
     elements.foremanTeamList.innerHTML = team.length
-      ? team.map((employee) => `<li><strong>${employee.nome}</strong><small>${employee.funcao} · Matrícula ${employee.matricula}</small></li>`).join("")
+      ? team.map((employee) => `<li><strong>${escapeHtml(employee.nome)}</strong><small>${escapeHtml(employee.funcao)} · Matrícula ${escapeHtml(employee.matricula)}</small></li>`).join("")
       : "<li>Nenhum colaborador vinculado a este encarregado.</li>";
   }
 
@@ -137,9 +138,9 @@
     const visibleRecords = profile === "portaria" ? records.filter((record) => record[4] === "approved") : records;
     elements.table.innerHTML = visibleRecords.map((record) => `
       <tr>
-        <td><strong>${record[0]}</strong><small>Registro local</small></td>
-        <td>${record[1]}</td>
-        <td>${record[2]}</td>
+        <td><strong>${escapeHtml(record[0])}</strong><small>Registro local</small></td>
+        <td>${escapeHtml(record[1])}</td>
+        <td>${escapeHtml(record[2])}</td>
         <td><span class="status-badge status-${record[4]}">${record[3]}</span></td>
         <td class="text-end"><a class="table-action" href="${profile === "encarregado" ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${profile === "encarregado" ? "Editar" : "Consultar"}</a></td>
       </tr>
@@ -173,7 +174,7 @@
     renderRecords(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
-      <li><span class="activity-dot ${release.status === "authorized" ? "is-success" : release.status === "pending" ? "is-warning" : ""}"></span><div><strong>Liberação ${release.status === "authorized" ? "autorizada" : release.status === "denied" ? "negada" : "aguardando análise"}</strong><small>${release.name} · ${release.time}</small></div></li>
+      <li><span class="activity-dot ${release.status === "authorized" ? "is-success" : release.status === "pending" ? "is-warning" : ""}"></span><div><strong>Liberação ${release.status === "authorized" ? "autorizada" : release.status === "denied" ? "negada" : "aguardando análise"}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
     `).join("") : "<li><div><strong>Nenhuma atividade local</strong><small>Cadastre colaboradores e registre liberações para começar.</small></div></li>";
   }
 

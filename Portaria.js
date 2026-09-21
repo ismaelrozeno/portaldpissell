@@ -16,9 +16,9 @@
     const visible = authorizations.filter((item) => `${item.name} ${item.registration}`.toLowerCase().includes(query));
     results.innerHTML = visible.length ? visible.map((item) => `
       <article class="gate-result ${item.status === "ready" ? "is-ready" : "is-blocked"}">
-        <div class="gate-result-head"><div><strong>${item.name}</strong><small>${item.registration}</small></div><span class="gate-status ${item.status}">${statusText[item.status]}</span></div>
-        <div class="gate-details"><span><strong>Frente:</strong> ${item.team}</span><span><strong>Horário:</strong> ${item.time}</span></div>
-        <div class="gate-authorizers"><strong>Encarregado:</strong> ${item.foreman} · <strong>DP:</strong> ${item.dp}</div>
+        <div class="gate-result-head"><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.registration)}</small></div><span class="gate-status ${item.status}">${statusText[item.status]}</span></div>
+        <div class="gate-details"><span><strong>Frente:</strong> ${escapeHtml(item.team)}</span><span><strong>Horário:</strong> ${escapeHtml(item.time)}</span></div>
+        <div class="gate-authorizers"><strong>Encarregado:</strong> ${escapeHtml(item.foreman)} · <strong>DP:</strong> ${item.dp}</div>
       </article>
     `).join("") : '<p class="gate-empty">Nenhuma autorização encontrada.</p>';
   }

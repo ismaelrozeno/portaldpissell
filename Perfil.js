@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+  await window.portalAuthDemo.ready();
   const session = window.portalAuthDemo.getSession();
   if (!session) {
     window.location.href = "Acesso.html#login";
@@ -19,19 +20,19 @@
     email.disabled = true;
   }
   function showMessage(text) { message.textContent = text; message.hidden = false; }
-  document.querySelector("#profile-form").addEventListener("submit", (event) => {
+  document.querySelector("#profile-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    window.portalAuthDemo.updateProfile({ name: name.value.trim() });
-    showMessage("Perfil atualizado nesta demonstração.");
+    await window.portalAuthDemo.updateProfile({ name: name.value.trim() });
+    showMessage("Perfil atualizado.");
   });
   document.querySelector("#profile-photo").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.addEventListener("load", () => {
+    reader.addEventListener("load", async () => {
       avatar.innerHTML = `<img src="${reader.result}" alt="Foto do perfil">`;
-      window.portalAuthDemo.updateProfile({ photo: reader.result });
-      showMessage("Foto atualizada nesta demonstração.");
+      await window.portalAuthDemo.updateProfile({ photo: reader.result });
+      showMessage("Foto atualizada.");
     });
     reader.readAsDataURL(file);
   });
@@ -40,7 +41,15 @@
   if (isFixedAdministrator) {
     changePassword.hidden = true;
   } else {
-    changePassword.addEventListener("click", () => showMessage("Um código de verificação será enviado por e-mail quando o Firebase estiver conectado."));
+    changePassword.addEventListener("click", async () => {
+      try {
+        await window.portalFirebaseAuth.sendPasswordResetEmail(session.email);
+        showMessage(`Enviamos um link de redefinição de senha para ${session.email}.`);
+      } catch (error) {
+        console.error("Não foi possível enviar o e-mail de redefinição de senha.", error);
+        showMessage("Não foi possível enviar o e-mail de redefinição de senha. Tente novamente mais tarde.");
+      }
+    });
   }
   document.querySelector("#logout").addEventListener("click", () => {
     window.portalOpenLogoutModal();
