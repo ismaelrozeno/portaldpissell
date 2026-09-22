@@ -13,7 +13,8 @@
     registration.value = registration.value.replace(/\D/g, "").slice(0, 7);
   });
   const users = await window.portalAuthDemo.getAllUsers();
-  const foremen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved");
+  const foremanRoles = ["encarregado", "dp", "engenheiro"];
+  const foremen = users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
   foremanSelect.innerHTML = '<option value="">Selecione o encarregado</option>' +
     foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
   form.addEventListener("submit", async (event) => {

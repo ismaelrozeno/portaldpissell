@@ -42,7 +42,8 @@
     const foremanSelect = document.querySelector("#employee-foreman");
     if (!foremanSelect) return;
     const users = await window.portalAuthDemo.getAllUsers();
-    const foremen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved");
+    const foremanRoles = ["encarregado", "dp", "engenheiro"];
+    const foremen = users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
     const currentValue = foremanSelect.value;
     foremanSelect.innerHTML = '<option value="">Selecione o encarregado</option>' +
       foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
