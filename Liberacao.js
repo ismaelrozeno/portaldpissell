@@ -17,7 +17,7 @@
     if (kicker) kicker.textContent = `${roleLabel} · Obra 369`;
     if (employeeHint) {
       employeeHint.textContent = session?.roleValue === "encarregado"
-        ? "Somente colaboradores vinculados à sua equipe serão exibidos."
+        ? "Sua equipe e colaboradores ainda sem encarregado vinculado serão exibidos."
         : "Selecione o colaborador para registrar a liberação.";
     }
     if (signatureDescription) {
@@ -35,9 +35,17 @@
 
   async function renderEmployees() {
     const session = window.portalAuthDemo?.getSession();
-    const employees = session?.roleValue === "encarregado"
-      ? await window.portalEmployeeStore?.getActiveByForeman(session.name) || []
-      : (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
+    let employees;
+    if (session?.roleValue === "encarregado") {
+      const myTeam = await window.portalEmployeeStore?.getActiveByForeman(session.name) || [];
+      const allActive = (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
+      const unassigned = allActive.filter((item) => !item.encarregado);
+      const seen = new Set(myTeam.map((item) => item.matricula));
+      employees = [...myTeam, ...unassigned.filter((item) => !seen.has(item.matricula))];
+    } else {
+      // DP, engenheiro e administrador podem liberar qualquer colaborador ativo, sem restrição de encarregado.
+      employees = (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
+    }
     employees.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.matricula;

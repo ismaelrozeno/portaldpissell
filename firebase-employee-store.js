@@ -93,6 +93,13 @@
       await employeesCollection().doc(normalized).delete();
       return this.getAll();
     },
+    async removeAll() {
+      const snapshot = await employeesCollection().get();
+      const batch = window.portalFirebaseDb.batch();
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+      return this.getAll();
+    },
     async replaceAll(employees) {
       const batch = window.portalFirebaseDb.batch();
       employees.forEach((employee) => {

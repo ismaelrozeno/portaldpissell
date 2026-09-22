@@ -15,10 +15,17 @@
   const users = await window.portalAuthDemo.getAllUsers();
   const foremanRoles = ["encarregado", "dp", "engenheiro"];
   const foremen = users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
-  foremanSelect.innerHTML = '<option value="">Selecione o encarregado</option>' +
+  foremanSelect.innerHTML = '<option value="">Sem encarregado</option>' +
     foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const normalizedMatricula = registration.value.replace(/\D/g, "").slice(0, 7);
+    const existingEmployees = await window.portalEmployeeStore.getAll();
+    if (existingEmployees.some((item) => item.matricula === normalizedMatricula)) {
+      result.textContent = "Já existe um colaborador cadastrado com esta matrícula.";
+      result.hidden = false;
+      return;
+    }
     await window.portalEmployeeStore.upsert({
       matricula: registration.value,
       nome: document.querySelector("#employee-name").value.trim(),

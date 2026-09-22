@@ -40,7 +40,7 @@
 
           <h1>Importar colaboradores</h1>
 
-          <p>Atualize a equipe a partir do relatório exportado pelo RM TOTVS.</p>
+          <p>Atualize a equipe a partir do relatório exportado pelo REPORTS.</p>
 
         </div>
 
@@ -62,19 +62,19 @@
 
           <span class="import-eyebrow">1 · Selecionar arquivo</span>
 
-          <h2>Relatório do RM</h2>
+          <h2>Relatório do REPORTS</h2>
 
-          <p class="import-help">Formatos aceitos: Excel (.xlsx), CSV e XML. O arquivo será processado somente nesta área do DP.</p>
+          <p class="import-help">Formato aceito: XML (relatório "ATIVOS DAS OBRAS" exportado do REPORTS). O nome do arquivo pode mudar a cada exportação. O arquivo será processado somente nesta área do DP.</p>
 
           <label class="import-dropzone" for="employee-file">
 
             <span class="import-upload-icon">↑</span>
 
-            <strong id="file-label">Escolher arquivo do RM</strong>
+            <strong id="file-label">Escolher arquivo do REPORTS</strong>
 
             <small>ou arraste o arquivo para esta área</small>
 
-            <input id="employee-file" type="file" accept=".xlsx,.xls,.csv,.xml">
+            <input id="employee-file" type="file" accept=".xml">
 
           </label>
 
@@ -82,9 +82,9 @@
 
           <div class="import-requirements">
 
-            <strong>Colunas esperadas</strong>
+            <strong>Colunas lidas do arquivo</strong>
 
-            <span>Matrícula · Nome · Função · Frente · Encarregado · Obra · Situação</span>
+            <span>Matrícula · Nome · Função · Situação. Frente e Encarregado não vêm do relatório: vincule o encarregado depois pela lista de colaboradores cadastrados.</span>
 
           </div>
 
@@ -153,6 +153,23 @@
 
   </main>
 
+  <div class="modal fade" id="import-summary-modal" tabindex="-1" aria-labelledby="import-summary-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="import-summary-title">Resumo da importação</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <textarea id="import-summary-text" class="form-control" rows="6" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div data-site-footer></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -167,6 +184,7 @@
 
 
 
+  <script src="dom-utils.js"></script>
   <script src="firebase-employee-store.js"></script>
   <script src="Importar-Colaboradores.js"></script>
 

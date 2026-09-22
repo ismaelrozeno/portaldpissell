@@ -84,16 +84,25 @@
             <label for="employee-team">Setor ou frente de trabalho</label>
             <input id="employee-team" type="text" placeholder="Ex.: Elétrica, Hidráulica, Forma" required>
             <label for="employee-foreman">Encarregado responsável</label>
-            <select id="employee-foreman" required>
-              <option value="">Selecione o encarregado</option>
+            <select id="employee-foreman">
+              <option value="">Sem encarregado</option>
             </select>
             <button class="import-submit" id="employee-submit" type="submit">Salvar colaborador</button>
             <button class="btn btn-outline-secondary mt-2 w-100" id="employee-cancel-edit" type="button" hidden>Cancelar edição</button>
             <p class="import-result" id="employee-result" role="status" hidden></p>
           </form>
           <div class="import-card mt-4">
-            <h2 class="h4">Colaboradores cadastrados</h2>
-            <ul id="employee-list" class="list-group list-group-flush"></ul>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <h2 class="h4 mb-0">Colaboradores cadastrados</h2>
+              <button class="btn btn-outline-danger btn-sm" id="clear-employees" type="button">Apagar todos os colaboradores</button>
+            </div>
+            <div id="clear-employees-security" class="mt-2" hidden>
+              <label for="clear-employees-code">Código físico</label>
+              <input id="clear-employees-code" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Digite o código" class="form-control form-control-sm d-inline-block w-auto mx-2">
+              <button class="btn btn-danger btn-sm" id="confirm-clear-employees" type="button">Confirmar exclusão de todos</button>
+              <small id="clear-employees-message" role="alert" class="d-block mt-1"></small>
+            </div>
+            <ul id="employee-list" class="list-group list-group-flush mt-2"></ul>
           </div>
         </section>
       </div>
