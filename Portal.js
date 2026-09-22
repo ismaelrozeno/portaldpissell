@@ -13,7 +13,7 @@
       approved: "0",
       bonus: "0",
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#encarregado-equipe", "#encarregado-historico"]
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
     },
     dp: {
       title: "Painel do Departamento Pessoal",
@@ -26,8 +26,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Importar relatório do RM", "Fechamento mensal"],
-      shortcutHrefs: ["DP-Liberacoes.html", "Importar-Colaboradores.html", "Fechamento.html"]
+      shortcuts: ["Conferir liberações", "Nova liberação", "Importar relatório do RM", "Fechamento mensal"],
+      shortcutHrefs: ["DP-Liberacoes.html", "Liberacao.html", "Importar-Colaboradores.html", "Fechamento.html"]
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
@@ -40,8 +40,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Assinar abono", "Consultar frentes", "Histórico de assinaturas"],
-      shortcutHrefs: ["Engenheiro.html", "#engenheiro-frentes", "#engenheiro-historico"]
+      shortcuts: ["Assinar abono", "Nova liberação", "Consultar frentes", "Histórico de assinaturas"],
+      shortcutHrefs: ["Engenheiro.html", "Liberacao.html", "#records-section", "#activity-section"]
     },
     portaria: {
       title: "Painel da portaria",
@@ -55,7 +55,7 @@
       approved: "0",
       bonus: "—",
       shortcuts: ["Consultar matrícula", "Ver histórico", "Orientações da portaria"],
-      shortcutHrefs: ["Portaria.html", "#portaria-historico", "#portaria-orientacoes"]
+      shortcutHrefs: ["Portaria.html", "#activity-section", "#guidance-section"]
     }
   };
   const adminSession = window.portalAuthDemo?.getSession();

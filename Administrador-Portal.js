@@ -22,6 +22,8 @@
   let editingEmployee = null;
   const porterList = document.querySelector("#porter-request-list");
   const porterPendingCount = document.querySelector("#porter-pending-count");
+  const registeredUsersList = document.querySelector("#registered-users-list");
+  const registeredUsersCount = document.querySelector("#registered-users-count");
 
   function normalizeInput(input) {
     input.value = input.value.replace(/\D/g, "").slice(0, 7);
@@ -34,6 +36,17 @@
       .toUpperCase()
       .replace(/\s+/g, " ")
       .replace(/^\s+/, "");
+  }
+
+  async function renderForemanOptions() {
+    const foremanSelect = document.querySelector("#employee-foreman");
+    if (!foremanSelect) return;
+    const users = await window.portalAuthDemo.getAllUsers();
+    const foremen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved");
+    const currentValue = foremanSelect.value;
+    foremanSelect.innerHTML = '<option value="">Selecione o encarregado</option>' +
+      foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
+    if (foremen.some((foreman) => foreman.name === currentValue)) foremanSelect.value = currentValue;
   }
 
   async function renderAllowed() {
@@ -81,6 +94,19 @@
       : '<p class="text-muted mb-0">Nenhum cadastro de porteiro recebido.</p>';
   }
 
+  async function renderRegisteredUsers() {
+    const users = await window.portalAuthDemo.getAllUsers();
+    const visible = users.filter((user) => user.roleValue !== "administrador-analista");
+    registeredUsersCount.textContent = `${visible.length} cadastrados`;
+    registeredUsersList.innerHTML = visible.length
+      ? visible.map((user) => {
+        const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
+        const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
+      }).join("")
+      : '<li class="list-group-item text-muted">Nenhum usuário cadastrado.</li>';
+  }
+
   function lookupAllowedEmployee() {
     normalizeInput(allowInput);
     const found = /^\d{7}$/.test(allowInput.value);
@@ -92,7 +118,7 @@
   }
 
   [allowInput, employeeRegistration].forEach((input) => input.addEventListener("input", () => normalizeInput(input)));
-  [allowName, document.querySelector("#employee-name"), document.querySelector("#employee-foreman")].forEach((input) => {
+  [allowName, document.querySelector("#employee-name")].forEach((input) => {
     input.addEventListener("input", () => normalizeNameInput(input));
   });
   allowInput.addEventListener("input", lookupAllowedEmployee);
@@ -192,6 +218,7 @@
       if (window.confirm("Apagar este cadastro de porteiro?")) {
         await window.portalAuthDemo.removePorterRequest(button.dataset.porterId);
         await renderPorterRequests();
+        await renderRegisteredUsers();
       }
       return;
     }
@@ -208,11 +235,13 @@
         email: email.trim()
       });
       await renderPorterRequests();
+      await renderRegisteredUsers();
       return;
     }
     const status = button.dataset.porterAction === "approve" ? "approved" : "rejected";
     await window.portalAuthDemo.updatePorterRequest(button.dataset.porterId, status);
     await renderPorterRequests();
+    await renderRegisteredUsers();
   });
   allowCancelEdit.addEventListener("click", () => {
     editingAllowedRegistration = null;
@@ -248,4 +277,6 @@
   renderAllowed();
   renderEmployees();
   renderPorterRequests();
+  renderForemanOptions();
+  renderRegisteredUsers();
 })();

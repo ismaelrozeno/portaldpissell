@@ -109,9 +109,13 @@
       try {
         const credential = await auth().signInWithEmailAndPassword(email, password);
         const profile = await loadProfile(credential.user);
-        if (!profile || profile.status !== "approved") {
+        if (!profile) {
           await auth().signOut();
           return false;
+        }
+        if (profile.status !== "approved") {
+          await auth().signOut();
+          return profile.status === "pending-dp" ? "pending" : "rejected";
         }
         currentSession = sessionFromProfile(credential.user, profile);
         return true;
@@ -150,6 +154,10 @@
 
     async getPorterRequests() {
       const snapshot = await usersRef().where("roleValue", "==", "porteiro").get();
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    },
+    async getAllUsers() {
+      const snapshot = await usersRef().get();
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     },
     async updatePorterRequest(requestId, status) {

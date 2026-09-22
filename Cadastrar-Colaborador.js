@@ -8,9 +8,14 @@
   const form = document.querySelector("#employee-form");
   const registration = document.querySelector("#employee-registration");
   const result = document.querySelector("#employee-result");
+  const foremanSelect = document.querySelector("#employee-foreman");
   registration.addEventListener("input", () => {
     registration.value = registration.value.replace(/\D/g, "").slice(0, 7);
   });
+  const users = await window.portalAuthDemo.getAllUsers();
+  const foremen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved");
+  foremanSelect.innerHTML = '<option value="">Selecione o encarregado</option>' +
+    foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await window.portalEmployeeStore.upsert({

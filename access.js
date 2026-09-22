@@ -87,8 +87,18 @@
       }
 
       const loginError = document.querySelector("#login-error");
-      window.portalAuthDemo.login(loginIdentifier.value, loginPassword.value).then((success) => {
-        if (!success) {
+      window.portalAuthDemo.login(loginIdentifier.value, loginPassword.value).then((result) => {
+        if (result === "pending") {
+          loginError.textContent = "Seu cadastro ainda está aguardando aprovação do Departamento Pessoal.";
+          loginError.classList.add("is-visible");
+          return;
+        }
+        if (result === "rejected") {
+          loginError.textContent = "Seu cadastro foi reprovado pelo Departamento Pessoal. Fale com o DP para mais informações.";
+          loginError.classList.add("is-visible");
+          return;
+        }
+        if (!result) {
           loginError.textContent = "Identificador ou senha inválidos.";
           loginError.classList.add("is-visible");
           return;

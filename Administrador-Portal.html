@@ -35,6 +35,18 @@
             <div id="porter-request-list" class="mt-3"></div>
           </div>
         </section>
+        <section class="col-12">
+          <div class="import-card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h2 class="h4 mb-1">Usuários cadastrados</h2>
+                <p class="text-muted mb-0">Contas já criadas no portal, com matrícula, perfil e status.</p>
+              </div>
+              <span class="badge text-bg-secondary" id="registered-users-count">0 cadastrados</span>
+            </div>
+            <ul id="registered-users-list" class="list-group list-group-flush mt-3"></ul>
+          </div>
+        </section>
         <section class="col-lg-5">
           <form class="import-card manual-employee-form" id="allowed-registration-form">
             <h2 class="h4">Liberar matrícula</h2>
@@ -72,7 +84,9 @@
             <label for="employee-team">Setor ou frente de trabalho</label>
             <input id="employee-team" type="text" placeholder="Ex.: Elétrica, Hidráulica, Forma" required>
             <label for="employee-foreman">Encarregado responsável</label>
-            <input id="employee-foreman" type="text" placeholder="Nome do encarregado" required>
+            <select id="employee-foreman" required>
+              <option value="">Selecione o encarregado</option>
+            </select>
             <button class="import-submit" id="employee-submit" type="submit">Salvar colaborador</button>
             <button class="btn btn-outline-secondary mt-2 w-100" id="employee-cancel-edit" type="button" hidden>Cancelar edição</button>
             <p class="import-result" id="employee-result" role="status" hidden></p>

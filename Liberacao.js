@@ -8,6 +8,23 @@
   const successMessage = document.querySelector("#release-success");
   const employee = document.querySelector("#employee");
 
+  function updatePageCopy() {
+    const session = window.portalAuthDemo?.getSession();
+    const roleLabel = session?.role || "Colaborador";
+    const kicker = document.querySelector("#release-kicker");
+    const employeeHint = document.querySelector("#employee-hint");
+    const signatureDescription = document.querySelector("#signature-description");
+    if (kicker) kicker.textContent = `${roleLabel} · Obra 369`;
+    if (employeeHint) {
+      employeeHint.textContent = session?.roleValue === "encarregado"
+        ? "Somente colaboradores vinculados à sua equipe serão exibidos."
+        : "Selecione o colaborador para registrar a liberação.";
+    }
+    if (signatureDescription) {
+      signatureDescription.textContent = "Ao enviar, seu nome, perfil, data e hora serão registrados como assinatura de quem solicitou.";
+    }
+  }
+
   function updateParticularField() {
     const selected = document.querySelector('input[name="reason"]:checked');
     const isParticular = selected?.value === "particular";
@@ -17,8 +34,10 @@
   }
 
   async function renderEmployees() {
-    const allEmployees = await window.portalEmployeeStore?.getAll() || [];
-    const employees = allEmployees.filter((item) => item.status === "ativo");
+    const session = window.portalAuthDemo?.getSession();
+    const employees = session?.roleValue === "encarregado"
+      ? await window.portalEmployeeStore?.getActiveByForeman(session.name) || []
+      : (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
     employees.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.matricula;
@@ -44,6 +63,7 @@
     updateParticularField();
   }
 
+  updatePageCopy();
   await renderEmployees();
 
   reasonInputs.forEach((input) => input.addEventListener("change", updateParticularField));
@@ -75,7 +95,7 @@
       reason: reason === "particular" ? particularReason.value : document.querySelector('input[name="reason"]:checked').parentElement.textContent.trim(),
       hoursType: hours,
       hours: document.querySelector('input[name="hours"]:checked').parentElement.textContent.trim(),
-      requester: window.portalAuthDemo?.getSession()?.name || "Encarregado",
+      requester: window.portalAuthDemo?.getSession()?.name || "Solicitante",
       status: "pending"
     };
     const editId = new URLSearchParams(window.location.search).get("edit");

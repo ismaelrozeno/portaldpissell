@@ -33,7 +33,9 @@
         <label for="employee-team">Setor ou frente de trabalho</label>
         <input id="employee-team" type="text" placeholder="Ex.: Elétrica, Hidráulica, Forma" required>
         <label for="employee-foreman">Encarregado responsável</label>
-        <input id="employee-foreman" type="text" placeholder="Nome do encarregado" required>
+        <select id="employee-foreman" required>
+          <option value="">Selecione o encarregado</option>
+        </select>
         <button class="import-submit" type="submit">Salvar colaborador</button>
         <p class="import-result" id="employee-result" role="status" hidden></p>
       </form>
@@ -48,6 +50,7 @@
   <script src="firebase-schema.js"></script>
 <script src="firebase-auth.js"></script>
   <script src="firebase-employee-store.js"></script>
+  <script src="dom-utils.js"></script>
   <script src="shared-components.js?v=20260920-auth8"></script>
   <script src="Cadastrar-Colaborador.js"></script>
 </body>

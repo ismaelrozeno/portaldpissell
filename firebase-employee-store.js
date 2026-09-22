@@ -18,6 +18,13 @@
       const data = doc.data();
       return data.status === "ativo" ? data : null;
     },
+    async getActiveByForeman(foremanName) {
+      const snapshot = await employeesCollection()
+        .where("encarregado", "==", foremanName)
+        .where("status", "==", "ativo")
+        .get();
+      return snapshot.docs.map((doc) => doc.data());
+    },
     async getAllowedRegistrations() {
       const snapshot = await allowedCollection().get();
       return snapshot.docs.map((doc) => doc.data());
