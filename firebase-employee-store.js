@@ -109,6 +109,19 @@
       });
       await batch.commit();
       return this.getAll();
+    },
+    async bulkUpsert(employees) {
+      const chunkSize = 400;
+      for (let i = 0; i < employees.length; i += chunkSize) {
+        const batch = window.portalFirebaseDb.batch();
+        employees.slice(i, i + chunkSize).forEach((employee) => {
+          const normalized = normalizeRegistration(employee.matricula);
+          const ref = employeesCollection().doc(normalized);
+          batch.set(ref, { ...employee, matricula: normalized, updatedAt: new Date().toISOString() }, { merge: true });
+        });
+        await batch.commit();
+      }
+      return this.getAll();
     }
   });
 })();

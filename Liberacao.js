@@ -16,7 +16,7 @@
     const signatureDescription = document.querySelector("#signature-description");
     if (kicker) kicker.textContent = `${roleLabel} · Obra 369`;
     if (employeeHint) {
-      employeeHint.textContent = session?.roleValue === "encarregado"
+      employeeHint.textContent = ["encarregado", "estagiario_engenharia"].includes(session?.roleValue)
         ? "Sua equipe e colaboradores ainda sem encarregado vinculado serão exibidos."
         : "Selecione o colaborador para registrar a liberação.";
     }
@@ -36,7 +36,7 @@
   async function renderEmployees() {
     const session = window.portalAuthDemo?.getSession();
     let employees;
-    if (session?.roleValue === "encarregado") {
+    if (["encarregado", "estagiario_engenharia"].includes(session?.roleValue)) {
       const myTeam = await window.portalEmployeeStore?.getActiveByForeman(session.name) || [];
       const allActive = (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
       const unassigned = allActive.filter((item) => !item.encarregado);

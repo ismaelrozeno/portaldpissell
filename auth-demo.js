@@ -105,6 +105,7 @@
       const roleAliases = {
         dp: ["dp", "departamento pessoal"],
         encarregado: ["encarregado"],
+        estagiario_engenharia: ["estagiario_engenharia", "estagiário de engenharia"],
         engenheiro: ["engenheiro", "engenheiro responsável"]
       };
       const acceptedRoles = roleAliases[roleValue] || [roleValue];

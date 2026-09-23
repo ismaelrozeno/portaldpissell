@@ -15,6 +15,20 @@
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
       shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
     },
+    estagiario_engenharia: {
+      title: "Painel do estagiário de engenharia",
+      description: "Acompanhe sua equipe e registre as liberações do dia.",
+      eyebrow: "Minha equipe",
+      tableTitle: "Liberações do dia",
+      action: "Nova liberação",
+      actionHref: "Liberacao.html",
+      team: "0",
+      pending: "0",
+      approved: "0",
+      bonus: "0",
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
+    },
     dp: {
       title: "Painel do Departamento Pessoal",
       description: "Confira as liberações, autorize saídas e organize os registros.",
@@ -97,19 +111,24 @@
     "logistica-almoxarifado": "Encarregado de Logística / Almoxarifado"
   };
 
+  const foremanRoleValues = ["encarregado", "estagiario_engenharia"];
+
   function renderForemanSummary(profileKey, employees) {
     const session = window.portalAuthDemo?.getSession();
-    const isForeman = profileKey === "encarregado";
+    const isForeman = foremanRoleValues.includes(profileKey);
     elements.foremanSummary.hidden = !isForeman;
     if (!isForeman) return;
 
-    const name = session?.roleValue === "encarregado" && session.name
+    const isActingForeman = foremanRoleValues.includes(session?.roleValue);
+    const name = isActingForeman && session.name
       ? session.name
       : session?.name || "Encarregado";
     const specialty = session?.roleValue === "encarregado"
       ? specialtyLabels[session.especialidade] || "área não informada"
-      : "selecione um cadastro de encarregado para visualizar";
-    const team = session?.roleValue === "encarregado"
+      : session?.roleValue === "estagiario_engenharia"
+        ? "Estagiário de Engenharia"
+        : "selecione um cadastro de encarregado para visualizar";
+    const team = isActingForeman
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
       : [];
 
@@ -124,7 +143,7 @@
   async function renderRecords(profile) {
     const session = window.portalAuthDemo?.getSession();
     const releases = await window.portalDemoStore?.getReleases() || [];
-    const profileReleases = profile === "encarregado" && session?.roleValue === "encarregado"
+    const profileReleases = foremanRoleValues.includes(profile) && foremanRoleValues.includes(session?.roleValue)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
     const records = profileReleases.map((release) => [
@@ -142,7 +161,7 @@
         <td>${escapeHtml(record[1])}</td>
         <td>${escapeHtml(record[2])}</td>
         <td><span class="status-badge status-${record[4]}">${record[3]}</span></td>
-        <td class="text-end"><a class="table-action" href="${profile === "encarregado" ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${profile === "encarregado" ? "Editar" : "Consultar"}</a></td>
+        <td class="text-end"><a class="table-action" href="${foremanRoleValues.includes(profile) ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${foremanRoleValues.includes(profile) ? "Editar" : "Consultar"}</a></td>
       </tr>
     `).join("");
   }
@@ -158,17 +177,17 @@
     const employees = await window.portalEmployeeStore?.getAll() || [];
     const releases = await window.portalDemoStore?.getReleases() || [];
     const session = window.portalAuthDemo?.getSession();
-    const foremanTeam = profileKey === "encarregado" && session?.roleValue === "encarregado"
+    const foremanTeam = foremanRoleValues.includes(profileKey) && foremanRoleValues.includes(session?.roleValue)
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
       : employees;
-    elements.team.textContent = profileKey === "encarregado" ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
+    elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
     elements.pending.textContent = releases.filter((release) => release.status === "pending").length;
     elements.approved.textContent = releases.filter((release) => release.status === "authorized").length;
     elements.bonus.textContent = releases.filter((release) => release.hours === "Abonado" && release.status === "authorized").length;
     renderForemanSummary(profileKey, employees);
-    elements.shortcutTitle.textContent = profileKey === "encarregado" ? "Operação" : profile.title.replace("Painel do ", "");
+    elements.shortcutTitle.textContent = foremanRoleValues.includes(profileKey) ? "Operação" : profile.title.replace("Painel do ", "");
     elements.shortcutList.innerHTML = profile.shortcuts.map((shortcut, index) => {
-      const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (profileKey === "encarregado" && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
+      const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (foremanRoleValues.includes(profileKey) && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;
     }).join("");
     await renderRecords(profileKey);

@@ -40,7 +40,7 @@
 
           <h1>Importar colaboradores</h1>
 
-          <p>Atualize a equipe a partir do relatório exportado pelo REPORTS.</p>
+          <p>Atualize a equipe a partir do relatório exportado pelo REPORTS ou pelo RM.</p>
 
         </div>
 
@@ -52,7 +52,7 @@
 
         <strong>Como funciona</strong>
 
-        <span>A matrícula será usada para identificar cada colaborador. Registros existentes serão atualizados e novos registros serão incluídos.</span>
+        <span>A matrícula será usada para identificar cada colaborador. A cada importação, a lista de colaboradores é totalmente substituída pelo conteúdo do arquivo: quem não estiver no arquivo importado é removido do cadastro. Os encarregados já vinculados são preservados para as matrículas que continuarem no arquivo.</span>
 
       </section>
 
@@ -62,29 +62,27 @@
 
           <span class="import-eyebrow">1 · Selecionar arquivo</span>
 
-          <h2>Relatório do REPORTS</h2>
+          <h2>Relatório de colaboradores</h2>
 
-          <p class="import-help">Formato aceito: XML (relatório "ATIVOS DAS OBRAS" exportado do REPORTS). O nome do arquivo pode mudar a cada exportação. O arquivo será processado somente nesta área do DP.</p>
+          <p class="import-help">Formatos aceitos: XML (relatório "ATIVOS DAS OBRAS" exportado do REPORTS) ou CSV/TXT (relatório exportado do RM). O nome do arquivo pode mudar a cada exportação. O arquivo será processado somente nesta área do DP.</p>
 
           <label class="import-dropzone" for="employee-file">
 
             <span class="import-upload-icon">↑</span>
 
-            <strong id="file-label">Escolher arquivo do REPORTS</strong>
+            <strong id="file-label">Escolher arquivo do REPORTS ou do RM</strong>
 
             <small>ou arraste o arquivo para esta área</small>
 
-            <input id="employee-file" type="file" accept=".xml">
+            <input id="employee-file" type="file" accept=".xml,.csv,.txt">
 
           </label>
-
-          <p class="import-file-name" id="file-name" hidden></p>
 
           <div class="import-requirements">
 
             <strong>Colunas lidas do arquivo</strong>
 
-            <span>Matrícula · Nome · Função · Situação. Frente e Encarregado não vêm do relatório: vincule o encarregado depois pela lista de colaboradores cadastrados.</span>
+            <span>Matrícula (Chapa) · Nome · Função (Nome Função) · Situação (Descrição da Situação). Frente e Encarregado não vêm do relatório: vincule o encarregado depois pela lista de colaboradores cadastrados.</span>
 
           </div>
 
@@ -99,13 +97,15 @@
 
           <ul>
 
-            <li>Matriculados no relatório permanecem ativos.</li>
+            <li>A lista é substituída pelo conteúdo do arquivo importado.</li>
 
             <li>Novas matrículas são adicionadas.</li>
 
-            <li>Dados atualizados substituem os anteriores.</li>
+            <li>Dados (nome, função, situação) sempre vêm da importação mais recente.</li>
 
-            <li>Desligados serão removidos conforme a política definida.</li>
+            <li>Colaboradores que não estiverem no novo arquivo são removidos.</li>
+
+            <li>Encarregado e setor já vinculados são mantidos para quem continuar no arquivo.</li>
 
           </ul>
 
@@ -123,6 +123,8 @@
 
         </div>
 
+        <p class="import-file-name" id="file-name" hidden></p>
+
         <div class="table-responsive">
 
           <table class="import-table">
@@ -138,6 +140,8 @@
         <p class="import-warning" id="import-warning" hidden></p>
 
         <div class="import-actions">
+
+          <button class="import-secondary" id="cancel-import" type="button">Cancelar</button>
 
           <button class="import-secondary" id="clear-file" type="button">Escolher outro arquivo</button>
 
