@@ -25,9 +25,10 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 .release-field-wide { grid-column: 1 / -1; }
 .release-field label, .release-field legend { display: block; margin-bottom: .45rem; color: var(--release-navy); font-size: .88rem; font-weight: 700; }
 .release-field label span, .release-field legend span { color: var(--release-orange); }
-.release-field input[type="date"], .release-field input[type="time"], .release-field select, .release-field textarea { width: 100%; padding: .72rem .8rem; border: 1px solid #cbd7e5; border-radius: .5rem; color: #16283d; background: #fff; font: inherit; }
+.release-field input[type="date"], .release-field input[type="time"], .release-field input[type="text"], .release-field select, .release-field textarea { width: 100%; padding: .72rem .8rem; border: 1px solid #cbd7e5; border-radius: .5rem; color: #16283d; background: #fff; font: inherit; }
 .release-field textarea { resize: vertical; }
 .release-field input:focus, .release-field select:focus, .release-field textarea:focus { border-color: var(--release-orange); outline: 3px solid rgba(245, 130, 10, .16); }
+#employee-search { margin-bottom: .5rem; }
 .release-field small { display: block; margin-top: .4rem; color: var(--release-muted); font-size: .76rem; }
 .release-options { display: flex; flex-wrap: wrap; gap: .65rem; }
 .release-options label { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .65rem .8rem; border: 1px solid var(--release-line); border-radius: .5rem; font-weight: 600; cursor: pointer; }

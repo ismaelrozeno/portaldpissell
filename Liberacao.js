@@ -7,6 +7,27 @@
   const errorMessage = document.querySelector("#release-error");
   const successMessage = document.querySelector("#release-success");
   const employee = document.querySelector("#employee");
+  const employeeSearch = document.querySelector("#employee-search");
+  let allEmployees = [];
+
+  function normalizeSearchText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase();
+  }
+
+  function populateEmployeeOptions(list, selectedValue) {
+    const previousValue = selectedValue ?? employee.value;
+    employee.innerHTML = '<option value="">Selecione o colaborador</option>';
+    list.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.matricula;
+      option.textContent = `${item.nome} · Matrícula ${item.matricula}`;
+      employee.append(option);
+    });
+    if (list.some((item) => item.matricula === previousValue)) employee.value = previousValue;
+  }
 
   function updatePageCopy() {
     const session = window.portalAuthDemo?.getSession();
@@ -35,23 +56,20 @@
 
   async function renderEmployees() {
     const session = window.portalAuthDemo?.getSession();
+    const allEmployeesRaw = await window.portalEmployeeStore?.getAll() || [];
     let employees;
     if (["encarregado", "estagiario_engenharia"].includes(session?.roleValue)) {
-      const myTeam = await window.portalEmployeeStore?.getActiveByForeman(session.name) || [];
-      const allActive = (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
-      const unassigned = allActive.filter((item) => !item.encarregado);
+      const myTeam = allEmployeesRaw.filter((item) => item.encarregado?.trim().toLowerCase() === session.name?.trim().toLowerCase());
+      const unassigned = allEmployeesRaw.filter((item) => !item.encarregado);
       const seen = new Set(myTeam.map((item) => item.matricula));
       employees = [...myTeam, ...unassigned.filter((item) => !seen.has(item.matricula))];
     } else {
-      // DP, engenheiro e administrador podem liberar qualquer colaborador ativo, sem restrição de encarregado.
-      employees = (await window.portalEmployeeStore?.getAll() || []).filter((item) => item.status === "ativo");
+      // DP, engenheiro e administrador podem liberar qualquer colaborador cadastrado, sem restrição de encarregado ou status.
+      employees = allEmployeesRaw;
     }
-    employees.forEach((item) => {
-      const option = document.createElement("option");
-      option.value = item.matricula;
-      option.textContent = `${item.nome} · Matrícula ${item.matricula}`;
-      employee.append(option);
-    });
+    employees.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
+    allEmployees = employees;
+    populateEmployeeOptions(employees);
     const editId = new URLSearchParams(window.location.search).get("edit");
     if (!editId) return;
     const releases = await window.portalDemoStore?.getReleases() || [];
@@ -73,6 +91,14 @@
 
   updatePageCopy();
   await renderEmployees();
+
+  employeeSearch?.addEventListener("input", () => {
+    const term = normalizeSearchText(employeeSearch.value);
+    const filtered = term
+      ? allEmployees.filter((item) => normalizeSearchText(item.nome).includes(term) || item.matricula.includes(term))
+      : allEmployees;
+    populateEmployeeOptions(filtered);
+  });
 
   reasonInputs.forEach((input) => input.addEventListener("change", updateParticularField));
 

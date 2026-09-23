@@ -68,7 +68,8 @@
   }
 
   async function renderEmployees() {
-    const employees = await window.portalEmployeeStore.getAll();
+    const employees = (await window.portalEmployeeStore.getAll())
+      .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" }));
     const foremen = await getForemen();
     const foremanOptions = (selected) => '<option value="">Sem encarregado</option>' +
       foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === selected ? " selected" : ""}>${escapeHtml(foreman.name)}</option>`).join("");
