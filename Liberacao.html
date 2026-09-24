@@ -56,11 +56,13 @@
 
           <strong>Atenção ao fluxo</strong>
 
-          <span>O colaborador deverá bater o ponto e procurar o Departamento Pessoal antes de seguir para a portaria.</span>
+          <span>A solicitação segue nesta ordem: engenheiro (decide o abono) → Departamento Pessoal (autoriza) → portaria (confirma a saída). O colaborador deve bater o ponto e procurar o DP antes de seguir para a portaria.</span>
 
         </div>
 
 
+
+        <div class="release-error" id="release-refusal" role="alert" hidden></div>
 
         <form id="release-form" novalidate>
 
@@ -68,15 +70,15 @@
 
             <div class="release-field release-field-wide">
 
-              <label for="employee">Colaborador <span aria-hidden="true">*</span></label>
+              <label for="employee-search">Colaborador <span aria-hidden="true">*</span></label>
 
               <input type="text" id="employee-search" placeholder="Buscar por nome ou matrícula..." autocomplete="off">
 
-              <select id="employee" required>
+              <input type="hidden" id="employee">
 
-                <option value="">Selecione o colaborador</option>
+              <div id="employee-selected" class="mt-2 fw-semibold" hidden></div>
 
-              </select>
+              <div id="employee-results" class="list-group mt-2" style="max-height:260px;overflow-y:auto" role="listbox" aria-label="Colaboradores encontrados"></div>
 
               <small id="employee-hint">Somente colaboradores vinculados à sua equipe serão exibidos.</small>
 
@@ -98,6 +100,22 @@
 
             </div>
 
+            <fieldset class="release-field release-field-wide" id="movement-field">
+
+              <legend>Movimentação <span aria-hidden="true">*</span></legend>
+
+              <div class="release-options">
+
+                <label><input type="checkbox" name="movement" value="entrada"> Entrada</label>
+
+                <label><input type="checkbox" name="movement" value="saida"> Saída</label>
+
+              </div>
+
+              <small>Marque se o colaborador está chegando, saindo, ou as duas opções.</small>
+
+            </fieldset>
+
             <fieldset class="release-field release-field-wide">
 
               <legend>Motivo da saída <span aria-hidden="true">*</span></legend>
@@ -114,27 +132,11 @@
 
             <div class="release-field release-field-wide" id="particular-reason-field" hidden>
 
-              <label for="particular-reason">Informe o motivo particular <span aria-hidden="true">*</span></label>
+              <label for="particular-reason" id="reason-detail-label">Informe o motivo particular <span aria-hidden="true">*</span></label>
 
               <textarea id="particular-reason" rows="3" maxlength="300" placeholder="Descreva o motivo da saída"></textarea>
 
             </div>
-
-            <fieldset class="release-field release-field-wide">
-
-              <legend>Tratamento das horas <span aria-hidden="true">*</span></legend>
-
-              <div class="release-options release-options-highlight">
-
-                <label><input type="radio" name="hours" value="abonado" required> Abonado</label>
-
-                <label><input type="radio" name="hours" value="nao-abonado"> Não abonado</label>
-
-              </div>
-
-              <small>Se for abonado, a autorização ficará pendente da assinatura individual do engenheiro.</small>
-
-            </fieldset>
 
           </div>
 
@@ -166,7 +168,7 @@
 
             <a class="release-secondary" href="Portal.html">Cancelar</a>
 
-            <button class="release-submit" type="submit">Enviar para o DP</button>
+            <button class="release-submit" type="submit">Enviar ao engenheiro</button>
 
           </div>
 

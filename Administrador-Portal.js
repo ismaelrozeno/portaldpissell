@@ -67,15 +67,29 @@
       : '<li class="list-group-item text-muted">Nenhuma matrícula liberada.</li>';
   }
 
+  const foldText = (value) => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
   async function renderEmployees() {
-    const employees = (await window.portalEmployeeStore.getAll())
+    const allEmployees = (await window.portalEmployeeStore.getAll())
       .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" }));
     const foremen = await getForemen();
+    const filterSelect = document.querySelector("#employee-filter");
+    const filterCurrent = filterSelect.value;
+    filterSelect.innerHTML = '<option value="">Todos os encarregados</option><option value="__none__">Sem encarregado</option>' +
+      foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
+    filterSelect.value = [...filterSelect.options].some((option) => option.value === filterCurrent) ? filterCurrent : "";
+    const term = foldText(document.querySelector("#employee-search").value.trim());
+    const employees = allEmployees.filter((item) => {
+      if (filterSelect.value === "__none__" && item.encarregado) return false;
+      if (filterSelect.value && filterSelect.value !== "__none__" && item.encarregado !== filterSelect.value) return false;
+      return !term || foldText([item.nome, item.matricula, item.funcao, item.setor].join(" ")).includes(term);
+    });
+    document.querySelector("#employee-count").textContent = `${employees.length} de ${allEmployees.length} colaboradores`;
     const foremanOptions = (selected) => '<option value="">Sem encarregado</option>' +
       foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === selected ? " selected" : ""}>${escapeHtml(foreman.name)}</option>`).join("");
     employeeList.innerHTML = employees.length
       ? employees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · ${escapeHtml(item.funcao) || "Função não informada"} · ${escapeHtml(item.setor) || "Setor não informado"}</small><small class="d-block text-muted">Encarregado: ${escapeHtml(item.encarregado) || "Não vinculado"}</small></span><span class="d-flex align-items-center gap-2 flex-wrap justify-content-end"><select class="form-select form-select-sm" style="width:auto" data-foreman-select="${escapeHtml(item.matricula)}">${foremanOptions(item.encarregado)}</select><button class="btn btn-sm btn-outline-success" type="button" data-employee-action="link-foreman" data-employee-id="${escapeHtml(item.matricula)}">Vincular encarregado</button><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
-      : '<li class="list-group-item text-muted">Nenhum colaborador cadastrado.</li>';
+      : `<li class="list-group-item text-muted">${allEmployees.length ? "Nenhum colaborador encontrado para este filtro." : "Nenhum colaborador cadastrado."}</li>`;
   }
 
   async function renderPorterRequests() {
@@ -197,6 +211,7 @@
     employeeResult.textContent = editingEmployee
       ? "Colaborador atualizado."
       : "Colaborador de linha de frente salvo. Ele não recebeu acesso ao portal.";
+    employeeResult.classList.remove("text-danger");
     employeeResult.hidden = false;
     employeeForm.reset();
     editingEmployee = null;
@@ -274,6 +289,8 @@
     allowCancelEdit.hidden = true;
     allowSubmit.textContent = "Adicionar matrícula permitida";
   });
+  document.querySelector("#employee-search").addEventListener("input", renderEmployees);
+  document.querySelector("#employee-filter").addEventListener("change", renderEmployees);
   document.querySelector("#employee-list")?.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-employee-action]");
     if (!button) return;
@@ -289,8 +306,10 @@
     }
     if (button.dataset.employeeAction === "link-foreman") {
       const select = employeeList.querySelector(`[data-foreman-select="${CSS.escape(button.dataset.employeeId)}"]`);
-      await window.portalEmployeeStore.upsert({ ...employee, encarregado: select ? select.value : "" });
-      employeeResult.textContent = "Encarregado vinculado.";
+      const foreman = select ? select.value : "";
+      await window.portalEmployeeStore.upsert({ ...employee, encarregado: foreman });
+      employeeResult.textContent = foreman ? "Encarregado vinculado." : "Nenhum encarregado vinculado.";
+      employeeResult.classList.toggle("text-danger", !foreman);
       employeeResult.hidden = false;
       await renderEmployees();
       return;

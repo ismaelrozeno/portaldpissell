@@ -18,6 +18,8 @@
 
   <link rel="stylesheet" href="Portaria.css">
 
+  <link rel="stylesheet" href="Release-Preview.css">
+
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
 </head>
@@ -46,7 +48,7 @@
 
         <strong>Como consultar</strong>
 
-        <span>Pesquise pela matrícula ou pelo nome. A saída só pode ser liberada quando as duas autorizações estiverem registradas.</span>
+        <span>Pesquise pela matrícula ou pelo nome. A saída só pode ser liberada quando a autorização do engenheiro e do DP estiverem registradas. Depois que o colaborador sair, confirme a saída aqui.</span>
 
       </section>
 
@@ -58,7 +60,7 @@
 
             <div><span class="gate-eyebrow">Consulta rápida</span><h2>Autorizações de hoje</h2></div>
 
-            <span class="gate-date">20/09/2026</span>
+            <span class="gate-date" data-live-date="short"></span>
 
           </div>
 
@@ -80,7 +82,7 @@
 
           <div class="gate-legend">
 
-            <span><i class="is-ready"></i>Autorizado para saída</span>
+            <span><i class="is-ready"></i>Autorizado para saída / saída confirmada</span>
 
             <span><i class="is-blocked"></i>Procurar o DP</span>
 
@@ -110,7 +112,11 @@
 
 
 
+  <script src="firebase-employee-store.js"></script>
+
   <script src="firebase-release-store.js"></script>
+
+  <script src="release-preview.js"></script>
 
   <script src="Portaria.js"></script>
 

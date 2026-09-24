@@ -1,0 +1,67 @@
+.release-preview-overlay { position:fixed; inset:0; z-index:2000; overflow:auto; padding:2rem; background:rgba(0,20,45,.72); }
+.release-preview { width:min(820px,100%); margin:auto; }
+.release-preview-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-bottom:.75rem; }
+.release-preview-actions button { padding:.6rem .8rem; border:0; border-radius:.4rem; color:#fff; background:#1769aa; font-weight:700; cursor:pointer; }
+.release-preview-actions button:first-child { background:#617188; }
+.release-sheet { padding:2rem; color:#111; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.25); font-family:Arial,sans-serif; }
+.release-sheet-header { display:flex; align-items:center; gap:2rem; padding-bottom:1rem; border-bottom:1px dotted #222; text-align:center; }
+.release-sheet-header strong { color:#1262a0; font-size:1.5rem; letter-spacing:.05em; }
+.release-sheet-header h2 { margin:0; font-size:1.1rem; }.release-sheet-header span { font-size:.95rem; font-weight:700; }
+.release-sheet-grid,.release-sheet-line { display:flex; justify-content:space-between; gap:1rem; padding:1rem 0; border-bottom:1px dotted #222; }
+.release-sheet-line span { min-width:20%; border-bottom:1px solid #222; }.release-sheet-checks { display:flex; flex-wrap:wrap; gap:1rem; padding:1rem 0; }
+.release-sheet-block { min-height:100px; padding:1rem 0; border-bottom:1px dotted #222; }.release-sheet-block p { min-height:45px; margin:.5rem 0 0; border-bottom:1px dashed #777; }
+.release-sheet-hours { padding:1rem 0; border-bottom:1px dotted #222; }.release-sheet-hours strong { display:block; margin-top:.6rem; font-size:1.1rem; }.release-sheet-hours .bonus-approved { color:#16803c; }.release-sheet-hours .bonus-denied { color:#c62835; }.release-sheet-hours .bonus-pending { color:#8b5515; }
+.release-sheet-signature { padding:1.4rem 0; border-bottom:1px dotted #222; }.release-sheet footer { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; padding-top:1.5rem; text-align:center; font-size:.7rem; }.release-sheet footer i.signature-name { display:block; margin-top:.5rem; font-family:"Segoe Script","Bradley Hand",cursive; font-size:1.05rem; font-style:normal; font-weight:600; line-height:1.1; }
+@media print { body > *:not(#release-preview) { display:none!important; } .release-preview-overlay { position:static; padding:0; background:#fff; } .release-preview-actions { display:none; } .release-sheet { box-shadow:none; } }
+/* Folha de liberação: meia folha A4 (A5 paisagem, 210x148 mm = 794x559 px) em qualquer tela.
+   Em telas estreitas o JS aplica zoom para a folha inteira caber na largura. */
+.release-preview-overlay { padding:0 1rem 1rem; background:rgba(0,20,45,.94); }
+.release-preview { width:100%; max-width:794px; margin:0 auto; }
+.release-preview-actions { position:sticky; top:0; z-index:2; width:100%; padding:.75rem 0; margin:0; background:rgba(0,20,45,.92); }
+.release-sheet { width:794px; min-height:559px; margin:0 auto; padding:22px 32px; box-sizing:border-box; }
+.release-sheet-header { gap:1.5rem; padding-bottom:.6rem; }
+.release-sheet-header strong { font-size:1.4rem; }.release-sheet-header h2 { font-size:1rem; }.release-sheet-header span { font-size:.85rem; }
+.release-sheet-grid,.release-sheet-line { padding:.55rem 0; }
+.release-sheet-checks { padding:.55rem 0; }
+.release-sheet-block { min-height:0; padding:.55rem 0; }.release-sheet-block p { min-height:32px; }
+.release-sheet-hours { padding:.55rem 0; }.release-sheet-hours strong { margin-top:.3rem; }
+.release-sheet-signature { padding:.8rem 0; }
+.release-sheet footer { padding-top:.9rem; }
+@media (max-width:520px) { .release-preview-overlay { padding:0 .5rem .5rem; }.release-preview-actions { justify-content:stretch; }.release-preview-actions button { flex:1; padding:.8rem; font-size:1rem; } }
+/* Impressão: meia folha A4 no topo de uma A4 retrato, com margens de 10 mm (área útil de 190 mm = ~718 px).
+   A folha tem 794 px de projeto, então reduz para 90% para caber sem barra de rolagem lateral. */
+@page { size:A4 portrait; margin:10mm; }
+@media print {
+  html,body { width:auto!important; height:auto!important; overflow:visible!important; background:#fff!important; }
+  .release-preview-overlay { position:static!important; inset:auto!important; overflow:visible!important; padding:0!important; background:#fff!important; }
+  .release-preview { width:auto!important; max-width:none!important; margin:0!important; }
+  .release-preview-actions { display:none!important; }
+  .release-sheet { zoom:.9!important; width:794px!important; margin:0!important; box-shadow:none!important; transform:none!important; animation:none!important; break-inside:avoid; }
+}
+/* Botão "Visualizar liberação" usado nas telas de todos os perfis */
+.release-view-btn { padding:.55rem .75rem; border:1px solid #1769aa; border-radius:.45rem; color:#1769aa; background:#f2f8fd; font-size:.78rem; font-weight:700; cursor:pointer; }.release-view-btn:hover { background:#e2effa; }
+
+/* Abono lançado no RM: botão do DP, indicador "ao vivo" e carimbo animado */
+.release-preview-actions { align-items:center; }
+.release-preview-actions .release-launch-btn { background:#1e7d4b; }
+.release-live { margin-left:auto; color:#7be3a3; font-size:.75rem; font-weight:700; letter-spacing:.04em; animation:release-live-blink 1.6s ease-in-out infinite; }
+@keyframes release-live-blink { 50% { opacity:.35; } }
+.release-sheet { position:relative; }
+.release-stamp { position:absolute; right:56px; top:238px; display:grid; justify-items:center; gap:.05rem; padding:.45rem 1.4rem .7rem; border:4px double #c62835; border-radius:.5rem; color:#c62835; background:rgba(255,255,255,.05); font-family:Impact,"Arial Black",Arial,sans-serif; letter-spacing:.14em; text-align:center; transform:rotate(-14deg); mix-blend-mode:multiply; opacity:.88; pointer-events:none; user-select:none; }
+.release-stamp[hidden] { display:none; }
+.release-stamp strong { font-size:2.1rem; line-height:1; }
+.release-stamp span { font-size:1.25rem; line-height:1; }
+.release-stamp small { margin-top:.4rem; white-space:nowrap; line-height:1.2; font:700 .62rem Arial,sans-serif; letter-spacing:.06em; text-transform:uppercase; }
+.release-stamp.is-stamping { animation:release-stamp-in .55s cubic-bezier(.2,.9,.3,1.1) both; }
+@keyframes release-stamp-in {
+  0% { transform:rotate(-32deg) scale(3); opacity:0; filter:blur(3px); }
+  55% { transform:rotate(-14deg) scale(.92); opacity:1; filter:blur(0); }
+  75% { transform:rotate(-14deg) scale(1.06); }
+  100% { transform:rotate(-14deg) scale(1); opacity:.88; }
+}
+.release-sheet.is-thud { animation:release-sheet-thud .28s .3s ease-out; }
+@keyframes release-sheet-thud { 0%,100% { transform:translate(0,0); } 25% { transform:translate(-3px,4px); } 50% { transform:translate(2px,-2px); } 75% { transform:translate(-1px,1px); } }
+@media (prefers-reduced-motion:reduce) { .release-stamp.is-stamping,.release-sheet.is-thud,.release-live { animation:none; } }
+@media print { .release-live,.release-launch-btn { display:none!important; }.release-stamp { animation:none!important; } }
+.release-preview-actions .release-undo-btn { background:#8b2930; }
+@media print { .release-undo-btn { display:none!important; } }

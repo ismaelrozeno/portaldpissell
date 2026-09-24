@@ -5,7 +5,7 @@
       title: "Painel do encarregado",
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
-      tableTitle: "Liberações do dia",
+      tableTitle: "Minhas liberações",
       action: "Nova liberação",
       actionHref: "Liberacao.html",
       team: "0",
@@ -19,7 +19,7 @@
       title: "Painel do estagiário de engenharia",
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
-      tableTitle: "Liberações do dia",
+      tableTitle: "Minhas liberações",
       action: "Nova liberação",
       actionHref: "Liberacao.html",
       team: "0",
@@ -45,9 +45,9 @@
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
-      description: "Revise e assine individualmente os abonos que dependem da sua decisão.",
+      description: "Você recebe as liberações primeiro: decida o abono ou recuse devolvendo ao encarregado.",
       eyebrow: "Assinaturas pendentes",
-      tableTitle: "Abonos para análise",
+      tableTitle: "Liberações para análise",
       action: "Ver pendências",
       actionHref: "Engenheiro.html",
       team: "0",
@@ -146,27 +146,35 @@
     const profileReleases = foremanRoleValues.includes(profile) && foremanRoleValues.includes(session?.roleValue)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
-    const records = profileReleases.map((release) => [
-      release.name,
-      release.team,
-      release.time,
-      release.status === "authorized" ? "Autorizado" : release.status === "denied" ? "Negado" : "Aguardando DP",
-      release.status === "authorized" ? "approved" : release.status === "denied" ? "denied" : "pending",
-      release.id
-    ]);
-    const visibleRecords = profile === "portaria" ? records.filter((record) => record[4] === "approved") : records;
+    const flow = window.portalReleaseFlow;
+    const records = profileReleases.map((release) => {
+      const stage = flow.stageOf(release);
+      return [release.name, release.team, release.time, flow.stages[stage].label, flow.stages[stage].tone, release.id, stage];
+    });
+    const visibleRecords = profile === "portaria" ? records.filter((record) => record[6] === "gate" || record[6] === "exited") : records;
     elements.table.innerHTML = visibleRecords.map((record) => `
       <tr>
         <td><strong>${escapeHtml(record[0])}</strong><small>Registro local</small></td>
         <td>${escapeHtml(record[1])}</td>
         <td>${escapeHtml(record[2])}</td>
         <td><span class="status-badge status-${record[4]}">${record[3]}</span></td>
-        <td class="text-end"><a class="table-action" href="${foremanRoleValues.includes(profile) ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${foremanRoleValues.includes(profile) ? "Editar" : "Consultar"}</a></td>
+        <td class="text-end"><button class="release-view-btn" type="button" data-view-release="${escapeHtml(record[5])}">Visualizar liberação</button> ${foremanRoleValues.includes(profile) && record[6] !== "foreman" ? "—" : `<a class="table-action" href="${foremanRoleValues.includes(profile) ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${foremanRoleValues.includes(profile) ? "Editar e reenviar" : "Consultar"}</a>`}</td>
       </tr>
     `).join("");
   }
 
+  elements.table.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-view-release]");
+    if (!button) return;
+    const releases = await window.portalDemoStore?.getReleases() || [];
+    const release = releases.find((item) => item.id === button.dataset.viewRelease);
+    if (release) window.portalReleasePreview.show(release, { dpContext: activeProfileKey === "dp" });
+  });
+
+  let activeProfileKey = null;
+
   async function renderProfile(profileKey) {
+    activeProfileKey = profileKey;
     const profile = profiles[profileKey];
     elements.title.textContent = profile.title;
     elements.description.textContent = profile.description;
@@ -181,9 +189,11 @@
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
       : employees;
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
-    elements.pending.textContent = releases.filter((release) => release.status === "pending").length;
-    elements.approved.textContent = releases.filter((release) => release.status === "authorized").length;
-    elements.bonus.textContent = releases.filter((release) => release.hours === "Abonado" && release.status === "authorized").length;
+    const stageOf = window.portalReleaseFlow.stageOf;
+    const pendingStages = { dp: ["dp"], engenheiro: ["engineer"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
+    elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
+    elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))).length;
+    elements.bonus.textContent = releases.filter((release) => release.bonusStatus === "approved" && ["gate", "exited"].includes(stageOf(release))).length;
     renderForemanSummary(profileKey, employees);
     elements.shortcutTitle.textContent = foremanRoleValues.includes(profileKey) ? "Operação" : profile.title.replace("Painel do ", "");
     elements.shortcutList.innerHTML = profile.shortcuts.map((shortcut, index) => {
@@ -193,7 +203,7 @@
     await renderRecords(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
-      <li><span class="activity-dot ${release.status === "authorized" ? "is-success" : release.status === "pending" ? "is-warning" : ""}"></span><div><strong>Liberação ${release.status === "authorized" ? "autorizada" : release.status === "denied" ? "negada" : "aguardando análise"}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
+      <li><span class="activity-dot ${["gate", "exited"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
     `).join("") : "<li><div><strong>Nenhuma atividade local</strong><small>Cadastre colaboradores e registre liberações para começar.</small></div></li>";
   }
 

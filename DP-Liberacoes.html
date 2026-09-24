@@ -18,6 +18,8 @@
 
   <link rel="stylesheet" href="DP-Liberacoes.css">
 
+  <link rel="stylesheet" href="Release-Preview.css">
+
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
 </head>
@@ -40,11 +42,11 @@
 
           <h1>Liberações pendentes</h1>
 
-          <p>Confira os dados enviados pelo encarregado e registre a autorização final.</p>
+          <p>Aqui chegam as liberações já decididas pelo engenheiro. Confira e registre a autorização final.</p>
 
         </div>
 
-        <span class="dp-date">20 de setembro de 2026</span>
+        <span class="dp-date" data-live-date="long"></span>
 
       </section>
 
@@ -72,15 +74,19 @@
 
             <label for="status-filter">Filtrar status</label>
 
-            <select id="status-filter">
+            <select id="status-filter" autocomplete="off">
 
-              <option value="all">Todos</option>
+              <option value="all" selected>Todos</option>
 
-              <option value="pending">Pendentes</option>
+              <option value="dp">Aguardando DP</option>
+
+              <option value="upstream">Com engenheiro / encarregado</option>
+
+              <option value="launch">Abonos a lançar no RM</option>
 
               <option value="authorized">Autorizadas</option>
 
-              <option value="denied">Negadas</option>
+              <option value="denied">Negadas pelo DP</option>
 
             </select>
             <button class="release-delete" id="clear-release-history" type="button">Limpar histórico</button>
@@ -91,6 +97,24 @@
               <small id="clear-history-message" role="alert"></small>
             </div>
           </div>
+
+          <div class="dp-filters dp-search-row">
+
+            <input id="release-search" type="search" placeholder="Pesquisar nome, matrícula ou motivo" aria-label="Pesquisar liberações" autocomplete="off">
+
+            <label for="date-from">De</label>
+
+            <input id="date-from" type="date">
+
+            <label for="date-to">Até</label>
+
+            <input id="date-to" type="date">
+
+            <button class="release-view" id="clear-filters" type="button">Limpar filtros</button>
+
+          </div>
+
+          <small id="filter-count" class="dp-filter-count"></small>
 
           <div class="dp-list" id="release-list"></div>
 
@@ -122,31 +146,6 @@
 
   </main>
 
-  <div class="release-preview-overlay" id="release-preview" hidden>
-    <section class="release-preview" role="dialog" aria-modal="true" aria-labelledby="release-preview-title">
-      <div class="release-preview-actions">
-        <button type="button" id="close-release-preview">Fechar</button>
-        <button type="button" id="print-release-preview">Imprimir / salvar PDF</button>
-      </div>
-      <article class="release-sheet">
-        <header class="release-sheet-header">
-          <strong>DIRECIONAL</strong>
-          <div><h2 id="release-preview-title">AUTORIZAÇÃO DE SAÍDA DE COLABORADORES</h2><span>DA FRENTE DE SERVIÇO</span></div>
-        </header>
-        <div class="release-sheet-grid">
-          <span><b>OBRA:</b> 369CG</span><span><b>DATA:</b> <i id="preview-date"></i></span>
-        </div>
-        <div class="release-sheet-line"><b>O Sr.:</b> <span id="preview-name"></span><b>Função:</b> <span>Colaborador</span></div>
-        <div class="release-sheet-line"><b>Está autorizado no dia de hoje a partir das:</b> <span id="preview-time"></span> hs</div>
-        <div class="release-sheet-checks"><b>Motivo da saída:</b> <span id="preview-reason"></span><span id="preview-hours"></span></div>
-        <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
-        <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
-        <div class="release-sheet-signature">Assinatura do colaborador: ______________________________________________</div>
-        <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i></span></footer>
-      </article>
-    </section>
-  </div>
-
   <div data-site-footer></div>
 
   <script src="dom-utils.js"></script>
@@ -163,7 +162,11 @@
 
 
 
+  <script src="firebase-employee-store.js"></script>
+
   <script src="firebase-release-store.js"></script>
+
+  <script src="release-preview.js"></script>
 
   <script src="DP-Liberacoes.js"></script>
 

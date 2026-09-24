@@ -3,56 +3,159 @@
   const session = window.portalAuthDemo?.getSession();
   const isAdministrator = session?.roleValue === "administrador-analista";
   const isEngineer = session?.roleValue === "engenheiro";
+  const flow = window.portalReleaseFlow;
   let adminBonusUnlocked = false;
-  const canSignBonus = () => isEngineer || (isAdministrator && adminBonusUnlocked);
+  const canSign = () => isEngineer || (isAdministrator && adminBonusUnlocked);
   const list = document.querySelector("#bonus-list");
   const counter = document.querySelector("#engineer-counter");
+  const filter = document.querySelector("#engineer-filter");
   const pendingSummary = document.querySelector("#summary-pending");
   const approvedSummary = document.querySelector("#summary-approved");
   const deniedSummary = document.querySelector("#summary-denied");
+  const refusedSummary = document.querySelector("#summary-refused");
   const adminSecurity = document.querySelector("#admin-bonus-security");
   const adminCode = document.querySelector("#admin-bonus-code");
   const unlockAdminBonus = document.querySelector("#unlock-admin-bonus");
   const adminMessage = document.querySelector("#admin-bonus-message");
+  const formatDateTime = (value) => value ? new Date(value).toLocaleString("pt-BR") : "";
+
+  function badgeOf(release, stage) {
+    if (stage === "foreman") return ["RECUSADA", "is-denied"];
+    if (release.bonusStatus === "approved") return ["ABONADO", "is-approved"];
+    if (release.bonusStatus === "denied") return ["NÃO ABONADO", "is-denied"];
+    return ["PENDENTE", "is-pending"];
+  }
+
+  // Pode mexer: liberação nova, ou a que o próprio engenheiro abonou/não abonou e o DP ainda não decidiu.
+  // Decisão de outro engenheiro, recusada ou já decidida pelo DP fica só para consulta.
+  const signerName = () => session?.name || "Engenheiro responsável";
+  const canAct = (release) => {
+    const stage = flow.stageOf(release);
+    if (release.abonoLaunchedAt) return false; // abono já lançado no RM: não muda mais
+    return stage === "engineer" || (stage === "dp" && !!release.bonusStatus && release.engineer === signerName());
+  };
+
+  function actionsHtml(release, current) {
+    if (!canSign()) {
+      return `<div class="bonus-signature">${isAdministrator ? "Informe o código físico para liberar a assinatura do Administrador Analista." : "Consulta permitida. Somente o engenheiro responsável pode decidir."}</div><div class="bonus-actions"><button class="release-view-btn" type="button" data-choice="view">Visualizar liberação</button></div>`;
+    }
+    return `<div class="bonus-actions">
+        <button class="release-view-btn" type="button" data-choice="view">Visualizar liberação</button>
+        <button class="bonus-yes" type="button" data-choice="approved">${current === "approved" ? "Abonado ✓" : "Abonado"}</button>
+        <button class="bonus-no" type="button" data-choice="denied">${current === "denied" ? "Não abonado ✓" : "Não abonado"}</button>
+        <button class="bonus-refuse" type="button" data-choice="refuse">Recusar</button>
+        <button class="bonus-delete" type="button" data-choice="delete">Apagar</button>
+      </div>`;
+  }
+
+  function releaseCard(release) {
+    const stage = flow.stageOf(release);
+    const id = escapeHtml(release.id);
+    const [badge, tone] = badgeOf(release, stage);
+    const note = stage === "foreman"
+      ? `Devolvida ao encarregado por ${escapeHtml(release.refusedBy)} em ${formatDateTime(release.refusedAt)}. Ele vai ajustar e reenviar.`
+      : release.engineerDecisionAt ? `Decisão assinada por ${escapeHtml(release.engineer)} em ${formatDateTime(release.engineerDecisionAt)}.` : "";
+    return `
+      <article class="bonus-item" data-release="${id}">
+        <div class="bonus-item-head"><div><strong>${escapeHtml(release.name)}</strong><small>Matrícula ${escapeHtml(release.registration)} · Solicitante: ${escapeHtml(release.requester)}</small></div><span class="bonus-status ${tone}">${badge}</span></div>
+        <div class="bonus-details"><span><strong>Data:</strong> ${escapeHtml(release.date)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Movimentação:</strong> ${escapeHtml(flow.movementLabel(release))}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Etapa:</strong> ${escapeHtml(flow.stages[stage]?.label)}</span>${stage === "foreman" ? `<span><strong>Recusa:</strong> ${escapeHtml(release.refusalReason)}</span>` : ""}</div>
+        ${canAct(release) ? actionsHtml(release, release.bonusStatus) : `<div class="bonus-signature">Somente consulta: esta liberação já foi decidida e está bloqueada para alteração.</div><div class="bonus-actions"><button class="release-view-btn" type="button" data-choice="view">Visualizar liberação</button>${canSign() ? '<button class="bonus-delete" type="button" data-choice="delete">Apagar</button>' : ""}</div>`}
+        ${note ? `<div class="bonus-signature">${note}</div>` : ""}
+      </article>`;
+  }
+
   async function render() {
     const releases = await window.portalDemoStore.getReleases();
-    const bonuses = releases
-      .filter((release) => release.bonusStatus || release.hours === "Abonado" || release.hours === "abonado")
-      .map((release) => ({
-        ...release,
-        bonusStatus: release.bonusStatus || "pending"
-      }));
-    const pending = bonuses.filter((bonus) => bonus.bonusStatus === "pending").length;
+    const order = { engineer: 0, dp: 1, foreman: 2, gate: 3, exited: 4, closed: 5 };
+    const stageOf = flow.stageOf;
+    const sorted = [...releases].sort((a, b) => order[stageOf(a)] - order[stageOf(b)]);
+    const visible = sorted.filter((release) => filter.value === "all" || stageOf(release) === "engineer");
+    const pending = releases.filter((release) => stageOf(release) === "engineer").length;
     counter.textContent = `${pending} pendentes`;
     pendingSummary.textContent = pending;
-    approvedSummary.textContent = bonuses.filter((bonus) => bonus.bonusStatus === "approved").length;
-    deniedSummary.textContent = bonuses.filter((bonus) => bonus.bonusStatus === "denied").length;
-    list.innerHTML = bonuses.length ? bonuses.map((bonus) => `
-      <article class="bonus-item">
-        <div class="bonus-item-head"><div><strong>${escapeHtml(bonus.name)}</strong><small>Registro local · Solicitante: ${escapeHtml(bonus.requester)}</small></div><span class="bonus-status ${bonus.bonusStatus === "approved" ? "is-approved" : bonus.bonusStatus === "denied" ? "is-denied" : "is-pending"}">${bonus.bonusStatus === "approved" ? "ABONADO" : bonus.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE"}</span></div>
-        <div class="bonus-details"><span><strong>Frente:</strong> ${escapeHtml(bonus.team)}</span><span><strong>Horário:</strong> ${escapeHtml(bonus.time)}</span><span><strong>Motivo:</strong> ${escapeHtml(bonus.reason)}</span></div>
-        <div class="bonus-signature">${bonus.engineer ? `Decisão registrada por ${escapeHtml(bonus.engineer)}.` : "Sua decisão será registrada com nome, perfil, data e hora."}</div>
-        ${canSignBonus()
-          ? '<div class="bonus-actions"><button class="bonus-yes" type="button" data-choice="approved" data-id="' + bonus.id + '">Assinar como abonado</button><button class="bonus-no" type="button" data-choice="denied" data-id="' + bonus.id + '">Assinar como não abonado</button></div>'
-          : `<div class="bonus-signature">${isAdministrator ? "Informe o código físico para liberar a assinatura do Administrador Analista." : "Consulta permitida. Somente o engenheiro responsável pode registrar o abono."}</div>`}
-      </article>
-    `).join("") : '<p class="engineer-empty">Nenhum abono pendente de assinatura.</p>';
+    approvedSummary.textContent = releases.filter((release) => release.bonusStatus === "approved" && stageOf(release) !== "foreman").length;
+    deniedSummary.textContent = releases.filter((release) => release.bonusStatus === "denied").length;
+    refusedSummary.textContent = releases.filter((release) => stageOf(release) === "foreman").length;
+    list.innerHTML = visible.length ? visible.map(releaseCard).join("") : '<p class="engineer-empty">Nenhuma liberação encontrada.</p>';
   }
+
+  filter.addEventListener("change", render);
+
+  const dialog = document.querySelector("#refuse-dialog");
+  const dialogReasons = document.querySelector("#refuse-reasons");
+  const dialogError = document.querySelector("#refuse-error");
+  const dialogTarget = document.querySelector("#refuse-target");
+  let refusingId = null;
+
+  function openRefuseDialog(release) {
+    refusingId = release.id;
+    dialogTarget.textContent = `${release.name} · solicitado por ${release.requester}`;
+    dialogReasons.innerHTML = flow.refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
+    dialogError.hidden = true;
+    dialog.showModal();
+  }
+
+  document.querySelector("#refuse-cancel").addEventListener("click", () => dialog.close());
+  document.querySelector("#refuse-confirm").addEventListener("click", async () => {
+    const reasons = [...dialogReasons.querySelectorAll("input:checked")].map((input) => input.value);
+    if (!reasons.length) {
+      dialogError.hidden = false;
+      return;
+    }
+    // A recusa só devolve ao encarregado com o motivo; ele ajusta e reenvia.
+    await window.portalDemoStore.updateRelease(refusingId, {
+      stage: "foreman",
+      status: "pending",
+      bonusStatus: null,
+      hours: "Pendente",
+      hoursType: null,
+      refusedBy: session?.name || "Engenheiro responsável",
+      refusedAt: new Date().toISOString(),
+      refusalReasons: reasons,
+      refusalReason: reasons.join(" e ")
+    });
+    dialog.close();
+    render();
+  });
+
   list.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-choice]");
     if (!button) return;
-    if (!canSignBonus()) return;
     const releases = await window.portalDemoStore.getReleases();
-    const bonus = releases.find((item) => item.id === button.dataset.id);
-    if (!bonus) return;
-    bonus.bonusStatus = button.dataset.choice;
-    await window.portalDemoStore.updateRelease(bonus.id, {
-      bonusStatus: bonus.bonusStatus,
-      hours: bonus.bonusStatus === "approved" ? "Abonado" : "Não abonado",
-      engineer: window.portalAuthDemo?.getSession()?.name || "Engenheiro responsável"
-    });
+    const release = releases.find((item) => item.id === button.closest("[data-release]").dataset.release);
+    if (!release) return render();
+    if (button.dataset.choice === "view") {
+      window.portalReleasePreview.show(release);
+      return;
+    }
+    if (!canSign()) return;
+    if (button.dataset.choice === "delete") {
+      if (!window.confirm(`Apagar a liberação de ${release.name}? Essa ação não pode ser desfeita.`)) return;
+      await window.portalDemoStore.removeRelease(release.id);
+      render();
+      return;
+    }
+    if (!canAct(release)) return render();
+    if (button.dataset.choice === "refuse") {
+      openRefuseDialog(release);
+      return;
+    }
+    const now = new Date().toISOString();
+    const changes = {
+      engineer: session?.name || "Engenheiro responsável",
+      engineerRole: session?.role || "Engenheiro responsável",
+      engineerDecisionAt: now,
+      stage: "dp",
+      status: "pending",
+      bonusStatus: button.dataset.choice,
+      hours: button.dataset.choice === "approved" ? "Abonado" : "Não abonado",
+      hoursType: button.dataset.choice === "approved" ? "abonado" : "nao-abonado"
+    };
+    if (flow.stageOf(release) === "dp") changes.engineerChangedAt = now;
+    await window.portalDemoStore.updateRelease(release.id, changes);
     render();
   });
+
   if (isAdministrator) {
     adminSecurity.hidden = false;
     unlockAdminBonus.addEventListener("click", () => {

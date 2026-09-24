@@ -11,58 +11,68 @@
   const session = window.portalAuthDemo?.getSession();
   const canClearHistory = session?.roleValue === "dp";
   const physicalSecurityCode = "3029";
-  const preview = document.querySelector("#release-preview");
-  const closePreview = document.querySelector("#close-release-preview");
-  const printPreview = document.querySelector("#print-release-preview");
-  const labels = { pending:"Pendente", authorized:"Autorizada", denied:"Negada" };
+  const flow = window.portalReleaseFlow;
+  const stageClass = { engineer:"pending", dp:"pending", gate:"authorized", exited:"authorized", foreman:"denied", closed:"denied" };
+  const filterMatches = {
+    all: () => true,
+    dp: (stage) => stage === "dp",
+    upstream: (stage) => stage === "engineer" || stage === "foreman",
+    authorized: (stage) => stage === "gate" || stage === "exited",
+    denied: (stage) => stage === "closed"
+  };
+  // Abono do engenheiro que o DP ainda precisa lançar no RM.
+  const needsLaunch = (release) => release.bonusStatus === "approved" && !release.abonoLaunchedAt && ["dp", "gate", "exited"].includes(flow.stageOf(release));
+  const launchLabel = (release) => release.abonoLaunchedAt
+    ? `<span class="release-launch-tag is-launched">Abono lançado no RM</span>`
+    : needsLaunch(release) ? `<span class="release-launch-tag">Abono a lançar no RM</span>` : "";
+  const search = document.querySelector("#release-search");
+  const dateFrom = document.querySelector("#date-from");
+  const dateTo = document.querySelector("#date-to");
+  const filterCount = document.querySelector("#filter-count");
+  const fold = (value) => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  // Data da liberação (AAAA-MM-DD); as antigas sem "date" usam o dia em que foram criadas.
+  const dateOf = (release) => release.date || release.createdAt?.slice(0, 10) || "";
+  const matchesSearchAndDate = (release, term) => {
+    const day = dateOf(release);
+    if (dateFrom.value && (!day || day < dateFrom.value)) return false;
+    if (dateTo.value && (!day || day > dateTo.value)) return false;
+    return !term || fold([release.name, release.registration, release.requester, release.reason, release.engineer].join(" ")).includes(term);
+  };
   const summary = {
     received: document.querySelector("#summary-received"),
     authorized: document.querySelector("#summary-authorized"),
     pending: document.querySelector("#summary-pending"),
     denied: document.querySelector("#summary-denied")
   };
-  const formatDate = (value) => {
-    if (!value) return "____/____/________";
-    const date = new Date(`${value}T00:00:00`);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("pt-BR");
-  };
-  const getDpSigner = (release) => {
-    if (release.dpSigner) return release.dpSigner;
-    if (release.status === "pending") return "Pendente";
-    return session?.name || "Departamento Pessoal";
-  };
-  function showPreview(release) {
-    document.querySelector("#preview-date").textContent = formatDate(release.date || release.createdAt?.slice(0, 10));
-    document.querySelector("#preview-name").textContent = release.name || "Não informado";
-    document.querySelector("#preview-time").textContent = release.time || "____:____";
-    document.querySelector("#preview-reason").textContent = release.reason || "Não informado";
-    document.querySelector("#preview-hours").textContent = release.hours || "Não informado";
-    document.querySelector("#preview-observation").textContent = release.reason || "Sem observação.";
-    const bonusElement = document.querySelector("#preview-bonus");
-    const bonusLabel = release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE");
-    bonusElement.textContent = bonusLabel;
-    bonusElement.className = release.bonusStatus === "approved" ? "bonus-approved" : release.bonusStatus === "denied" ? "bonus-denied" : "bonus-pending";
-    document.querySelector("#preview-requester").textContent = release.requester || "Não informado";
-    document.querySelector("#preview-engineer").textContent = release.engineer || "Pendente";
-    document.querySelector("#preview-dp").textContent = getDpSigner(release);
-    preview.hidden = false;
-  }
   async function render() {
     const releases = await window.portalDemoStore.getReleases();
     const selected = filter.value;
-    const visible = releases.filter((release) => selected === "all" || release.status === selected);
-    list.innerHTML = visible.length ? visible.map((release) => `
+    const term = fold(search.value.trim());
+    const visible = releases.filter((release) => (selected === "launch" ? needsLaunch(release) : (filterMatches[selected] || filterMatches.all)(flow.stageOf(release))) && matchesSearchAndDate(release, term));
+    filterCount.textContent = `${visible.length} de ${releases.length} liberações`;
+    list.innerHTML = visible.length ? visible.map((release) => {
+      const stage = flow.stageOf(release);
+      const canDecide = stage === "dp";
+      const signatures = [
+        release.engineer ? `Engenheiro: ${escapeHtml(release.engineer)}` : "",
+        release.dpSigner ? `DP: ${escapeHtml(release.dpSigner)}` : "",
+        release.exitConfirmedBy ? `Portaria: ${escapeHtml(release.exitConfirmedBy)}` : "",
+        stage === "foreman" ? `Recusada: ${escapeHtml(release.refusalReason)}` : ""
+      ].filter(Boolean).join(" · ");
+      return `
       <article class="release-item">
-        <div class="release-item-header"><div><strong>${escapeHtml(release.name)}</strong><small>Registro local · Solicitante: ${escapeHtml(release.requester)}</small></div><span class="release-status ${release.status}">${labels[release.status]}</span></div>
-        <div class="release-details"><span><strong>Frente:</strong> ${escapeHtml(release.team)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Horas:</strong> ${escapeHtml(release.hours)}</span></div>
-        <div class="release-actions"><button class="release-view" type="button" data-action="view" data-id="${release.id}">Visualizar liberação</button><button class="release-authorize" type="button" data-action="authorize" data-id="${release.id}" ${release.status !== "pending" ? "disabled" : ""}>Autorizar saída</button><button class="release-deny" type="button" data-action="deny" data-id="${release.id}" ${release.status !== "pending" ? "disabled" : ""}>Negar</button><a class="release-edit" href="Liberacao.html?edit=${encodeURIComponent(release.id)}">Editar</a><button class="release-delete" type="button" data-action="delete" data-id="${release.id}">Apagar</button></div>
-      </article>
-    `).join("") : '<p class="dp-empty">Nenhuma solicitação neste filtro.</p>';
-    counter.textContent = `${releases.filter((release) => release.status === "pending").length} pendentes`;
+        <div class="release-item-header"><div><strong>${escapeHtml(release.name)}</strong><small>Solicitante: ${escapeHtml(release.requester)}${signatures ? ` · ${signatures}` : ""}</small></div><span class="release-status ${stageClass[stage]}">${escapeHtml(flow.stages[stage].label)}</span></div>
+        ${launchLabel(release) ? `<div class="release-launch-row">${launchLabel(release)}</div>` : ""}
+        <div class="release-details"><span><strong>Frente:</strong> ${escapeHtml(release.team)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Movimentação:</strong> ${escapeHtml(flow.movementLabel(release))}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Horas:</strong> ${escapeHtml(release.hours)}</span></div>
+        <div class="release-actions"><button class="release-view" type="button" data-action="view" data-id="${release.id}">Visualizar liberação</button><button class="release-authorize" type="button" data-action="authorize" data-id="${release.id}" ${canDecide ? "" : "disabled"}>Autorizar saída</button><button class="release-deny" type="button" data-action="deny" data-id="${release.id}" ${canDecide ? "" : "disabled"}>Negar</button><a class="release-edit" href="Liberacao.html?edit=${encodeURIComponent(release.id)}">Editar</a><button class="release-delete" type="button" data-action="delete" data-id="${release.id}">Apagar</button></div>
+      </article>`;
+    }).join("") : '<p class="dp-empty">Nenhuma solicitação neste filtro.</p>';
+    const count = (name) => releases.filter((release) => filterMatches[name](flow.stageOf(release))).length;
+    counter.textContent = `${count("dp")} pendentes`;
     summary.received.textContent = releases.length;
-    summary.authorized.textContent = releases.filter((release) => release.status === "authorized").length;
-    summary.pending.textContent = releases.filter((release) => release.status === "pending").length;
-    summary.denied.textContent = releases.filter((release) => release.status === "denied").length;
+    summary.authorized.textContent = count("authorized");
+    summary.pending.textContent = count("dp");
+    summary.denied.textContent = count("denied");
   }
   list.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
@@ -71,7 +81,7 @@
     const release = releases.find((item) => item.id === button.dataset.id);
     if (!release) return;
     if (button.dataset.action === "view") {
-      showPreview(release);
+      window.portalReleasePreview.show(release, { dpContext: true });
       return;
     }
     if (button.dataset.action === "delete") {
@@ -80,17 +90,33 @@
       render();
       return;
     }
-    release.status = button.dataset.action === "authorize" ? "authorized" : "denied";
+    if (flow.stageOf(release) !== "dp") {
+      window.alert("Esta liberação ainda não chegou ao DP: ela precisa da decisão do engenheiro primeiro.");
+      render();
+      return;
+    }
+    const authorized = button.dataset.action === "authorize";
     await window.portalDemoStore.updateRelease(release.id, {
-      status: release.status,
+      status: authorized ? "authorized" : "denied",
+      stage: authorized ? "gate" : "closed",
+      dpRole: session?.role || "Departamento Pessoal",
       dpSigner: session?.name || "Departamento Pessoal",
       dpDecisionAt: new Date().toISOString()
     });
     render();
   });
   filter.addEventListener("change", render);
-  closePreview.addEventListener("click", () => { preview.hidden = true; });
-  printPreview.addEventListener("click", () => window.print());
+  search.addEventListener("input", render);
+  dateFrom.addEventListener("change", render);
+  dateTo.addEventListener("change", render);
+  document.querySelector("#clear-filters").addEventListener("click", () => {
+    search.value = "";
+    dateFrom.value = "";
+    dateTo.value = "";
+    filter.value = "all";
+    render();
+  });
+  document.addEventListener("portal:release-changed", render);
   clearHistory.hidden = !canClearHistory;
   securityBox.hidden = true;
   clearHistory.addEventListener("click", () => {

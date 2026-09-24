@@ -36,6 +36,13 @@
       write(releases);
       return releases;
     },
+    subscribeRelease(id, callback) {
+      const timer = setInterval(() => {
+        const found = readCurrent().find((release) => release.id === id);
+        if (found) callback(found);
+      }, 2000);
+      return () => clearInterval(timer);
+    },
     updateRelease(id, changes) {
       const releases = readCurrent().map((release) => release.id === id ? { ...release, ...changes } : release);
       write(releases);

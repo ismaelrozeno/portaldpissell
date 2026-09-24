@@ -103,6 +103,18 @@
               <button class="btn btn-danger btn-sm" id="confirm-clear-employees" type="button">Confirmar exclusão de todos</button>
               <small id="clear-employees-message" role="alert" class="d-block mt-1"></small>
             </div>
+            <div class="row g-2 mt-2">
+              <div class="col-sm-7">
+                <input id="employee-search" type="search" class="form-control form-control-sm" placeholder="Pesquisar por nome, matrícula, função ou setor" aria-label="Pesquisar colaboradores" autocomplete="off">
+              </div>
+              <div class="col-sm-5">
+                <select id="employee-filter" class="form-select form-select-sm" aria-label="Filtrar por encarregado">
+                  <option value="">Todos os encarregados</option>
+                  <option value="__none__">Sem encarregado</option>
+                </select>
+              </div>
+            </div>
+            <small id="employee-count" class="d-block text-muted mt-2"></small>
             <ul id="employee-list" class="list-group list-group-flush mt-2"></ul>
           </div>
         </section>

@@ -10,13 +10,15 @@
 
   <meta name="description" content="Assinatura de abonos pelo engenheiro responsável da Obra 369.">
 
-  <title>Abonos pendentes | Obra 369</title>
+  <title>Liberações para análise | Obra 369</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <link rel="stylesheet" href="site-overrides.css">
 
   <link rel="stylesheet" href="Engenheiro.css">
+
+  <link rel="stylesheet" href="Release-Preview.css">
 
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
@@ -38,13 +40,13 @@
 
           <p class="engineer-kicker">Engenheiro responsável · Obra 369</p>
 
-          <h1>Abonos pendentes</h1>
+          <h1>Liberações para análise</h1>
 
-          <p>Analise cada autorização e registre sua decisão sobre o abono.</p>
+          <p>Você recebe a solicitação primeiro: decida o abono ou recuse, devolvendo ao encarregado com o motivo.</p>
 
         </div>
 
-        <span class="engineer-date">20 de setembro de 2026</span>
+        <span class="engineer-date" data-live-date="long"></span>
 
       </section>
 
@@ -52,7 +54,7 @@
 
         <strong>Assinatura individual</strong>
 
-        <span>O abono só será considerado válido depois da sua decisão e assinatura eletrônica em cada autorização.</span>
+        <span>Ao abonar ou não abonar, a liberação segue para o Departamento Pessoal. Ao recusar, ela volta para o encarregado ajustar e reenviar. Cada decisão é assinada eletronicamente.</span>
         <div id="admin-bonus-security" hidden>
           <label for="admin-bonus-code">Código físico para o Administrador Analista</label>
           <div class="admin-bonus-security-fields">
@@ -70,11 +72,19 @@
 
           <div class="engineer-card-heading">
 
-            <div><span class="engineer-eyebrow">Fila de análise</span><h2>Autorizações para decisão</h2></div>
+            <div><span class="engineer-eyebrow">Fila de análise</span><h2>Todas as liberações</h2></div>
 
             <span class="engineer-counter" id="engineer-counter">2 pendentes</span>
 
           </div>
+
+          <select id="engineer-filter" class="form-select form-select-sm w-auto mb-3" aria-label="Filtrar liberações">
+
+            <option value="all">Todas as liberações</option>
+
+            <option value="pending">Só pendentes de decisão</option>
+
+          </select>
 
           <div id="bonus-list" class="bonus-list"></div>
 
@@ -92,6 +102,8 @@
 
             <div><dt>Não abonadas</dt><dd id="summary-denied">1</dd></div>
 
+            <div><dt>Recusadas</dt><dd id="summary-refused">0</dd></div>
+
           </dl>
 
           <a class="engineer-secondary-link" href="Portal.html">Ver painel completo</a>
@@ -103,6 +115,18 @@
     </div>
 
   </main>
+
+  <dialog id="refuse-dialog" class="refuse-dialog" aria-labelledby="refuse-title">
+    <h2 id="refuse-title">Recusar liberação</h2>
+    <p id="refuse-target"></p>
+    <p>Escolha o que o encarregado precisa ajustar:</p>
+    <div id="refuse-reasons" class="refuse-reasons"></div>
+    <p id="refuse-error" class="text-danger" role="alert" hidden>Selecione pelo menos um motivo.</p>
+    <div class="refuse-buttons">
+      <button type="button" id="refuse-cancel" class="bonus-yes">Cancelar</button>
+      <button type="button" id="refuse-confirm" class="bonus-no">Confirmar recusa</button>
+    </div>
+  </dialog>
 
   <div data-site-footer></div>
 
@@ -120,7 +144,11 @@
 
 
 
+  <script src="firebase-employee-store.js"></script>
+
   <script src="firebase-release-store.js"></script>
+
+  <script src="release-preview.js"></script>
 
   <script src="Engenheiro.js"></script>
 
