@@ -9,11 +9,13 @@
   const pending = document.querySelector("#closing-pending");
   const checklistPending = document.querySelector("#checklist-pending");
   const pendingCount = releases.filter((release) => release.status === "pending").length;
+  const bonusCandidates = releases.filter((release) => release.bonusStatus || release.hoursType === "abonado" || release.hours === "Abonado");
+  const bonusPendingCount = bonusCandidates.filter((release) => (release.bonusStatus || "pending") === "pending").length;
   total.textContent = releases.length;
   approved.textContent = releases.filter((release) => release.bonusStatus === "approved").length;
   denied.textContent = releases.filter((release) => release.hours === "Não abonado" || release.bonusStatus === "denied").length;
   pending.textContent = pendingCount;
-  checklistPending.textContent = pendingCount;
+  checklistPending.textContent = bonusPendingCount;
   exportButton.addEventListener("click", () => {
     const now = new Date();
     const periodLabel = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });

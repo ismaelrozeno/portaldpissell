@@ -85,6 +85,7 @@
     shortcutTitle: document.querySelector("#shortcut-title"),
     shortcutList: document.querySelector("#shortcut-list"),
     table: document.querySelector("#records-table"),
+    recordsSearch: document.querySelector("#records-search"),
     team: document.querySelector("#stat-team"),
     pending: document.querySelector("#stat-pending"),
     approved: document.querySelector("#stat-approved"),
@@ -136,7 +137,7 @@
     elements.foremanSpecialty.textContent = specialty;
     elements.foremanTeamCount.textContent = `${team.length} ${team.length === 1 ? "colaborador" : "colaboradores"}`;
     elements.foremanTeamList.innerHTML = team.length
-      ? team.map((employee) => `<li><strong>${escapeHtml(employee.nome)}</strong><small>${escapeHtml(employee.funcao)} · Matrícula ${escapeHtml(employee.matricula)}</small></li>`).join("")
+      ? team.map((employee) => `<li><a href="Liberacao.html?employee=${encodeURIComponent(employee.matricula)}" title="Criar liberação para ${escapeHtml(employee.nome)}"><strong>${escapeHtml(employee.nome)}</strong><small>${escapeHtml(employee.funcao)} · Matrícula ${escapeHtml(employee.matricula)}</small></a></li>`).join("")
       : "<li>Nenhum colaborador vinculado a este encarregado.</li>";
   }
 
@@ -151,16 +152,20 @@
       const stage = flow.stageOf(release);
       return [release.name, release.team, release.time, flow.stages[stage].label, flow.stages[stage].tone, release.id, stage];
     });
-    const visibleRecords = profile === "portaria" ? records.filter((record) => record[6] === "gate" || record[6] === "exited") : records;
-    elements.table.innerHTML = visibleRecords.map((record) => `
+    const stageFilteredRecords = profile === "portaria" ? records.filter((record) => record[6] === "gate" || record[6] === "exited") : records;
+    const query = window.normalizeSearchText(elements.recordsSearch?.value || "");
+    const visibleRecords = query
+      ? stageFilteredRecords.filter((record) => window.normalizeSearchText(`${record[0]} ${record[1]}`).includes(query))
+      : stageFilteredRecords;
+    elements.table.innerHTML = visibleRecords.length ? visibleRecords.map((record) => `
       <tr>
-        <td><strong>${escapeHtml(record[0])}</strong><small>Registro local</small></td>
-        <td>${escapeHtml(record[1])}</td>
-        <td>${escapeHtml(record[2])}</td>
-        <td><span class="status-badge status-${record[4]}">${record[3]}</span></td>
-        <td class="text-end"><button class="release-view-btn" type="button" data-view-release="${escapeHtml(record[5])}">Visualizar liberação</button> ${foremanRoleValues.includes(profile) && record[6] !== "foreman" ? "—" : `<a class="table-action" href="${foremanRoleValues.includes(profile) ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${foremanRoleValues.includes(profile) ? "Editar e reenviar" : "Consultar"}</a>`}</td>
+        <td data-label="Colaborador"><strong>${escapeHtml(record[0])}</strong><small>Registro local</small></td>
+        <td data-label="Frente">${escapeHtml(record[1])}</td>
+        <td data-label="Horário">${escapeHtml(record[2])}</td>
+        <td data-label="Status"><span class="status-badge status-${record[4]}">${record[3]}</span></td>
+        <td class="text-end" data-label="Ação"><button class="release-view-btn" type="button" data-view-release="${escapeHtml(record[5])}">Visualizar liberação</button> ${foremanRoleValues.includes(profile) && record[6] !== "foreman" ? "—" : `<a class="table-action" href="${foremanRoleValues.includes(profile) ? `Liberacao.html?edit=${encodeURIComponent(record[5])}` : profile === "dp" ? `DP-Liberacoes.html?release=${encodeURIComponent(record[5])}` : profile === "portaria" ? `Portaria.html?release=${encodeURIComponent(record[5])}` : `Engenheiro.html?release=${encodeURIComponent(record[5])}`}">${foremanRoleValues.includes(profile) ? "Editar e reenviar" : "Consultar"}</a>`}</td>
       </tr>
-    `).join("");
+    `).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
   }
 
   elements.table.addEventListener("click", async (event) => {
@@ -218,5 +223,6 @@
     elements.adminProfile.value = "dp";
     elements.adminProfile.addEventListener("change", (event) => renderProfile(event.target.value));
   }
+  elements.recordsSearch?.addEventListener("input", () => renderRecords(activeProfileKey));
   renderProfile(profiles[profileKey] ? profileKey : "dp");
 })();

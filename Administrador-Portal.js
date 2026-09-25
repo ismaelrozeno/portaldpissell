@@ -30,6 +30,9 @@
   const porterPendingCount = document.querySelector("#porter-pending-count");
   const registeredUsersList = document.querySelector("#registered-users-list");
   const registeredUsersCount = document.querySelector("#registered-users-count");
+  const porterSearch = document.querySelector("#porter-search");
+  const registeredUsersSearch = document.querySelector("#registered-users-search");
+  const allowedSearch = document.querySelector("#allowed-search");
 
   function normalizeInput(input) {
     input.value = input.value.replace(/\D/g, "").slice(0, 7);
@@ -62,9 +65,13 @@
 
   async function renderAllowed() {
     const registrations = await window.portalEmployeeStore.getAllowedRegistrations();
-    allowedList.innerHTML = registrations.length
-      ? registrations.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · Perfil: ${escapeHtml(item.role) || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
-      : '<li class="list-group-item text-muted">Nenhuma matrícula liberada.</li>';
+    const query = window.normalizeSearchText(allowedSearch?.value || "");
+    const visible = query
+      ? registrations.filter((item) => window.normalizeSearchText(`${item.nome} ${item.matricula}`).includes(query))
+      : registrations;
+    allowedList.innerHTML = visible.length
+      ? visible.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · Perfil: ${escapeHtml(item.role) || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
+      : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhuma matrícula liberada."}</li>`;
   }
 
   const foldText = (value) => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -96,8 +103,12 @@
     const requests = await window.portalAuthDemo.getPorterRequests();
     const pending = requests.filter((request) => request.status === "pending-dp");
     porterPendingCount.textContent = `${pending.length} pendentes`;
-    porterList.innerHTML = requests.length
-      ? requests.map((request) => `
+    const query = window.normalizeSearchText(porterSearch?.value || "");
+    const visible = query
+      ? requests.filter((request) => window.normalizeSearchText(`${request.name} ${request.email}`).includes(query))
+      : requests;
+    porterList.innerHTML = visible.length
+      ? visible.map((request) => `
         <article class="border rounded p-3 mb-2">
           <div class="d-flex justify-content-between gap-3 flex-wrap">
             <div>
@@ -120,20 +131,24 @@
           </div>
         </article>
       `).join("")
-      : '<p class="text-muted mb-0">Nenhum cadastro de porteiro recebido.</p>';
+      : `<p class="text-muted mb-0">${query ? "Nenhum resultado para a busca." : "Nenhum cadastro de porteiro recebido."}</p>`;
   }
 
   async function renderRegisteredUsers() {
     const users = await window.portalAuthDemo.getAllUsers();
-    const visible = users.filter((user) => user.roleValue !== "administrador-analista");
-    registeredUsersCount.textContent = `${visible.length} cadastrados`;
+    const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
+    registeredUsersCount.textContent = `${eligible.length} cadastrados`;
+    const query = window.normalizeSearchText(registeredUsersSearch?.value || "");
+    const visible = query
+      ? eligible.filter((user) => window.normalizeSearchText(`${user.name} ${user.email} ${user.matricula || ""}`).includes(query))
+      : eligible;
     registeredUsersList.innerHTML = visible.length
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
         return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
       }).join("")
-      : '<li class="list-group-item text-muted">Nenhum usuário cadastrado.</li>';
+      : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
 
   function lookupAllowedEmployee() {
@@ -345,6 +360,10 @@
     clearEmployeesSecurity.hidden = true;
     await renderEmployees();
   });
+
+  porterSearch?.addEventListener("input", renderPorterRequests);
+  registeredUsersSearch?.addEventListener("input", renderRegisteredUsers);
+  allowedSearch?.addEventListener("input", renderAllowed);
 
   renderAllowed();
   renderEmployees();

@@ -7,6 +7,7 @@
   let adminBonusUnlocked = false;
   const canSign = () => isEngineer || (isAdministrator && adminBonusUnlocked);
   const list = document.querySelector("#bonus-list");
+  const search = document.querySelector("#bonus-search");
   const counter = document.querySelector("#engineer-counter");
   const filter = document.querySelector("#engineer-filter");
   const pendingSummary = document.querySelector("#summary-pending");
@@ -58,7 +59,7 @@
     return `
       <article class="bonus-item" data-release="${id}">
         <div class="bonus-item-head"><div><strong>${escapeHtml(release.name)}</strong><small>Matrícula ${escapeHtml(release.registration)} · Solicitante: ${escapeHtml(release.requester)}</small></div><span class="bonus-status ${tone}">${badge}</span></div>
-        <div class="bonus-details"><span><strong>Data:</strong> ${escapeHtml(release.date)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Movimentação:</strong> ${escapeHtml(flow.movementLabel(release))}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Etapa:</strong> ${escapeHtml(flow.stages[stage]?.label)}</span>${stage === "foreman" ? `<span><strong>Recusa:</strong> ${escapeHtml(release.refusalReason)}</span>` : ""}</div>
+        <div class="bonus-details"><span><strong>Data:</strong> ${escapeHtml(release.date)}</span><span><strong>Horário:</strong> ${escapeHtml(release.time)}</span><span><strong>Movimentação:</strong> ${escapeHtml(flow.movementLabel(release))}</span><span><strong>Motivo:</strong> ${escapeHtml(release.reason)}</span><span><strong>Etapa:</strong> ${escapeHtml(flow.stages[stage]?.label)}</span>${release.bonusRequest ? `<span><strong>Pedido do encarregado:</strong> ${release.bonusRequest === "abonado" ? "Abonado" : "Não abonado"}</span>` : ""}${stage === "foreman" ? `<span><strong>Recusa:</strong> ${escapeHtml(release.refusalReason)}</span>` : ""}</div>
         ${canAct(release) ? actionsHtml(release, release.bonusStatus) : `<div class="bonus-signature">Somente consulta: esta liberação já foi decidida e está bloqueada para alteração.</div><div class="bonus-actions"><button class="release-view-btn" type="button" data-choice="view">Visualizar liberação</button>${canSign() ? '<button class="bonus-delete" type="button" data-choice="delete">Apagar</button>' : ""}</div>`}
         ${note ? `<div class="bonus-signature">${note}</div>` : ""}
       </article>`;
@@ -69,17 +70,22 @@
     const order = { engineer: 0, dp: 1, foreman: 2, gate: 3, exited: 4, closed: 5 };
     const stageOf = flow.stageOf;
     const sorted = [...releases].sort((a, b) => order[stageOf(a)] - order[stageOf(b)]);
-    const visible = sorted.filter((release) => filter.value === "all" || stageOf(release) === "engineer");
+    const stageFiltered = sorted.filter((release) => filter.value === "all" || stageOf(release) === "engineer");
+    const query = window.normalizeSearchText(search?.value || "");
+    const visible = query
+      ? stageFiltered.filter((release) => window.normalizeSearchText(`${release.name} ${release.requester}`).includes(query))
+      : stageFiltered;
     const pending = releases.filter((release) => stageOf(release) === "engineer").length;
     counter.textContent = `${pending} pendentes`;
     pendingSummary.textContent = pending;
     approvedSummary.textContent = releases.filter((release) => release.bonusStatus === "approved" && stageOf(release) !== "foreman").length;
     deniedSummary.textContent = releases.filter((release) => release.bonusStatus === "denied").length;
     refusedSummary.textContent = releases.filter((release) => stageOf(release) === "foreman").length;
-    list.innerHTML = visible.length ? visible.map(releaseCard).join("") : '<p class="engineer-empty">Nenhuma liberação encontrada.</p>';
+    list.innerHTML = visible.length ? visible.map(releaseCard).join("") : `<p class="engineer-empty">${query ? "Nenhuma liberação encontrada para a busca." : "Nenhuma liberação encontrada."}</p>`;
   }
 
   filter.addEventListener("change", render);
+  search?.addEventListener("input", render);
 
   const dialog = document.querySelector("#refuse-dialog");
   const dialogReasons = document.querySelector("#refuse-reasons");

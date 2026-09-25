@@ -99,8 +99,14 @@
     employees.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
     allEmployees = employees;
     filterEmployees();
-    const editId = new URLSearchParams(window.location.search).get("edit");
-    if (!editId) return;
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+    if (!editId) {
+      const preselect = params.get("employee");
+      const preselectedEmployee = preselect ? employees.find((item) => item.matricula === preselect) : null;
+      if (preselectedEmployee) selectEmployee(preselectedEmployee);
+      return;
+    }
     const releases = await window.portalDemoStore?.getReleases() || [];
     const release = releases.find((item) => item.id === editId);
     if (!release) return;
@@ -119,6 +125,10 @@
     particularReason.value = release.reasonDetail ?? (savedReason === "particular" && release.reason !== "Particular" ? release.reason || "" : "");
     const savedMovement = release.movement || ["saida"];
     document.querySelectorAll('input[name="movement"]').forEach((input) => { input.checked = savedMovement.includes(input.value); });
+    if (release.bonusRequest) {
+      const bonusInput = document.querySelector(`input[name="bonus-request"][value="${release.bonusRequest}"]`);
+      if (bonusInput) bonusInput.checked = true;
+    }
     updateParticularField();
   }
 
@@ -129,8 +139,14 @@
 
   reasonInputs.forEach((input) => input.addEventListener("change", updateParticularField));
 
+  let isSubmitting = false;
+  const submitButton = form.querySelector(".release-submit");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+    submitButton.disabled = true;
+
     errorMessage.hidden = true;
     successMessage.hidden = true;
     updateParticularField();
@@ -143,11 +159,14 @@
           ? "Marque entrada, saída ou as duas."
           : "Confira os campos obrigatórios antes de enviar a liberação.";
       errorMessage.hidden = false;
+      isSubmitting = false;
+      submitButton.disabled = false;
       return;
     }
 
     const selectedEmployee = selectedEmployeeName;
     const reason = document.querySelector('input[name="reason"]:checked').value;
+    const bonusRequest = document.querySelector('input[name="bonus-request"]:checked')?.value || null;
     const editId = new URLSearchParams(window.location.search).get("edit");
     const session = window.portalAuthDemo?.getSession();
     const existing = editId ? (await window.portalDemoStore.getReleases()).find((item) => item.id === editId) : null;
@@ -170,39 +189,47 @@
       team: "Equipe local",
       time: document.querySelector("#release-time").value,
       movement: movementInputs(),
+      bonusRequest,
       reasonType: reason,
       reasonDetail: particularReason.value.trim(),
       reason: reason === "particular" ? particularReason.value.trim() : `Tarefa: ${particularReason.value.trim()}`,
       requester: existing?.requester || session?.name || "Solicitante"
     };
-    if (!existing) {
-      await window.portalDemoStore.saveRelease({
-        ...releaseData,
-        hours: "Pendente",
-        status: "pending",
-        stage: "engineer",
-        requestedAt: new Date().toISOString()
-      });
-    } else if (window.portalReleaseFlow.stageOf(existing) === "foreman") {
-      // Reenvio após recusa: volta para o engenheiro e guarda a recusa anterior no histórico.
-      await window.portalDemoStore.updateRelease(editId, {
-        ...releaseData,
-        status: "pending",
-        stage: "engineer",
-        requestedAt: new Date().toISOString(),
-        refusalHistory: [...(existing.refusalHistory || []), { by: existing.refusedBy, at: existing.refusedAt, reason: existing.refusalReason }],
-        refusedBy: null,
-        refusedAt: null,
-        refusalReason: null
-      });
-    } else {
-      await window.portalDemoStore.updateRelease(editId, releaseData);
+    try {
+      if (!existing) {
+        await window.portalDemoStore.saveRelease({
+          ...releaseData,
+          hours: "Pendente",
+          status: "pending",
+          stage: "engineer",
+          requestedAt: new Date().toISOString()
+        });
+      } else if (window.portalReleaseFlow.stageOf(existing) === "foreman") {
+        // Reenvio após recusa: volta para o engenheiro e guarda a recusa anterior no histórico.
+        await window.portalDemoStore.updateRelease(editId, {
+          ...releaseData,
+          status: "pending",
+          stage: "engineer",
+          requestedAt: new Date().toISOString(),
+          refusalHistory: [...(existing.refusalHistory || []), { by: existing.refusedBy, at: existing.refusedAt, reason: existing.refusalReason }],
+          refusedBy: null,
+          refusedAt: null,
+          refusalReason: null
+        });
+      } else {
+        await window.portalDemoStore.updateRelease(editId, releaseData);
+      }
+      successMessage.innerHTML = '<span class="release-done-icon" aria-hidden="true">✓</span><strong>Concluído!</strong> Solicitação enviada ao engenheiro responsável para decisão do abono.<small>Voltando ao seu painel…</small>';
+      successMessage.classList.add("is-done");
+      successMessage.hidden = false;
+      successMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { window.location.href = "Portal.html"; }, 2200);
+    } catch (err) {
+      console.error(err);
+      errorMessage.textContent = "Não foi possível registrar a liberação. Tente novamente.";
+      errorMessage.hidden = false;
+      isSubmitting = false;
+      submitButton.disabled = false;
     }
-    successMessage.innerHTML = '<span class="release-done-icon" aria-hidden="true">✓</span><strong>Concluído!</strong> Solicitação enviada ao engenheiro responsável para decisão do abono.<small>Voltando ao seu painel…</small>';
-    successMessage.classList.add("is-done");
-    successMessage.hidden = false;
-    successMessage.scrollIntoView({ behavior: "smooth", block: "center" });
-    form.querySelector(".release-submit").disabled = true;
-    setTimeout(() => { window.location.href = "Portal.html"; }, 2200);
   });
 })();

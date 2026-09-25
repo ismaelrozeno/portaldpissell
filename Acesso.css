@@ -244,6 +244,27 @@
   display: block;
 }
 
+#login-error.is-visible {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  margin: .85rem 0 0;
+  padding: .7rem .9rem;
+  border: 1px solid rgba(255, 92, 92, .45);
+  border-radius: .6rem;
+  background: rgba(255, 92, 92, .14);
+  color: #ffcdcd;
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+#login-error.is-visible::before {
+  content: "⚠";
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
 .access-panel input.password-invalid,
 .access-panel input.password-invalid:focus {
   border-color: #ff5c5c;

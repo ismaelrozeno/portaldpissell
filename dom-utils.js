@@ -6,6 +6,11 @@ window.escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) =>
   "'": "&#39;"
 }[char]));
 
+window.normalizeSearchText = (value) => String(value ?? "")
+  .normalize("NFD")
+  .replace(/[̀-ͯ]/g, "")
+  .toLowerCase();
+
 // Datas "ao vivo": <span data-live-date="long|short"></span> mostra a data de hoje e vira à meia-noite.
 (() => {
   const formats = {

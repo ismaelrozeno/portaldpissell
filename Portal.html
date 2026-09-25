@@ -71,6 +71,8 @@
             </div>
             <a class="portal-button portal-button-primary" id="primary-action" href="Liberacao.html">Nova liberação</a>
           </div>
+          <label class="visually-hidden" for="records-search">Pesquisar por colaborador ou frente</label>
+          <input class="search-input" id="records-search" type="search" placeholder="Buscar por colaborador ou frente..." autocomplete="off">
           <div class="table-responsive">
             <table class="portal-table">
               <thead><tr><th>Colaborador</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
@@ -80,18 +82,20 @@
           <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
         </article>
 
-        <aside class="portal-card portal-card-alert" id="guidance-section">
-          <span class="card-eyebrow">Avisos importantes</span>
-          <h2>Fluxo de saída</h2>
-          <p>O colaborador deve bater o ponto antes de procurar o Departamento Pessoal para a autorização final.</p>
-          <p>Na portaria, somente saídas com as autorizações registradas poderão ser liberadas.</p>
-        </aside>
+        <div class="portal-side">
+          <aside class="portal-card portal-card-alert" id="guidance-section">
+            <span class="card-eyebrow">Avisos importantes</span>
+            <h2>Fluxo de saída</h2>
+            <p>O colaborador deve bater o ponto antes de procurar o Departamento Pessoal para a autorização final.</p>
+            <p>Na portaria, somente saídas com as autorizações registradas poderão ser liberadas.</p>
+          </aside>
 
-        <article class="portal-card">
-          <span class="card-eyebrow">Atalhos</span>
-          <h2 id="shortcut-title">Operação</h2>
-          <div class="shortcut-list" id="shortcut-list"></div>
-        </article>
+          <article class="portal-card">
+            <span class="card-eyebrow">Atalhos</span>
+            <h2 id="shortcut-title">Operação</h2>
+            <div class="shortcut-list" id="shortcut-list"></div>
+          </article>
+        </div>
 
         <article class="portal-card" id="activity-section">
           <span class="card-eyebrow">Última atividade</span>

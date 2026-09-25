@@ -26,7 +26,7 @@
         <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
         <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
         <div class="release-sheet-signature">Assinatura do colaborador: ______________________________________________</div>
-        <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i></span></footer>
+        <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i><small id="preview-requester-time"></small></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i><small id="preview-engineer-time"></small></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i><small id="preview-dp-time"></small></span><span><b>PORTARIA</b><br><i class="signature-name" id="preview-gate"></i><small id="preview-gate-time"></small></span></footer>
         <div class="release-stamp" id="release-stamp" hidden aria-label="Abono lançado no RM">
           <strong>LANÇADO</strong><span>NO RM</span><small id="stamp-detail"></small>
         </div>
@@ -39,6 +39,12 @@
     if (!value) return "____/____/________";
     const date = new Date(`${value}T00:00:00`);
     return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("pt-BR");
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
   let overlay = null;
@@ -145,8 +151,13 @@
     bonus.textContent = release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE");
     bonus.className = release.bonusStatus === "approved" ? "bonus-approved" : release.bonusStatus === "denied" ? "bonus-denied" : "bonus-pending";
     set("#preview-requester", release.requester || "Não informado");
+    set("#preview-requester-time", formatDateTime(release.createdAt));
     set("#preview-engineer", release.engineer || "Pendente");
+    set("#preview-engineer-time", formatDateTime(release.engineerDecisionAt));
     set("#preview-dp", release.dpSigner || (dpDecided ? "Departamento Pessoal" : "Pendente"));
+    set("#preview-dp-time", formatDateTime(release.dpDecisionAt));
+    set("#preview-gate", release.exitConfirmedBy || "Pendente");
+    set("#preview-gate-time", formatDateTime(release.exitConfirmedAt));
     overlay.querySelector("#launch-release-preview").hidden = !canLaunch(release);
     overlay.querySelector("#undo-launch-release-preview").hidden = !(isDp() && release.abonoLaunchedAt);
     renderStamp(release, animate);
