@@ -52,7 +52,7 @@
     filterCount.textContent = `${visible.length} de ${releases.length} liberações`;
     list.innerHTML = visible.length ? visible.map((release) => {
       const stage = flow.stageOf(release);
-      const canDecide = stage === "dp";
+      const canDecide = stage === "dp" || stage === "engineer";
       const signatures = [
         release.engineer ? `Engenheiro: ${escapeHtml(release.engineer)}` : "",
         release.dpSigner ? `DP: ${escapeHtml(release.dpSigner)}` : "",
@@ -90,8 +90,8 @@
       render();
       return;
     }
-    if (flow.stageOf(release) !== "dp") {
-      window.alert("Esta liberação ainda não chegou ao DP: ela precisa da decisão do engenheiro primeiro.");
+    if (!["dp", "engineer"].includes(flow.stageOf(release))) {
+      window.alert("Esta liberação já foi decidida ou está aguardando o encarregado ajustar e reenviar.");
       render();
       return;
     }

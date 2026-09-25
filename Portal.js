@@ -195,8 +195,15 @@
       : employees;
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
-    const pendingStages = { dp: ["dp"], engenheiro: ["engineer"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
-    elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
+    // Engenheiro: conta pelo abono ainda nao decidido, nao só pelo estágio — o DP pode
+    // autorizar a saída antes dele decidir, então a pendência dele continua existindo
+    // mesmo quando a liberação já passou para "dp"/"gate"/"exited".
+    if (profileKey === "engenheiro") {
+      elements.pending.textContent = releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
+    } else {
+      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
+      elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
+    }
     elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))).length;
     elements.bonus.textContent = releases.filter((release) => release.bonusStatus === "approved" && ["gate", "exited"].includes(stageOf(release))).length;
     renderForemanSummary(profileKey, employees);
