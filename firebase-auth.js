@@ -58,6 +58,39 @@
     return snapshot.exists ? snapshot.data() : null;
   }
 
+  // Cópia da última sessão carregada com sucesso. Só é usada quando o Firebase confirma o login
+  // mas o perfil não pôde ser lido por uma falha momentânea (rede ruim, Safari acordando o aparelho).
+  const sessionCacheKey = "issellPortalAuthSessionCache";
+  const readSessionCache = (uid) => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(sessionCacheKey));
+      return cached && cached.uid === uid && cached.status === "approved" ? cached : null;
+    } catch (error) {
+      return null;
+    }
+  };
+  const writeSessionCache = (session) => {
+    try { localStorage.setItem(sessionCacheKey, JSON.stringify(session)); } catch (error) { /* armazenamento indisponível */ }
+  };
+  const clearSessionCache = () => {
+    try { localStorage.removeItem(sessionCacheKey); } catch (error) { /* armazenamento indisponível */ }
+  };
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Tenta ler o perfil algumas vezes antes de desistir.
+  async function loadProfileWithRetry(user) {
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await loadProfile(user);
+      } catch (error) {
+        lastError = error;
+        await wait(700 * (attempt + 1));
+      }
+    }
+    throw lastError;
+  }
+
   let currentSession = null;
   let readyResolve;
   let readyFired = false;
@@ -74,15 +107,19 @@
     auth().onAuthStateChanged(async (user) => {
       if (!user) {
         currentSession = null;
+        clearSessionCache();
         resolveReady();
         return;
       }
       try {
-        const profile = await loadProfile(user);
+        const profile = await loadProfileWithRetry(user);
         currentSession = profile ? sessionFromProfile(user, profile) : null;
+        if (currentSession) writeSessionCache(currentSession);
+        else clearSessionCache();
       } catch (error) {
         console.error("Não foi possível carregar o perfil do usuário.", error);
-        currentSession = null;
+        // Falha de leitura não é logout: mantém o usuário logado com a última sessão conhecida.
+        currentSession = readSessionCache(user.uid);
       }
       resolveReady();
     });
@@ -107,6 +144,7 @@
         email = indexDoc.data().email;
       }
       try {
+        await window.portalFirebasePersistenceReady;
         const credential = await auth().signInWithEmailAndPassword(email, password);
         const profile = await loadProfile(credential.user);
         if (!profile) {
@@ -118,6 +156,7 @@
           return profile.status === "pending-dp" ? "pending" : "rejected";
         }
         currentSession = sessionFromProfile(credential.user, profile);
+        writeSessionCache(currentSession);
         return true;
       } catch (error) {
         console.warn("Falha no login.", error);
@@ -219,6 +258,7 @@
     },
     logout() {
       currentSession = null;
+      clearSessionCache();
       return auth().signOut();
     }
   });

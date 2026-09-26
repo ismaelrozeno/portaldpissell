@@ -120,18 +120,6 @@
 
   </main>
 
-  <dialog id="refuse-dialog" class="refuse-dialog" aria-labelledby="refuse-title">
-    <h2 id="refuse-title">Recusar liberação</h2>
-    <p id="refuse-target"></p>
-    <p>Escolha o que o encarregado precisa ajustar:</p>
-    <div id="refuse-reasons" class="refuse-reasons"></div>
-    <p id="refuse-error" class="text-danger" role="alert" hidden>Selecione pelo menos um motivo.</p>
-    <div class="refuse-buttons">
-      <button type="button" id="refuse-cancel" class="bonus-yes">Cancelar</button>
-      <button type="button" id="refuse-confirm" class="bonus-no">Confirmar recusa</button>
-    </div>
-  </dialog>
-
   <div data-site-footer></div>
 
   <script src="dom-utils.js"></script>
@@ -152,6 +140,7 @@
 
   <script src="firebase-release-store.js"></script>
 
+  <script src="release-actions.js"></script>
   <script src="release-preview.js"></script>
 
   <script src="Engenheiro.js"></script>

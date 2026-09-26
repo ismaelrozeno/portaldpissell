@@ -24,3 +24,7 @@ window.normalizeSearchText = (value) => String(value ?? "")
   else update();
   setInterval(update, 60000);
 })();
+
+// Confirmação padrão de todo botão de apagar/deletar do site.
+// Uso: if (!window.confirmDelete("Colaborador FULANO")) return;
+window.confirmDelete = (subject) => window.confirm(`${subject ? `${subject}\n\n` : ""}Tem certeza que deseja apagar?\nEssa ação não poderá ser desfeita.`);

@@ -21,7 +21,7 @@
     denied: (stage) => stage === "closed"
   };
   // Abono do engenheiro que o DP ainda precisa lançar no RM.
-  const needsLaunch = (release) => release.bonusStatus === "approved" && !release.abonoLaunchedAt && ["dp", "gate", "exited"].includes(flow.stageOf(release));
+  const needsLaunch = (release) => window.portalReleaseActions.needsLaunch(release);
   const launchLabel = (release) => release.abonoLaunchedAt
     ? `<span class="release-launch-tag is-launched">Abono lançado no RM</span>`
     : needsLaunch(release) ? `<span class="release-launch-tag">Abono a lançar no RM</span>` : "";
@@ -52,7 +52,7 @@
     filterCount.textContent = `${visible.length} de ${releases.length} liberações`;
     list.innerHTML = visible.length ? visible.map((release) => {
       const stage = flow.stageOf(release);
-      const canDecide = stage === "dp" || stage === "engineer";
+      const canDecide = window.portalReleaseActions.dpCanDecide(release);
       const signatures = [
         release.engineer ? `Engenheiro: ${escapeHtml(release.engineer)}` : "",
         release.dpSigner ? `DP: ${escapeHtml(release.dpSigner)}` : "",
@@ -85,24 +85,17 @@
       return;
     }
     if (button.dataset.action === "delete") {
-      if (!window.confirm("Apagar esta liberação?")) return;
+      if (!window.confirmDelete(`Liberação de ${release.name}`)) return;
       await window.portalDemoStore.removeRelease(release.id);
       render();
       return;
     }
-    if (!["dp", "engineer"].includes(flow.stageOf(release))) {
+    if (!window.portalReleaseActions.dpCanDecide(release)) {
       window.alert("Esta liberação já foi decidida ou está aguardando o encarregado ajustar e reenviar.");
       render();
       return;
     }
-    const authorized = button.dataset.action === "authorize";
-    await window.portalDemoStore.updateRelease(release.id, {
-      status: authorized ? "authorized" : "denied",
-      stage: authorized ? "gate" : "closed",
-      dpRole: session?.role || "Departamento Pessoal",
-      dpSigner: session?.name || "Departamento Pessoal",
-      dpDecisionAt: new Date().toISOString()
-    });
+    await window.portalReleaseActions.dpDecide(release, button.dataset.action === "authorize");
     render();
   });
   filter.addEventListener("change", render);
@@ -135,6 +128,7 @@
       securityCode.focus();
       return;
     }
+    if (!window.confirmDelete("TODO o histórico de liberações")) return;
     await window.portalDemoStore.clearHistory();
     securityBox.hidden = true;
     render();

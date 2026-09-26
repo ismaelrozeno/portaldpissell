@@ -242,7 +242,7 @@
     const item = registrations.find((entry) => entry.matricula === button.dataset.allowedId);
     if (!item) return;
     if (button.dataset.allowedAction === "delete") {
-      if (!window.confirm("Apagar esta matrícula permitida?")) return;
+      if (!window.confirmDelete(`Matrícula permitida ${item.matricula}`)) return;
       await window.portalEmployeeStore.removeAllowedRegistration(item.matricula);
       await renderAllowed();
       return;
@@ -269,7 +269,7 @@
     const button = event.target.closest("[data-porter-action]");
     if (!button) return;
     if (button.dataset.porterAction === "delete") {
-      if (window.confirm("Apagar este cadastro de porteiro?")) {
+      if (window.confirmDelete("Cadastro de porteiro")) {
         await window.portalAuthDemo.removePorterRequest(button.dataset.porterId);
         await renderPorterRequests();
         await renderRegisteredUsers();
@@ -313,7 +313,7 @@
     const employee = employees.find((item) => item.matricula === button.dataset.employeeId);
     if (!employee) return;
     if (button.dataset.employeeAction === "delete") {
-      if (window.confirm("Apagar este colaborador?")) {
+      if (window.confirmDelete(`Colaborador ${employee.nome || employee.matricula}`)) {
         await window.portalEmployeeStore.remove(employee.matricula);
         await renderEmployees();
       }
@@ -355,7 +355,7 @@
       clearEmployeesCode.focus();
       return;
     }
-    if (!window.confirm("Apagar TODOS os colaboradores cadastrados? Esta ação não pode ser desfeita.")) return;
+    if (!window.confirmDelete("TODOS os colaboradores cadastrados")) return;
     await window.portalEmployeeStore.removeAll();
     clearEmployeesSecurity.hidden = true;
     await renderEmployees();

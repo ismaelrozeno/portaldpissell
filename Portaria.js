@@ -16,7 +16,7 @@
     closed: "Negada pelo DP"
   };
   async function render() {
-    const releases = await window.portalDemoStore.getReleases();
+    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases(), false);
     const authorizations = releases.map((release) => ({
       id: release.id,
       stage: flow.stageOf(release),
@@ -57,12 +57,7 @@
     const release = releases.find((item) => item.id === button.dataset.exitId);
     if (!release || flow.stageOf(release) !== "gate") return render();
     if (!window.confirm(`Confirmar a saída de ${release.name}?`)) return;
-    await window.portalDemoStore.updateRelease(release.id, {
-      stage: "exited",
-      exitConfirmedBy: session?.name || "Portaria",
-      exitConfirmedRole: session?.role || "Porteiro",
-      exitConfirmedAt: new Date().toISOString()
-    });
+    await window.portalReleaseActions.confirmExit(release);
     render();
   });
   search.addEventListener("input", render);

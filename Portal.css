@@ -104,3 +104,12 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
   .portal-table td[data-label]::before { display: block; margin-bottom: .15rem; color: var(--portal-muted); font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; content: attr(data-label); }
   .portal-table td.text-end { text-align: left !important; }
 }
+.gate-confirm-btn { padding:.5rem .75rem; border:1px solid #1e7d4b; border-radius:.45rem; color:#fff; background:#1e7d4b; font-size:.78rem; font-weight:700; cursor:pointer; }.gate-confirm-btn:hover { background:#17613b; }
+/* Ações da tabela do painel inicial (todos os perfis) */
+.row-actions { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:flex-end; align-items:center; }
+.row-actions button,.row-actions .table-action { padding:.5rem .7rem; border-radius:.45rem; font-size:.78rem; font-weight:700; line-height:1.2; cursor:pointer; text-decoration:none; }
+.row-yes-btn { border:1px solid #4caa76; color:#17613b; background:#effbf4; }
+.row-no-btn { border:1px solid #e0a2a6; color:#8b2930; background:#fff5f5; }
+.row-delete-btn { border:1px solid #d7c2c4; color:#8b2930; background:#fff; }
+.row-launched { display:block; margin-top:.3rem; color:#17613b; font-weight:700; }
+@media (max-width:760px) { .row-actions { justify-content:flex-start; }.row-actions button,.row-actions .table-action { flex:1 1 calc(50% - .4rem); text-align:center; } }
