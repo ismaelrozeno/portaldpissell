@@ -49,7 +49,7 @@
 
   async function getForemen() {
     const users = await window.portalAuthDemo.getAllUsers();
-    const foremanRoles = ["encarregado", "dp", "engenheiro", "estagiario_engenharia"];
+    const foremanRoles = ["encarregado", "dp", "engenheiro", "estagiario_engenharia", "seguranca_trabalho"];
     return users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
   }
 

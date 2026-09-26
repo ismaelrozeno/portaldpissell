@@ -122,3 +122,44 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .trash-notice { margin:0 0 .8rem; padding:.75rem .9rem; border-left:4px solid #1769aa; border-radius:.4rem; color:#33475b; background:#eef5fb; font-size:.85rem; }
 .trash-notice-danger { border-left-color:#c62835; color:#7a1f27; background:#fdeeee; }
 @media (max-width:760px) { .toolbar-btn { flex:1 1 100%; } }
+/* Resumo das assinaturas na linha da liberação */
+.sig-chips { display:flex; flex-wrap:wrap; gap:.25rem; margin-top:.4rem; }
+.sig-chip { display:inline-block; padding:.15rem .5rem; border-radius:2rem; border:1px solid transparent; font-size:.68rem; font-weight:600; line-height:1.35; white-space:normal; }
+.sig-chip b { font-weight:800; }
+.sig-yes { color:#17613b; background:#def5e8; border-color:#b6e2c8; }
+.sig-no { color:#8b2930; background:#fdeaea; border-color:#f1c4c7; }
+.sig-info { color:#0b4a7a; background:#e3f0fb; border-color:#bcd9f0; }
+.sig-wait { color:#617188; background:#f1f4f8; border-color:#dde4ec; font-weight:500; }
+
+/* ===== Visual das liberações no celular: cartão enxuto ===== */
+.portal-table small.row-meta { display:none; }
+@media (max-width:760px) {
+  .portal-table tr { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:.6rem; row-gap:.15rem; padding:.85rem .9rem; }
+  .portal-table td { padding:0; width:auto; }
+  .portal-table td[data-label]::before { display:none; }
+  .portal-table td.col-status { grid-column:1 / -1; grid-row:1; display:flex; flex-wrap:wrap; align-items:center; gap:.2rem .5rem; margin-bottom:.45rem; text-align:left; }
+  .portal-table td.col-who { grid-column:1 / -1; grid-row:2; }
+  .portal-table td.col-frente, .portal-table td.col-horario { display:none; }
+  .portal-table td.col-actions { width:auto; grid-column:1 / -1; grid-row:3; margin-top:.6rem; padding-top:.65rem; border-top:1px solid var(--portal-line); }
+  .col-who strong { font-size:1rem; line-height:1.25; }
+  .col-who .row-who { display:block; margin-top:.1rem; font-size:.74rem; }
+  .portal-table .col-who small.row-meta { display:block; margin-top:.05rem; color:var(--portal-muted); font-size:.74rem; font-weight:600; }
+  .col-status .status-badge { display:inline-block; padding:.3rem .65rem; font-size:.72rem; line-height:1.25; text-align:center; }
+  .col-status .row-launched { display:inline-block; margin:0; font-size:.7rem; }
+  /* assinaturas: uma linha por etapa, com bolinha de cor, em vez de vários "comprimidos" */
+  .sig-chips { display:grid; grid-template-columns:1fr; gap:.15rem; margin-top:.55rem; padding:.5rem .6rem; border-radius:.55rem; background:#f6f8fb; }
+  .sig-chip { position:relative; display:block; padding:0 0 0 .95rem; border:0; border-radius:0; background:transparent !important; font-size:.72rem; font-weight:500; line-height:1.4; }
+  .sig-chip::before { content:""; position:absolute; left:0; top:.4em; width:.55rem; height:.55rem; border-radius:50%; background:#c2ccd8; }
+  .sig-yes::before { background:#1e9e5a; }.sig-no::before { background:#d33a46; }.sig-info::before { background:#1769aa; }
+  .sig-yes { color:#17613b; }.sig-no { color:#8b2930; }.sig-info { color:#0b4a7a; }.sig-wait { color:#7b8798; }
+  /* ações: decisão em destaque (grade de 2), secundárias em uma faixa menor embaixo */
+  .portal-table td.row-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem; }
+  .row-actions button, .row-actions .table-action { min-height:2.5rem; padding:.45rem .5rem; font-size:.78rem; }
+  .row-actions .release-view-btn, .row-actions .row-delete-btn { min-height:2.2rem; font-size:.72rem; font-weight:600; }
+  .row-actions .row-delete-btn { border-color:#e2e6ec; color:#7a5a5d; }
+  .row-actions > :only-child { grid-column:1 / -1; }
+  .row-actions button[data-row-action="refuse"] { grid-column:1 / -1; order:3; }
+  .row-actions .release-view-btn { order:5; }.row-actions .row-delete-btn { order:6; }
+  .row-actions .table-action { order:4; }
+  .row-actions .gate-confirm-btn { grid-column:1 / -1; min-height:2.8rem; font-size:.85rem; }
+}

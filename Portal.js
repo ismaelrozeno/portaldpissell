@@ -29,6 +29,20 @@
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
       shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
     },
+    seguranca_trabalho: {
+      title: "Painel da segurança do trabalho",
+      description: "Acompanhe sua equipe e registre as liberações do dia.",
+      eyebrow: "Minha equipe",
+      tableTitle: "Minhas liberações",
+      action: "Nova liberação",
+      actionHref: "Liberacao.html",
+      team: "0",
+      pending: "0",
+      approved: "0",
+      bonus: "0",
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
+    },
     dp: {
       title: "Painel do Departamento Pessoal",
       description: "Confira as liberações, autorize saídas e organize os registros.",
@@ -112,7 +126,7 @@
     "logistica-almoxarifado": "Encarregado de Logística / Almoxarifado"
   };
 
-  const foremanRoleValues = ["encarregado", "estagiario_engenharia"];
+  const foremanRoleValues = ["encarregado", "estagiario_engenharia", "seguranca_trabalho"];
 
   function renderForemanSummary(profileKey, employees) {
     const session = window.portalAuthDemo?.getSession();
@@ -128,7 +142,9 @@
       ? specialtyLabels[session.especialidade] || "área não informada"
       : session?.roleValue === "estagiario_engenharia"
         ? "Estagiário de Engenharia"
-        : "selecione um cadastro de encarregado para visualizar";
+        : session?.roleValue === "seguranca_trabalho"
+          ? "Segurança do trabalho"
+          : "selecione um cadastro de encarregado para visualizar";
     const team = isActingForeman
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
       : [];
@@ -139,6 +155,33 @@
     elements.foremanTeamList.innerHTML = team.length
       ? team.map((employee) => `<li><a href="Liberacao.html?employee=${encodeURIComponent(employee.matricula)}" title="Criar liberação para ${escapeHtml(employee.nome)}"><strong>${escapeHtml(employee.nome)}</strong><small>${escapeHtml(employee.funcao)} · Matrícula ${escapeHtml(employee.matricula)}</small></a></li>`).join("")
       : "<li>Nenhum colaborador vinculado a este encarregado.</li>";
+  }
+
+  // Resumo visual das assinaturas já feitas (engenheiro, DP, portaria) para dar para ler a situação de relance.
+  function signatureChips(release, stage) {
+    const short = (name) => escapeHtml(String(name || "").trim());
+    const chip = (tone, html) => `<span class="sig-chip sig-${tone}">${html}</span>`;
+    const chips = [];
+    if (stage === "foreman") {
+      chips.push(chip("no", `Recusada por <b>${short(release.refusedBy)}</b>${release.refusalReason ? ` · ${escapeHtml(release.refusalReason)}` : ""}`));
+    } else if (release.engineer && release.bonusStatus) {
+      chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Eng. <b>${short(release.engineer)}</b> · ${release.bonusStatus === "approved" ? "assinou como abonado" : "assinou como não abonado"}`));
+    } else {
+      chips.push(chip("wait", "Engenheiro: aguardando"));
+    }
+    if (stage !== "foreman") {
+      if (release.dpSigner) {
+        chips.push(chip(stage === "closed" ? "no" : "yes", `DP <b>${short(release.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`));
+      } else {
+        chips.push(chip("wait", "DP: aguardando"));
+      }
+      if (release.exitConfirmedBy) {
+        chips.push(chip("info", `Portaria <b>${short(release.exitConfirmedBy)}</b> · assinou`));
+      } else if (stage === "gate") {
+        chips.push(chip("wait", "Portaria: aguardando saída"));
+      }
+    }
+    return `<div class="sig-chips">${chips.join("")}</div>`;
   }
 
   // Botões de ação de cada liberação, conforme o perfil aberto (tudo na tela inicial).
@@ -213,11 +256,11 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador"><strong>${escapeHtml(release.name)}</strong><small>Solicitante: ${escapeHtml(release.requester)}</small></td>
-        <td data-label="Frente">${escapeHtml(release.team)}</td>
-        <td data-label="Horário">${escapeHtml(release.time)}</td>
-        <td data-label="Status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
-        <td class="text-end row-actions" data-label="Ação">
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
+        <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
+        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
+        <td class="text-end row-actions col-actions" data-label="Ação">
           <button class="row-yes-btn" type="button" data-row-action="restore" data-release-id="${escapeHtml(release.id)}">Restaurar</button>
           <button class="release-view-btn" type="button" data-row-action="view" data-release-id="${escapeHtml(release.id)}">Visualizar liberação</button>
           <button class="row-delete-btn" type="button" data-row-action="purge" data-release-id="${escapeHtml(release.id)}">${actions.canHardDelete(activeProfileKey === "dp") ? "Apagar do banco" : "Apagar de vez"}</button>
@@ -245,11 +288,11 @@
     renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador"><strong>${escapeHtml(release.name)}</strong><small>Solicitante: ${escapeHtml(release.requester)}</small></td>
-        <td data-label="Frente">${escapeHtml(release.team)}</td>
-        <td data-label="Horário">${escapeHtml(release.time)}</td>
-        <td data-label="Status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
-        <td class="text-end row-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
+        <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
+        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
+        <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
     `).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
   }
@@ -363,7 +406,7 @@
     if (profileKey === "engenheiro") {
       elements.pending.textContent = releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
     } else {
-      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
+      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"], seguranca_trabalho: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
       elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
     }
     elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))).length;
