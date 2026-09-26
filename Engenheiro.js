@@ -72,7 +72,7 @@
 
   async function render() {
     // Na tela do engenheiro ninguém age como DP: apagar aqui só tira do histórico de quem apagou.
-    const releases = actions.visibleFor(await window.portalDemoStore.getReleases(), false);
+    const releases = actions.visibleFor(await window.portalDemoStore.getReleases());
     const order = { engineer: 0, dp: 1, foreman: 2, gate: 3, exited: 4, closed: 5 };
     const stageOf = flow.stageOf;
     const sorted = [...releases].sort((a, b) => order[stageOf(a)] - order[stageOf(b)]);
@@ -105,8 +105,8 @@
     }
     if (!canSign()) return;
     if (button.dataset.choice === "delete") {
-      if (!window.confirmDelete(actions.deleteQuestion(release, false))) return;
-      await actions.deleteRelease(release, false);
+      if (!window.confirm(actions.trashQuestion(release))) return;
+      await actions.trashRelease(release);
       render();
       return;
     }

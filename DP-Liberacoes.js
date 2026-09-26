@@ -45,7 +45,7 @@
     denied: document.querySelector("#summary-denied")
   };
   async function render() {
-    const releases = await window.portalDemoStore.getReleases();
+    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases());
     const selected = filter.value;
     const term = fold(search.value.trim());
     const visible = releases.filter((release) => (selected === "launch" ? needsLaunch(release) : (filterMatches[selected] || filterMatches.all)(flow.stageOf(release))) && matchesSearchAndDate(release, term));
@@ -85,8 +85,8 @@
       return;
     }
     if (button.dataset.action === "delete") {
-      if (!window.confirmDelete(`Liberação de ${release.name}`)) return;
-      await window.portalDemoStore.removeRelease(release.id);
+      if (!window.confirm(window.portalReleaseActions.trashQuestion(release))) return;
+      await window.portalReleaseActions.trashRelease(release);
       render();
       return;
     }

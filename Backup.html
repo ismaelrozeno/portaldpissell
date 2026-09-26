@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Backup dos dados e exportação das liberações para Excel da Obra 369.">
+  <title>Backup e Excel | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="Backup.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="backup-page">
+  <div data-site-header></div>
+  <main class="backup-content">
+    <div class="container-xl">
+      <a class="backup-back" href="Portal.html">← Voltar ao painel</a>
+      <section class="backup-heading">
+        <p class="backup-kicker">Departamento Pessoal · Obra 369</p>
+        <h1>Backup e Excel</h1>
+        <p>Guarde uma cópia dos dados fora do sistema e exporte as folhas de liberação para uma planilha.</p>
+      </section>
+
+      <p class="backup-denied" id="backup-denied" role="alert" hidden>Esta tela é só do Departamento Pessoal.</p>
+
+      <div class="backup-grid" id="backup-grid">
+        <section class="backup-card" aria-labelledby="export-title">
+          <span class="backup-eyebrow">Proteção extra</span>
+          <h2 id="export-title">Exportar backup dos dados</h2>
+          <p>Gera um arquivo <strong>.json</strong> com todas as liberações e os colaboradores cadastrados. Guarde em um lugar seguro (pen drive, e-mail, nuvem). Se alguma coisa for apagada por engano, este arquivo recupera.</p>
+          <ul class="backup-list" id="export-scope"></ul>
+          <button class="backup-button" id="export-backup" type="button">Baixar backup (.json)</button>
+          <p class="backup-result" id="export-result" role="status" hidden></p>
+        </section>
+
+        <section class="backup-card" aria-labelledby="import-title">
+          <span class="backup-eyebrow">Recuperação</span>
+          <h2 id="import-title">Importar backup dos dados</h2>
+          <p>Escolha um arquivo de backup. Nada é apagado: o sistema só <strong>recoloca</strong> o que estiver no arquivo.</p>
+          <label class="backup-file" for="import-file">Arquivo de backup (.json)</label>
+          <input id="import-file" type="file" accept=".json,application/json">
+          <div id="import-summary" hidden>
+            <p class="backup-summary" id="import-summary-text"></p>
+            <fieldset class="backup-modes">
+              <legend>Como restaurar?</legend>
+              <label><input type="radio" name="import-mode" value="missing" checked> <strong>Só o que está faltando</strong> — não mexe no que já existe (mais seguro)</label>
+              <label><input type="radio" name="import-mode" value="overwrite"> <strong>Tudo do arquivo</strong> — sobrescreve o que existe com a versão do backup</label>
+            </fieldset>
+            <div id="import-scope"></div>
+            <button class="backup-button backup-button-warn" id="import-run" type="button">Restaurar backup</button>
+          </div>
+          <p class="backup-result" id="import-result" role="status" hidden></p>
+        </section>
+
+        <section class="backup-card backup-card-wide" aria-labelledby="images-title">
+          <span class="backup-eyebrow">Arquivo</span>
+          <h2 id="images-title">Exportar as folhas de liberação (PDF ou imagem)</h2>
+          <p>Gera as folhas <strong>iguais à tela "Visualizar liberação"</strong>, com as assinaturas e o carimbo do RM, para arquivar o mês. Pensado para muitas liberações: tudo é separado por dia.</p>
+          <div class="backup-filters">
+            <label for="images-from">De</label>
+            <input id="images-from" type="date">
+            <label for="images-to">Até</label>
+            <input id="images-to" type="date">
+            <label for="images-kind">Quais</label>
+            <select id="images-kind">
+              <option value="all">Todas as liberações</option>
+              <option value="approved">Só as abonadas</option>
+              <option value="launched">Só as abonadas já lançadas no RM</option>
+              <option value="pending-launch">Só as abonadas ainda por lançar no RM</option>
+            </select>
+          </div>
+          <fieldset class="backup-modes">
+            <legend>Formato</legend>
+            <label><input type="radio" name="images-format" value="pdf" checked> <strong>PDF</strong> — duas folhas por página A4, texto de verdade (bem pequeno, nítido e pesquisável; o melhor para arquivar e imprimir)</label>
+            <label><input type="radio" name="images-format" value="png"> <strong>Imagens PNG</strong> — uma imagem por folha (arquivos bem maiores)</label>
+          </fieldset>
+          <fieldset class="backup-modes">
+            <legend>Como salvar?</legend>
+            <label id="images-mode-folder-label"><input type="radio" name="images-mode" value="folder"> <strong>Direto numa pasta</strong> — você escolhe uma pasta e o sistema cria uma subpasta por dia com as imagens (melhor para muitas; funciona no Chrome e no Edge)</label>
+            <label><input type="radio" name="images-mode" value="zip" checked> <strong>Baixar arquivos</strong> — um por dia (PDF, ou ZIP no caso das imagens); dias muito cheios são divididos em partes</label>
+          </fieldset>
+          <div class="backup-filters" id="images-pdf-options">
+            <label for="images-per-pdf">Folhas por PDF</label>
+            <select id="images-per-pdf">
+              <option value="200">200 (100 páginas)</option>
+              <option value="500" selected>500 (250 páginas)</option>
+              <option value="1000">1000 (500 páginas)</option>
+            </select>
+          </div>
+          <div class="backup-filters" id="images-zip-options">
+            <label for="images-per-zip">Imagens por ZIP</label>
+            <select id="images-per-zip">
+              <option value="200">200</option>
+              <option value="500" selected>500</option>
+              <option value="1000">1000</option>
+            </select>
+          </div>
+          <div class="backup-filters">
+            <button class="backup-button" id="export-images" type="button">Gerar imagens</button>
+            <button class="backup-button backup-button-warn" id="cancel-images" type="button" hidden>Cancelar</button>
+          </div>
+          <progress id="images-progress" value="0" max="1" hidden></progress>
+          <p class="backup-result" id="images-result" role="status" hidden></p>
+        </section>
+
+        <section class="backup-card backup-card-wide" aria-labelledby="excel-title">
+          <span class="backup-eyebrow">Planilha</span>
+          <h2 id="excel-title">Exportar a tabela de liberações para o Excel</h2>
+          <p>Uma linha por folha de liberação, com todos os campos da folha (colaborador, função, horário, motivo, abono, assinaturas com data e hora, saída e lançamento no RM). Inclui todas as liberações, mesmo as que estão na lixeira.</p>
+          <div class="backup-filters">
+            <label for="excel-from">De</label>
+            <input id="excel-from" type="date">
+            <label for="excel-to">Até</label>
+            <input id="excel-to" type="date">
+            <button class="backup-button" id="export-excel" type="button">Baixar Excel (.xlsx)</button>
+          </div>
+          <small>Sem datas, exporta tudo. As datas usam o dia da liberação.</small>
+          <p class="backup-result" id="excel-result" role="status" hidden></p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div data-site-footer></div>
+
+  <script src="dom-utils.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="firebase-schema.js"></script>
+  <script src="firebase-auth.js"></script>
+  <script src="shared-components.js?v=20260920-auth7"></script>
+  <script src="firebase-employee-store.js"></script>
+  <script src="firebase-release-store.js"></script>
+  <script src="backup-store.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="release-preview.js"></script>
+  <script src="release-image.js"></script>
+  <script src="release-pdf.js"></script>
+  <script src="Backup.js"></script>
+  <script src="Backup-images.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

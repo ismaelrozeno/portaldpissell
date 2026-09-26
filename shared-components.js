@@ -1,7 +1,7 @@
 (async function loadSharedComponents() {
   const protectedPages = new Set([
     "Portal.html", "Liberacao.html", "DP-Liberacoes.html", "Portaria.html",
-    "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html"
+    "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html", "Backup.html"
   ]);
   const currentPage = window.location.pathname.split("/").pop();
   await window.portalAuthDemo?.ready();

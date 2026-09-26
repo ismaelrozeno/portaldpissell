@@ -68,12 +68,64 @@
       && ["dp", "gate", "exited"].includes(stage);
   }
 
+  // Carrega, só quando precisa, o gerador de PDF (jsPDF + release-pdf.js) que as outras telas não usam.
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const tag = document.createElement("script");
+      tag.src = src;
+      tag.onload = resolve;
+      tag.onerror = () => reject(new Error(`Não foi possível carregar ${src}`));
+      document.head.append(tag);
+    });
+  }
+
+  async function ensurePdfTools() {
+    if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
+    if (!window.portalReleasePdf) await loadScript("release-pdf.js");
+  }
+
+  // "Imprimir / salvar PDF": gera o mesmo PDF da exportação em lote (folha na metade de cima de uma A4) e abre
+  // para imprimir ou salvar. Se não der (sem internet, pop-up bloqueado), cai na impressão normal da tela.
+  async function printSheet() {
+    if (!current) return;
+    const button = overlay.querySelector("#print-release-preview");
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Gerando PDF…";
+    // Abre a aba já no clique (antes do carregamento), para o navegador não bloquear o pop-up.
+    const tab = window.open("", "_blank");
+    try {
+      await ensurePdfTools();
+      const day = String(current.date || current.createdAt?.slice(0, 10) || "").split("-").reverse().join("/");
+      const blob = window.portalReleasePdf.build([current], () => current._role || "", { label: `Obra 369 · Autorização de saída${day ? ` · ${day}` : ""}` });
+      const url = URL.createObjectURL(blob);
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `liberacao-obra-369_${String(current.name || "folha").normalize("NFD").replace(/[^a-zA-Z0-9]+/g, "-").toUpperCase().slice(0, 30)}.pdf`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch (error) {
+      console.warn("PDF indisponível, usando a impressão da tela.", error);
+      if (tab) tab.close();
+      window.print();
+    } finally {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
+
   function ensureOverlay() {
     if (overlay) return overlay;
     document.body.insertAdjacentHTML("beforeend", template);
     overlay = document.querySelector("#release-preview");
     overlay.querySelector("#close-release-preview").addEventListener("click", close);
-    overlay.querySelector("#print-release-preview").addEventListener("click", () => window.print());
+    overlay.querySelector("#print-release-preview").addEventListener("click", printSheet);
     overlay.querySelector("#launch-release-preview").addEventListener("click", launch);
     overlay.querySelector("#undo-launch-release-preview").addEventListener("click", undoLaunch);
     overlay.addEventListener("click", (event) => {
@@ -130,34 +182,62 @@
     }
   }
 
-  function render(release, role, animate) {
-    const set = (id, text) => { overlay.querySelector(id).textContent = text; };
+  // Valores exibidos na folha. Usado pela tela e pela exportação em imagem, para saírem sempre iguais.
+  function sheetFields(release, role) {
     const stage = window.portalReleaseFlow.stageOf(release);
     const dpDecided = stage === "gate" || stage === "exited" || stage === "closed";
-    set("#preview-date", formatDate(release.date || release.createdAt?.slice(0, 10)));
-    set("#preview-name", release.name || "Não informado");
-    set("#preview-role", role || "Não informada");
-    set("#preview-time", release.time || "____:____");
-    set("#preview-movement", window.portalReleaseFlow.movementLabel(release));
     // Tipo do motivo como no formulário de papel (☒ marcado / ☐ vazio) e o detalhe na observação.
     const legacyText = String(release.reason || "");
     const type = release.reasonType || (/^tarefa/i.test(legacyText) ? "tarefa" : /^particular/i.test(legacyText) ? "particular" : "");
     const box = (value, label) => `${type === value ? "☒" : "☐"} ${label}`;
-    set("#preview-reason", type ? `${box("tarefa", "Tarefa")}   ${box("particular", "Particular")}` : "Não informado");
     const detail = release.reasonDetail ?? legacyText.replace(/^(tarefa|particular):?\s*/i, "");
-    set("#preview-hours", release.hours || "Não informado");
-    set("#preview-observation", detail || "Sem observação.");
+    const bonusTone = release.bonusStatus === "approved" ? "approved" : release.bonusStatus === "denied" ? "denied" : "pending";
+    return {
+      date: formatDate(release.date || release.createdAt?.slice(0, 10)),
+      name: release.name || "Não informado",
+      role: role || "Não informada",
+      time: release.time || "____:____",
+      movement: window.portalReleaseFlow.movementLabel(release),
+      reason: type ? `${box("tarefa", "Tarefa")}   ${box("particular", "Particular")}` : "Não informado",
+      hours: release.hours || "Não informado",
+      observation: detail || "Sem observação.",
+      bonus: release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE"),
+      bonusTone,
+      requester: release.requester || "Não informado",
+      requesterTime: formatDateTime(release.createdAt),
+      engineer: release.engineer || "Pendente",
+      engineerTime: formatDateTime(release.engineerDecisionAt),
+      dp: release.dpSigner || (dpDecided ? "Departamento Pessoal" : "Pendente"),
+      dpTime: formatDateTime(release.dpDecisionAt),
+      gate: release.exitConfirmedBy || "Pendente",
+      gateTime: formatDateTime(release.exitConfirmedAt),
+      launched: !!release.abonoLaunchedAt,
+      stampDetail: release.abonoLaunchedAt ? `${new Date(release.abonoLaunchedAt).toLocaleDateString("pt-BR")} · ${release.abonoLaunchedBy || "DP"}` : ""
+    };
+  }
+
+  function render(release, role, animate) {
+    const set = (id, text) => { overlay.querySelector(id).textContent = text; };
+    const f = sheetFields(release, role);
+    set("#preview-date", f.date);
+    set("#preview-name", f.name);
+    set("#preview-role", f.role);
+    set("#preview-time", f.time);
+    set("#preview-movement", f.movement);
+    set("#preview-reason", f.reason);
+    set("#preview-hours", f.hours);
+    set("#preview-observation", f.observation);
     const bonus = overlay.querySelector("#preview-bonus");
-    bonus.textContent = release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE");
-    bonus.className = release.bonusStatus === "approved" ? "bonus-approved" : release.bonusStatus === "denied" ? "bonus-denied" : "bonus-pending";
-    set("#preview-requester", release.requester || "Não informado");
-    set("#preview-requester-time", formatDateTime(release.createdAt));
-    set("#preview-engineer", release.engineer || "Pendente");
-    set("#preview-engineer-time", formatDateTime(release.engineerDecisionAt));
-    set("#preview-dp", release.dpSigner || (dpDecided ? "Departamento Pessoal" : "Pendente"));
-    set("#preview-dp-time", formatDateTime(release.dpDecisionAt));
-    set("#preview-gate", release.exitConfirmedBy || "Pendente");
-    set("#preview-gate-time", formatDateTime(release.exitConfirmedAt));
+    bonus.textContent = f.bonus;
+    bonus.className = `bonus-${f.bonusTone}`;
+    set("#preview-requester", f.requester);
+    set("#preview-requester-time", f.requesterTime);
+    set("#preview-engineer", f.engineer);
+    set("#preview-engineer-time", f.engineerTime);
+    set("#preview-dp", f.dp);
+    set("#preview-dp-time", f.dpTime);
+    set("#preview-gate", f.gate);
+    set("#preview-gate-time", f.gateTime);
     overlay.querySelector("#launch-release-preview").hidden = !canLaunch(release);
     overlay.querySelector("#undo-launch-release-preview").hidden = !(isDp() && release.abonoLaunchedAt);
     renderStamp(release, animate);
@@ -235,5 +315,5 @@
     }) || null;
   }
 
-  window.portalReleasePreview = Object.freeze({ show });
+  window.portalReleasePreview = Object.freeze({ show, sheetFields });
 })();

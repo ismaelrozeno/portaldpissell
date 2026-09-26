@@ -40,8 +40,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Nova liberação", "Importar relatório do RM", "Fechamento mensal"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "Importar-Colaboradores.html", "Fechamento.html"]
+      shortcuts: ["Conferir liberações", "Nova liberação", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html"]
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
@@ -169,15 +169,67 @@
     return `${view}${edit}${del}`;
   }
 
+  // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
+  let trashMode = false;
+  let shownReleases = [];
+
+  function renderToolbar(visibleCount, trashCount) {
+    const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
+    const notice = document.querySelector("#trash-notice");
+    const toolbar = document.querySelector("#records-toolbar");
+    if (trashMode) {
+      toolbar.innerHTML = `
+        <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às liberações</button>
+        <button class="toolbar-btn" type="button" data-toolbar="restore-all" ${trashCount ? "" : "disabled"}>Restaurar tudo</button>
+        <button class="toolbar-btn toolbar-danger" type="button" data-toolbar="empty" ${trashCount ? "" : "disabled"}>${canHard ? "Esvaziar lixeira (apaga do banco)" : "Esvaziar lixeira"}</button>`;
+      notice.hidden = false;
+      notice.className = `trash-notice ${canHard ? "trash-notice-danger" : ""}`;
+      notice.innerHTML = canHard
+        ? "<strong>⚠ Atenção:</strong> para o DP e o Administrador, apagar da lixeira <strong>APAGA DO BANCO DE DADOS</strong>, para <strong>todos os perfis</strong>, e <strong>não tem como recuperar</strong>. Se só quer limpar a tela, deixe na lixeira."
+        : "Estas liberações saíram da sua tela inicial. Restaure para trazer de volta, ou apague de vez para sumir só do <strong>seu</strong> histórico (o DP continua vendo).";
+    } else {
+      toolbar.innerHTML = `
+        <button class="toolbar-btn" type="button" data-toolbar="open-trash">🗑 Lixeira${trashCount ? ` (${trashCount})` : ""}</button>
+        <button class="toolbar-btn toolbar-danger" type="button" data-toolbar="trash-all" ${visibleCount ? "" : "disabled"}>Apagar tudo (mover para a lixeira)</button>`;
+      notice.hidden = true;
+    }
+  }
+
   async function renderRecords(profile) {
     const session = window.portalAuthDemo?.getSession();
-    const asDp = window.portalReleaseActions.actsAsDp(profile === "dp");
-    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore?.getReleases() || [], asDp);
+    const actions = window.portalReleaseActions;
+    const allReleases = await window.portalDemoStore?.getReleases() || [];
+    const trashed = actions.trashFor(allReleases);
+    const releases = actions.visibleFor(allReleases);
+    const flow = window.portalReleaseFlow;
+    const query = window.normalizeSearchText(elements.recordsSearch?.value || "");
+    const matches = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team}`).includes(query);
+
+    if (trashMode) {
+      const rows = trashed.filter(matches);
+      shownReleases = rows;
+      renderToolbar(releases.length, trashed.length);
+      elements.table.innerHTML = rows.length ? rows.map((release) => {
+        const stage = flow.stageOf(release);
+        return `
+      <tr>
+        <td data-label="Colaborador"><strong>${escapeHtml(release.name)}</strong><small>Solicitante: ${escapeHtml(release.requester)}</small></td>
+        <td data-label="Frente">${escapeHtml(release.team)}</td>
+        <td data-label="Horário">${escapeHtml(release.time)}</td>
+        <td data-label="Status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
+        <td class="text-end row-actions" data-label="Ação">
+          <button class="row-yes-btn" type="button" data-row-action="restore" data-release-id="${escapeHtml(release.id)}">Restaurar</button>
+          <button class="release-view-btn" type="button" data-row-action="view" data-release-id="${escapeHtml(release.id)}">Visualizar liberação</button>
+          <button class="row-delete-btn" type="button" data-row-action="purge" data-release-id="${escapeHtml(release.id)}">${actions.canHardDelete(activeProfileKey === "dp") ? "Apagar do banco" : "Apagar de vez"}</button>
+        </td>
+      </tr>`;
+      }).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "A lixeira está vazia."}</td></tr>`;
+      return;
+    }
+
     const profileReleases = foremanRoleValues.includes(profile) && foremanRoleValues.includes(session?.roleValue)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
-    const flow = window.portalReleaseFlow;
-    const actions = window.portalReleaseActions;
     // Ordem: o que precisa da ação do perfil aparece primeiro.
     const priority = {
       portaria: (release, stage) => (stage === "gate" ? 0 : 1),
@@ -188,10 +240,9 @@
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
     if (priority) rows = rows.map((row, index) => ({ ...row, index })).sort((a, b) => priority(a.release, a.stage) - priority(b.release, b.stage) || a.index - b.index);
-    const query = window.normalizeSearchText(elements.recordsSearch?.value || "");
-    const visible = query
-      ? rows.filter((row) => window.normalizeSearchText(`${row.release.name} ${row.release.team}`).includes(query))
-      : rows;
+    const visible = query ? rows.filter((row) => matches(row.release)) : rows;
+    shownReleases = visible.map((row) => row.release);
+    renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
       <tr>
         <td data-label="Colaborador"><strong>${escapeHtml(release.name)}</strong><small>Solicitante: ${escapeHtml(release.requester)}</small></td>
@@ -202,6 +253,34 @@
       </tr>
     `).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
   }
+
+  // Botões da barra (Lixeira, Apagar tudo, Restaurar tudo, Esvaziar lixeira).
+  document.querySelector("#records-toolbar").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-toolbar]");
+    if (!button || button.disabled) return;
+    const actions = window.portalReleaseActions;
+    const refresh = () => renderProfile(activeProfileKey);
+    const kind = button.dataset.toolbar;
+    if (kind === "open-trash" || kind === "back") {
+      trashMode = kind === "open-trash";
+      return renderRecords(activeProfileKey);
+    }
+    if (!shownReleases.length) return;
+    if (kind === "trash-all") {
+      if (!window.confirm(actions.trashAllQuestion(shownReleases.length))) return;
+      await actions.trashMany(shownReleases);
+    } else if (kind === "restore-all") {
+      if (!window.confirm(actions.restoreAllQuestion(shownReleases.length))) return;
+      await actions.restoreMany(shownReleases);
+    } else if (kind === "empty") {
+      const dpContext = activeProfileKey === "dp";
+      if (!window.confirm(actions.emptyQuestion(shownReleases.length, null, dpContext))) return;
+      // Apagar do banco (DP/Admin) pede uma segunda confirmação: não tem volta.
+      if (actions.canHardDelete(dpContext) && !window.confirm("ÚLTIMO AVISO\n\n" + shownReleases.length + " liberação(ões) serão APAGADAS DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.\n\nClique em OK só se tiver certeza.")) return;
+      await actions.emptyTrashMany(shownReleases, dpContext);
+    }
+    return refresh();
+  });
 
   // Todas as ações da tabela passam por aqui.
   elements.table.addEventListener("click", async (event) => {
@@ -220,10 +299,18 @@
       return;
     }
     if (action === "delete") {
-      const asDp = actions.actsAsDp(activeProfileKey === "dp");
-      if (!window.confirmDelete(actions.deleteQuestion(release, asDp))) return;
-      if (activeProfileKey === "engenheiro" && !actions.ensureEngineerSignature()) return;
-      await actions.deleteRelease(release, asDp);
+      if (!window.confirm(actions.trashQuestion(release))) return;
+      await actions.trashRelease(release);
+      return refresh();
+    }
+    if (action === "restore") {
+      await actions.restoreRelease(release);
+      return refresh();
+    }
+    if (action === "purge") {
+      const dpContext = activeProfileKey === "dp";
+      if (!window.confirm(actions.emptyQuestion(1, release, dpContext))) return;
+      await actions.emptyTrashItem(release, dpContext);
       return refresh();
     }
     if (action === "confirm-exit") {
@@ -317,6 +404,7 @@
     elements.adminSwitcher.hidden = false;
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
+      trashMode = false;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
       renderProfile(event.target.value);
     });

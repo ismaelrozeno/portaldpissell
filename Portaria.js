@@ -16,7 +16,7 @@
     closed: "Negada pelo DP"
   };
   async function render() {
-    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases(), false);
+    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases());
     const authorizations = releases.map((release) => ({
       id: release.id,
       stage: flow.stageOf(release),

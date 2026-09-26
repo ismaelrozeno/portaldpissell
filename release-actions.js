@@ -197,45 +197,106 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
     });
   }
 
-  // ---------- Apagar / histórico de cada perfil ----------
-  // Só o DP apaga de verdade (some para todos). Qualquer outro perfil "apaga" só do próprio histórico:
-  // o id dele entra em "hiddenFor" na liberação e as telas dele passam a escondê-la. Ninguém apaga nada do DP.
+  // ---------- Lixeira de cada usuário ----------
+  // "Apagar" manda a liberação para a lixeira DE QUEM APAGOU (o id dele entra em "hiddenFor"): some da tela
+  // inicial dele e nada muda para os outros. Da lixeira dá para restaurar ou apagar de vez:
+  //  - perfis comuns: "apagar de vez" só some do histórico deles (id em "purgedFor"); o DP continua vendo;
+  //  - DP e Administrador: "apagar da lixeira" APAGA DO BANCO DE DADOS, para todos os perfis, sem volta.
   const myId = () => session()?.uid || session()?.email || session()?.name || "";
+  const has = (list) => (list || []).includes(myId());
+  const without = (list) => (list || []).filter((id) => id !== myId());
+  const withMe = (list) => [...new Set([...(list || []), myId()])];
 
-  // O administrador só age como DP na tela/painel do DP (dpContext).
+  // Só no perfil do DP se apaga de verdade no banco: o próprio DP, ou o Administrador com o painel do DP aberto.
+  // Nos demais perfis (mesmo o administrador operando-os) "apagar da lixeira" só some do histórico de quem apagou.
+  const canHardDelete = (dpContext) => {
+    const role = session()?.roleValue;
+    return role === "dp" || (role === "administrador-analista" && !!dpContext);
+  };
+
+  // O administrador só age como DP na tela/painel do DP (dpContext) — usado no lançamento de abono.
   function actsAsDp(dpContext) {
     const role = session()?.roleValue;
     return role === "dp" || (role === "administrador-analista" && !!dpContext);
   }
 
-  const isHiddenForMe = (release) => (release.hiddenFor || []).includes(myId());
+  const isTrashed = (release) => has(release.hiddenFor) && !has(release.purgedFor);
+  // Liberações que o usuário vê (fora da lixeira e não apagadas de vez). O 2º argumento existe só por compatibilidade.
+  const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor));
+  const trashFor = (releases) => releases.filter(isTrashed);
 
-  // Lista de liberações que o usuário vê: o DP vê tudo; os outros não veem o que apagaram do próprio histórico.
-  const visibleFor = (releases, asDp) => (asDp ? releases : releases.filter((release) => !isHiddenForMe(release)));
-
-  async function deleteRelease(release, asDp) {
-    if (asDp) {
-      await store().removeRelease(release.id);
-      return "all";
-    }
-    const id = myId();
-    if (!id) return null;
-    await store().updateRelease(release.id, { hiddenFor: [...new Set([...(release.hiddenFor || []), id])] });
-    return "me";
+  async function trashRelease(release) {
+    if (!myId()) return;
+    await store().updateRelease(release.id, { hiddenFor: withMe(release.hiddenFor) });
   }
 
-  // Texto da pergunta antes de apagar, conforme quem está apagando.
-  const deleteQuestion = (release, asDp) => (asDp
-    ? `Liberação de ${release.name}
-(some para TODOS os perfis)`
-    : `Liberação de ${release.name}
-(some só do seu histórico; o DP continua vendo)`);
+  async function restoreRelease(release) {
+    await store().updateRelease(release.id, { hiddenFor: without(release.hiddenFor) });
+  }
+
+  // Apagar da lixeira: DP/Admin apagam no banco; os demais só somem do próprio histórico.
+  async function emptyTrashItem(release, dpContext) {
+    if (canHardDelete(dpContext)) {
+      await store().removeRelease(release.id);
+      return "database";
+    }
+    await store().updateRelease(release.id, { purgedFor: withMe(release.purgedFor) });
+    return "history";
+  }
+
+  async function forEachSequential(list, fn) {
+    for (const release of list) await fn(release);
+  }
+  const trashMany = (list) => forEachSequential(list, trashRelease);
+  const restoreMany = (list) => forEachSequential(list, restoreRelease);
+  const emptyTrashMany = (list, dpContext) => forEachSequential(list, (release) => emptyTrashItem(release, dpContext));
+
+  // Textos das perguntas de confirmação.
+  const trashQuestion = (release) => `Mover para a lixeira?
+
+Liberação de ${release.name}
+Você pode restaurar depois. Some só da sua tela inicial.`;
+  const trashAllQuestion = (count) => `Mover ${count} liberação(ões) para a lixeira?
+
+A tela inicial fica limpa e você pode restaurar depois.
+Os outros perfis não são afetados.`;
+  const restoreAllQuestion = (count) => `Restaurar ${count} liberação(ões) da lixeira para a tela inicial?`;
+  function emptyQuestion(count, single, dpContext) {
+    const what = single ? `a liberação de ${single.name}` : `${count} liberação(ões)`;
+    if (canHardDelete(dpContext)) {
+      return `⚠ ATENÇÃO — APAGAR DO BANCO DE DADOS ⚠
+
+Você vai apagar DEFINITIVAMENTE ${what} do BANCO DE DADOS.
+
+• Some para TODOS os perfis (DP, engenheiro, encarregado e portaria).
+• NÃO existe como recuperar.
+
+Deseja realmente apagar do banco de dados?`;
+    }
+    return `Apagar de vez da lixeira?
+
+Você vai apagar ${what} do SEU histórico.
+• Não dá para restaurar depois.
+• O DP continua vendo essa liberação.
+
+Deseja continuar?`;
+  }
 
   window.portalReleaseActions = Object.freeze({
     actsAsDp,
+    canHardDelete,
     visibleFor,
-    deleteRelease,
-    deleteQuestion,
+    trashFor,
+    trashRelease,
+    restoreRelease,
+    emptyTrashItem,
+    trashMany,
+    restoreMany,
+    emptyTrashMany,
+    trashQuestion,
+    trashAllQuestion,
+    restoreAllQuestion,
+    emptyQuestion,
     engineerCanAct,
     engineerCanRefuse,
     ensureEngineerSignature,
