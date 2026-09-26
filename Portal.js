@@ -270,7 +270,9 @@
       return;
     }
 
-    const profileReleases = foremanRoleValues.includes(profile) && foremanRoleValues.includes(session?.roleValue)
+    // Perfil de encarregado/estagiário/segurança (inclusive quando o administrador o abre para testar):
+    // só o que a própria pessoa logada solicitou.
+    const profileReleases = foremanRoleValues.includes(profile)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
     // Ordem: o que precisa da ação do perfil aparece primeiro.
@@ -393,8 +395,12 @@
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref || "#";
     const employees = await window.portalEmployeeStore?.getAll() || [];
-    const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore?.getReleases() || [], window.portalReleaseActions.actsAsDp(profileKey === "dp"));
     const session = window.portalAuthDemo?.getSession();
+    const allVisible = window.portalReleaseActions.visibleFor(await window.portalDemoStore?.getReleases() || []);
+    // Encarregado, estagiário e segurança do trabalho veem (tabela, números e histórico) só o que eles mesmos solicitaram.
+    const releases = foremanRoleValues.includes(profileKey)
+      ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
+      : allVisible;
     const foremanTeam = foremanRoleValues.includes(profileKey) && foremanRoleValues.includes(session?.roleValue)
       ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
       : employees;
