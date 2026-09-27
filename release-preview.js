@@ -52,6 +52,12 @@
   let unsubscribe = null;
   let launching = false;
 
+  // Janelas do próprio site (release-actions.js) quando disponíveis; senão, as nativas do navegador.
+  const confirmBox = (text) => window.portalReleaseActions?.confirmText ? window.portalReleaseActions.confirmText(text) : Promise.resolve(window.confirm(text));
+  const notify = (title, message) => window.portalReleaseActions?.ask
+    ? window.portalReleaseActions.ask({ title, message, okText: "OK", cancelText: null })
+    : Promise.resolve(window.alert(`${title}. ${message}`));
+
   // Só o DP lança (e desfaz) abono no RM, e só o que o engenheiro abonou.
   // O Administrador Analista só conta como DP quando está operando a tela do DP (dpContext).
   let dpContext = false;
@@ -265,7 +271,7 @@
       document.dispatchEvent(new CustomEvent("portal:release-changed", { detail: { id: current.id } }));
     } catch (error) {
       console.error("Não foi possível lançar o abono.", error);
-      window.alert("Não foi possível lançar o abono. Tente novamente.");
+      await notify("Não foi possível lançar o abono", "Verifique a internet e tente de novo.");
     } finally {
       launching = false;
     }
@@ -274,7 +280,9 @@
   // Desfaz um lançamento feito por engano: tira o carimbo e guarda quem lançou/desfez no histórico.
   async function undoLaunch() {
     if (!current || launching || !current.abonoLaunchedAt || !isDp()) return;
-    if (!window.confirm(`Desfazer o lançamento do abono de ${current.name}? O carimbo será removido.`)) return;
+    if (!await confirmBox(`Desfazer o lançamento do abono?
+${current.name}
+O carimbo será removido.`)) return;
     launching = true;
     const session = window.portalAuthDemo?.getSession();
     const changes = {
@@ -295,7 +303,7 @@
       document.dispatchEvent(new CustomEvent("portal:release-changed", { detail: { id: current.id } }));
     } catch (error) {
       console.error("Não foi possível desfazer o lançamento.", error);
-      window.alert("Não foi possível desfazer o lançamento. Tente novamente.");
+      await notify("Não foi possível desfazer o lançamento", "Verifique a internet e tente de novo.");
     } finally {
       launching = false;
     }

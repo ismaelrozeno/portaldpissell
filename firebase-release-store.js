@@ -57,9 +57,9 @@
         if (doc.exists) callback(toPlain(doc));
       }, (error) => console.warn("Falha ao acompanhar a liberação ao vivo.", error));
     },
+    // Não relê a coleção inteira depois de gravar: quem chama já redesenha a tela com os dados novos.
     async updateRelease(id, changes) {
       await releasesCollection().doc(id).update(changes);
-      return this.getReleases();
     },
     // Lixeira por usuário: põe/tira SÓ o id de quem está logado na lista (hiddenFor/purgedFor), de forma
     // atômica no banco. Nunca regrava a lista inteira a partir de uma cópia antiga da tela — senão a ação
@@ -72,7 +72,6 @@
     },
     async removeRelease(id) {
       await releasesCollection().doc(id).delete();
-      return this.getReleases();
     },
     async clearHistory() {
       const snapshot = await releasesCollection().get();

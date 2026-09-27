@@ -318,79 +318,140 @@
       return renderRecords(activeProfileKey);
     }
     if (!shownReleases.length) return;
-    if (kind === "trash-all") {
-      if (!window.confirm(actions.trashAllQuestion(shownReleases.length))) return;
-      await actions.trashMany(shownReleases);
-    } else if (kind === "restore-all") {
-      if (!window.confirm(actions.restoreAllQuestion(shownReleases.length))) return;
-      await actions.restoreMany(shownReleases);
-    } else if (kind === "empty") {
-      const dpContext = activeProfileKey === "dp";
-      if (!window.confirm(actions.emptyQuestion(shownReleases.length, null, dpContext))) return;
+    const list = [...shownReleases];
+    const dpContext = activeProfileKey === "dp";
+    if (kind === "trash-all" && !await actions.confirmText(actions.trashAllQuestion(list.length))) return;
+    if (kind === "restore-all" && !await actions.confirmText(actions.restoreAllQuestion(list.length))) return;
+    if (kind === "empty") {
+      if (!await actions.confirmText(actions.emptyQuestion(list.length, null, dpContext))) return;
       // Apagar do banco (DP/Admin) pede uma segunda confirmação: não tem volta.
-      if (actions.canHardDelete(dpContext) && !window.confirm("ÚLTIMO AVISO\n\n" + shownReleases.length + " liberação(ões) serão APAGADAS DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.\n\nClique em OK só se tiver certeza.")) return;
-      await actions.emptyTrashMany(shownReleases, dpContext);
+      if (actions.canHardDelete(dpContext) && !await actions.confirmText("ÚLTIMO AVISO\n" + list.length + " liberação(ões) serão APAGADAS DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.", "Apagar do banco")) return;
+    }
+    const toolbarButtons = [...document.querySelectorAll("#records-toolbar button")];
+    toolbarButtons.forEach((item) => { item.disabled = true; });
+    const label = button.textContent;
+    button.textContent = "Salvando…";
+    try {
+      if (kind === "trash-all") await actions.trashMany(list);
+      else if (kind === "restore-all") await actions.restoreMany(list);
+      else if (kind === "empty") await actions.emptyTrashMany(list, dpContext);
+    } catch (error) {
+      console.error("Não foi possível concluir a ação na lista.", error);
+      await actions.ask({ title: "Não foi possível salvar", message: "Verifique a internet e tente de novo.", okText: "OK", cancelText: null });
+    } finally {
+      button.textContent = label;
+      toolbarButtons.forEach((item) => { item.disabled = false; });
     }
     return refresh();
   });
 
+  // Enquanto uma liberação está sendo salva, os botões dela ficam desativados e o clicado mostra "Salvando…":
+  // evita clique duplo e deixa claro que a ação foi recebida. Sempre destrava no final, mesmo com erro.
+  const busyReleases = new Set();
+  function setRowBusy(button, on) {
+    button.closest("tr")?.querySelectorAll("button").forEach((item) => { item.disabled = on; });
+    if (on) {
+      button.dataset.label = button.textContent;
+      button.textContent = "Salvando…";
+    } else if (button.dataset.label) {
+      button.textContent = button.dataset.label;
+    }
+  }
+
   // Todas as ações da tabela passam por aqui.
   elements.table.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-row-action]");
-    if (!button) return;
+    if (!button || button.disabled) return;
+    const id = button.dataset.releaseId;
+    if (busyReleases.has(id)) return;
     const actions = window.portalReleaseActions;
     const flow = window.portalReleaseFlow;
     const action = button.dataset.rowAction;
-    const releases = await window.portalDemoStore?.getReleases() || [];
-    const release = releases.find((item) => item.id === button.dataset.releaseId);
     const refresh = () => renderProfile(activeProfileKey);
-    if (!release) return refresh();
+    busyReleases.add(id);
+    try {
+      const releases = await window.portalDemoStore?.getReleases() || [];
+      const release = releases.find((item) => item.id === id);
+      if (!release) return refresh();
+      if (action === "view") {
+        window.portalReleasePreview.show(release, { dpContext: activeProfileKey === "dp" });
+        return;
+      }
 
-    if (action === "view") {
-      window.portalReleasePreview.show(release, { dpContext: activeProfileKey === "dp" });
-      return;
-    }
-    if (action === "delete") {
-      if (!window.confirm(actions.trashQuestion(release))) return;
-      await actions.trashRelease(release);
-      return refresh();
-    }
-    if (action === "restore") {
-      await actions.restoreRelease(release);
-      return refresh();
-    }
-    if (action === "purge") {
+      // 1) Perguntas e permissões (antes de travar os botões).
       const dpContext = activeProfileKey === "dp";
-      if (!window.confirm(actions.emptyQuestion(1, release, dpContext))) return;
-      await actions.emptyTrashItem(release, dpContext);
+      let run = null;
+      if (action === "delete") {
+        if (!await actions.confirmText(actions.trashQuestion(release), "Mover para a lixeira")) return;
+        run = () => actions.trashRelease(release);
+      } else if (action === "restore") {
+        run = () => actions.restoreRelease(release);
+      } else if (action === "purge") {
+        if (!await actions.confirmText(actions.emptyQuestion(1, release, dpContext), "Apagar")) return;
+        run = () => actions.emptyTrashItem(release, dpContext);
+      } else if (action === "confirm-exit") {
+        if (flow.stageOf(release) !== "gate") return refresh();
+        if (!await actions.confirmText(`Confirmar a saída de ${release.name}?`)) return;
+        run = () => actions.confirmExit(release);
+      } else if (action === "authorize" || action === "deny") {
+        if (!actions.dpCanDecide(release)) return refresh();
+        run = () => actions.dpDecide(release, action === "authorize");
+      } else {
+        // Engenheiro: abonar, não abonar ou recusar (exige a assinatura do engenheiro)
+        if (action === "refuse" ? !actions.engineerCanRefuse(release) : !actions.engineerCanAct(release)) return refresh();
+        if (!await actions.ensureEngineerSignature()) return;
+        if (action === "refuse") {
+          actions.openRefuseDialog(release, refresh);
+          return;
+        }
+        run = () => actions.engineerToggleDecision(release, action);
+      }
+
+      // 2) Grava com os botões da linha travados e "Salvando…" no clicado.
+      setRowBusy(button, true);
+      try {
+        await run();
+      } catch (error) {
+        console.error("Não foi possível salvar a ação na liberação.", error);
+        await actions.ask({ title: "Não foi possível salvar", message: `${release.name}\nVerifique a internet e tente de novo.`, okText: "OK", cancelText: null });
+      } finally {
+        setRowBusy(button, false);
+      }
       return refresh();
+    } finally {
+      busyReleases.delete(id);
     }
-    if (action === "confirm-exit") {
-      if (flow.stageOf(release) !== "gate") return refresh();
-      if (!window.confirm(`Confirmar a saída de ${release.name}?`)) return;
-      await actions.confirmExit(release);
-      return refresh();
-    }
-    if (action === "authorize" || action === "deny") {
-      if (!actions.dpCanDecide(release)) return refresh();
-      await actions.dpDecide(release, action === "authorize");
-      return refresh();
-    }
-    // Engenheiro: abonar, não abonar ou recusar (exige a assinatura do engenheiro)
-    if (action === "refuse" ? !actions.engineerCanRefuse(release) : !actions.engineerCanAct(release)) return refresh();
-    if (!actions.ensureEngineerSignature()) return;
-    if (action === "refuse") {
-      actions.openRefuseDialog(release, refresh);
-      return;
-    }
-    await actions.engineerToggleDecision(release, action);
-    return refresh();
   });
 
   let activeProfileKey = null;
   document.addEventListener("portal:release-changed", () => { if (activeProfileKey) renderProfile(activeProfileKey); });
 
-  async function renderProfile(profileKey) {
+  // Redesenhos em fila: se chegar um pedido enquanto outro roda (ex.: vários cliques seguidos), roda só mais
+  // uma vez no final com os dados mais novos, em vez de vários redesenhos ao mesmo tempo se atropelando.
+  let renderRunning = null;
+  let renderAgain = false;
+  function renderProfile(profileKey) {
+    activeProfileKey = profileKey;
+    if (renderRunning) {
+      renderAgain = true;
+      return renderRunning;
+    }
+    renderRunning = (async () => {
+      try {
+        do {
+          renderAgain = false;
+          await renderProfileNow(activeProfileKey);
+        } while (renderAgain);
+      } catch (error) {
+        console.error("Falha ao atualizar o painel.", error);
+      } finally {
+        renderRunning = null;
+      }
+    })();
+    return renderRunning;
+  }
+
+  async function renderProfileNow(profileKey) {
     activeProfileKey = profileKey;
     const profile = profiles[profileKey];
     elements.title.textContent = profile.title;

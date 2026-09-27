@@ -85,13 +85,13 @@
       return;
     }
     if (button.dataset.action === "delete") {
-      if (!window.confirm(window.portalReleaseActions.trashQuestion(release))) return;
+      if (!await window.portalReleaseActions.confirmText(window.portalReleaseActions.trashQuestion(release), "Mover para a lixeira")) return;
       await window.portalReleaseActions.trashRelease(release);
       render();
       return;
     }
     if (!window.portalReleaseActions.dpCanDecide(release)) {
-      window.alert("Esta liberação já foi decidida ou está aguardando o encarregado ajustar e reenviar.");
+      await window.portalReleaseActions.ask({ title: "Liberação já decidida", message: "Esta liberação já foi decidida ou está aguardando o encarregado ajustar e reenviar.", okText: "OK", cancelText: null });
       render();
       return;
     }

@@ -70,7 +70,30 @@
     return !release.bonusStatus && stage !== "foreman" && stage !== "closed";
   };
 
-  async function render() {
+  // Redesenho em fila: vários pedidos seguidos viram um só no final, com os dados mais novos.
+  let renderRunning = null;
+  let renderAgain = false;
+  function render() {
+    if (renderRunning) {
+      renderAgain = true;
+      return renderRunning;
+    }
+    renderRunning = (async () => {
+      try {
+        do {
+          renderAgain = false;
+          await renderNow();
+        } while (renderAgain);
+      } catch (error) {
+        console.error("Falha ao atualizar a lista do engenheiro.", error);
+      } finally {
+        renderRunning = null;
+      }
+    })();
+    return renderRunning;
+  }
+
+  async function renderNow() {
     // Na tela do engenheiro ninguém age como DP: apagar aqui só tira do histórico de quem apagou.
     const releases = actions.visibleFor(await window.portalDemoStore.getReleases());
     const order = { engineer: 0, dp: 1, foreman: 2, gate: 3, exited: 4, closed: 5 };
@@ -93,31 +116,59 @@
   filter.addEventListener("change", render);
   search?.addEventListener("input", render);
 
+  // Enquanto uma liberação está sendo salva, os botões do cartão dela ficam travados e o clicado mostra
+  // "Salvando…" (evita clique duplo). Sempre destrava no final, mesmo com erro de internet.
+  const busyReleases = new Set();
+  function setCardBusy(button, on) {
+    button.closest("[data-release]")?.querySelectorAll("button").forEach((item) => { item.disabled = on; });
+    if (on) {
+      button.dataset.label = button.textContent;
+      button.textContent = "Salvando…";
+    } else if (button.dataset.label) {
+      button.textContent = button.dataset.label;
+    }
+  }
+
   list.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-choice]");
-    if (!button) return;
-    const releases = await window.portalDemoStore.getReleases();
-    const release = releases.find((item) => item.id === button.closest("[data-release]").dataset.release);
-    if (!release) return render();
-    if (button.dataset.choice === "view") {
-      window.portalReleasePreview.show(release);
-      return;
-    }
-    if (!canSign()) return;
-    if (button.dataset.choice === "delete") {
-      if (!window.confirm(actions.trashQuestion(release))) return;
-      await actions.trashRelease(release);
+    if (!button || button.disabled) return;
+    const id = button.closest("[data-release]").dataset.release;
+    if (busyReleases.has(id)) return;
+    busyReleases.add(id);
+    try {
+      const releases = await window.portalDemoStore.getReleases();
+      const release = releases.find((item) => item.id === id);
+      if (!release) return render();
+      if (button.dataset.choice === "view") {
+        window.portalReleasePreview.show(release);
+        return;
+      }
+      if (!canSign()) return;
+      let run = null;
+      if (button.dataset.choice === "delete") {
+        if (!await actions.confirmText(actions.trashQuestion(release), "Mover para a lixeira")) return;
+        run = () => actions.trashRelease(release);
+      } else if (button.dataset.choice === "refuse") {
+        if (!actions.engineerCanRefuse(release)) return render();
+        actions.openRefuseDialog(release, render);
+        return;
+      } else {
+        if (!canAct(release)) return render();
+        run = () => actions.engineerToggleDecision(release, button.dataset.choice);
+      }
+      setCardBusy(button, true);
+      try {
+        await run();
+      } catch (error) {
+        console.error("Não foi possível salvar a decisão.", error);
+        await actions.ask({ title: "Não foi possível salvar", message: `${release.name}\nVerifique a internet e tente de novo.`, okText: "OK", cancelText: null });
+      } finally {
+        setCardBusy(button, false);
+      }
       render();
-      return;
+    } finally {
+      busyReleases.delete(id);
     }
-    if (button.dataset.choice === "refuse") {
-      if (!actions.engineerCanRefuse(release)) return render();
-      actions.openRefuseDialog(release, render);
-      return;
-    }
-    if (!canAct(release)) return render();
-    await actions.engineerToggleDecision(release, button.dataset.choice);
-    render();
   });
 
   if (isAdministrator) {

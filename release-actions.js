@@ -9,6 +9,55 @@
 
   const signerName = (fallback) => session()?.name || fallback;
 
+  // Janela de confirmação/código do próprio site (no lugar de window.confirm/prompt): não congela a página
+  // e funciona igual no celular, no computador e em navegadores automatizados.
+  // Devolve true/false (confirmação) ou o texto digitado / null (quando pede um código).
+  let askDialog = null;
+  function ask({ title, message = "", input = false, okText = "Confirmar", cancelText = "Cancelar" }) {
+    if (!askDialog) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <dialog id="ask-dialog" class="refuse-dialog" aria-labelledby="ask-title">
+          <form method="dialog">
+            <h2 id="ask-title"></h2>
+            <p id="ask-message" style="white-space:pre-line"></p>
+            <input id="ask-input" class="form-control" type="password" inputmode="numeric" autocomplete="off" hidden>
+            <div class="refuse-buttons">
+              <button type="button" id="ask-cancel" class="bonus-yes"></button>
+              <button type="submit" id="ask-ok" class="bonus-no"></button>
+            </div>
+          </form>
+        </dialog>`);
+      askDialog = document.querySelector("#ask-dialog");
+    }
+    const field = askDialog.querySelector("#ask-input");
+    askDialog.querySelector("#ask-title").textContent = title;
+    askDialog.querySelector("#ask-message").textContent = message;
+    askDialog.querySelector("#ask-ok").textContent = okText;
+    askDialog.querySelector("#ask-cancel").textContent = cancelText || "";
+    askDialog.querySelector("#ask-cancel").hidden = cancelText === null;
+    field.hidden = !input;
+    field.value = "";
+    return new Promise((resolve) => {
+      let answered = false;
+      const finish = (value) => {
+        if (answered) return;
+        answered = true;
+        askDialog.removeEventListener("close", onClose);
+        if (askDialog.open) askDialog.close();
+        resolve(value);
+      };
+      const onClose = () => finish(input ? null : false);
+      askDialog.addEventListener("close", onClose);
+      askDialog.querySelector("#ask-cancel").onclick = () => finish(input ? null : false);
+      askDialog.querySelector("form").onsubmit = (event) => {
+        event.preventDefault();
+        finish(input ? field.value : true);
+      };
+      askDialog.showModal();
+      (input ? field : askDialog.querySelector("#ask-ok")).focus();
+    });
+  }
+
   // ---------- Engenheiro ----------
 
   // Abonado / Não abonado ficam sempre disponíveis, mesmo depois de o DP autorizar a saída ou de o colaborador sair
@@ -32,15 +81,15 @@
   }
 
   // O engenheiro assina direto; o Administrador Analista precisa do código físico (uma vez por sessão do navegador).
-  function ensureEngineerSignature() {
+  async function ensureEngineerSignature() {
     const role = session()?.roleValue;
     if (role === "engenheiro") return true;
     if (role !== "administrador-analista") return false;
     if (adminSignatureUnlocked) return true;
-    const code = window.prompt("Código físico do Administrador Analista para assinar como engenheiro:");
+    const code = await ask({ title: "Assinar como engenheiro", message: "Código físico do Administrador Analista:", input: true, okText: "Liberar" });
     if (code === null) return false;
     if (code.trim() !== adminPhysicalCode) {
-      window.alert("Código incorreto. A assinatura continua bloqueada.");
+      await ask({ title: "Código incorreto", message: "A assinatura continua bloqueada.", okText: "OK", cancelText: null });
       return false;
     }
     adminSignatureUnlocked = true;
@@ -78,10 +127,7 @@
       return true;
     }
     const question = choice === "approved" ? "Deseja desfazer o abono?" : "Deseja desfazer o não abono?";
-    if (!window.confirm(`${question}
-
-${release.name}
-A liberação volta a ficar sem decisão do engenheiro.`)) return false;
+    if (!await ask({ title: question, message: `${release.name}\nA liberação volta a ficar sem decisão do engenheiro.`, okText: "Desfazer" })) return false;
     const stage = flow().stageOf(release);
     const changes = {
       bonusStatus: null,
@@ -144,6 +190,7 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
     const error = refuseDialog.querySelector("#refuse-error");
     refuseDialog.querySelector("#refuse-target").textContent = `${release.name} · solicitado por ${release.requester}`;
     reasonsBox.innerHTML = flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
+    error.textContent = "Selecione pelo menos um motivo.";
     error.hidden = true;
     // Botões recriados a cada abertura para não acumular ouvintes de recusas anteriores.
     for (const id of ["#refuse-cancel", "#refuse-confirm"]) {
@@ -154,11 +201,26 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
     refuseDialog.querySelector("#refuse-confirm").addEventListener("click", async () => {
       const reasons = [...reasonsBox.querySelectorAll("input:checked")].map((input) => input.value);
       if (!reasons.length) {
+        error.textContent = "Selecione pelo menos um motivo.";
         error.hidden = false;
         return;
       }
-      await engineerRefuse(release, reasons);
-      refuseDialog.close();
+      const confirmButton = refuseDialog.querySelector("#refuse-confirm");
+      if (confirmButton.disabled) return;
+      confirmButton.disabled = true;
+      confirmButton.textContent = "Salvando…";
+      try {
+        await engineerRefuse(release, reasons);
+        refuseDialog.close();
+      } catch (failure) {
+        console.error("Não foi possível recusar a liberação.", failure);
+        error.textContent = "Não foi possível salvar. Verifique a internet e tente de novo.";
+        error.hidden = false;
+        return;
+      } finally {
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Confirmar recusa";
+      }
       if (onDone) onDone();
     });
     refuseDialog.showModal();
@@ -284,7 +346,15 @@ Você vai apagar ${what} do SEU histórico.
 Deseja continuar?`;
   }
 
+  // Troca direta de window.confirm(texto): a 1ª linha vira o título e o resto a mensagem. Devolve uma Promise<boolean>.
+  function confirmText(text, okText = "Confirmar") {
+    const [title, ...rest] = String(text).split("\n");
+    return ask({ title, message: rest.join("\n").trim(), okText });
+  }
+
   window.portalReleaseActions = Object.freeze({
+    ask,
+    confirmText,
     actsAsDp,
     canHardDelete,
     visibleFor,
