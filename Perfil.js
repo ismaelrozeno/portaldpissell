@@ -43,10 +43,20 @@
         <img src="${avatars.url(item.id)}" alt="${item.label}" loading="lazy">
       </button>`).join("");
   }
-  toggle.addEventListener("click", () => {
-    picker.hidden = !picker.hidden;
-    toggle.setAttribute("aria-expanded", String(!picker.hidden));
-    if (!picker.hidden) renderGrid();
+  function setPickerOpen(open) {
+    picker.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) renderGrid();
+  }
+  toggle.addEventListener("click", () => setPickerOpen(picker.hidden));
+  // Clicar fora da grade (ou apertar Esc) fecha a escolha.
+  document.addEventListener("click", (event) => {
+    // composedPath: a grade é redesenhada no clique, então o alvo já pode ter saído da página.
+    const path = event.composedPath();
+    if (!picker.hidden && !path.includes(picker) && !path.includes(toggle)) setPickerOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !picker.hidden) setPickerOpen(false);
   });
   grid.addEventListener("click", async (event) => {
     const option = event.target.closest("[data-avatar]");
