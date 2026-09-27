@@ -15,6 +15,14 @@
   let parsedInvalidCount = 0;
   let parsedDuplicateCount = 0;
 
+  // "OBRA 369CO - MAO DE OBRA DIRETA" -> "direta"; "... INDIRETA" -> "indireta". Só a mão de obra direta entra em equipes.
+  function maoDeObraFrom(text) {
+    const value = normalizeHeader(text);
+    if (value.includes("indireta")) return "indireta";
+    if (value.includes("direta")) return "direta";
+    return "";
+  }
+
   function situacaoToStatus(situacao) {
     return String(situacao || "").trim().toLowerCase() === "ativo" ? "ativo" : "inativo";
   }
@@ -45,7 +53,8 @@
       matricula: (node.getAttribute("MATRICULA") || "").trim(),
       nome: (node.getAttribute("NOME") || "").trim(),
       funcao: (node.getAttribute("FUNCAO") || "").trim(),
-      situacao: (node.getAttribute("SITUACAO") || "").trim()
+      situacao: (node.getAttribute("SITUACAO") || "").trim(),
+      maoDeObra: maoDeObraFrom(node.getAttribute("DESCRICAO"))
     }));
     return dedupeRows(allRows);
   }
@@ -66,6 +75,7 @@
     const nomeIndex = headers.indexOf("nome");
     const funcaoIndex = headers.indexOf("nome funcao");
     const situacaoIndex = headers.indexOf("descricao da situacao");
+    const secaoIndex = headers.indexOf("descricao secao");
     if (matriculaIndex === -1 || nomeIndex === -1) throw new Error("Colunas obrigatórias não encontradas no arquivo.");
     const allRows = lines.slice(1).map((line) => {
       const cols = line.split(delimiter);
@@ -73,7 +83,8 @@
         matricula: (cols[matriculaIndex] || "").trim(),
         nome: (cols[nomeIndex] || "").trim(),
         funcao: (cols[funcaoIndex] || "").trim(),
-        situacao: (cols[situacaoIndex] || "").trim()
+        situacao: (cols[situacaoIndex] || "").trim(),
+        maoDeObra: secaoIndex === -1 ? "" : maoDeObraFrom(cols[secaoIndex])
       };
     });
     return dedupeRows(allRows);
@@ -164,13 +175,13 @@
 
     previewCount.textContent = `${parsedRows.length} registro${parsedRows.length === 1 ? "" : "s"} encontrado${parsedRows.length === 1 ? "" : "s"}`;
     previewBody.innerHTML = parsedRows.length
-      ? parsedRows.map((row) => `<tr><td>${window.escapeHtml(row.matricula)}</td><td>${window.escapeHtml(row.nome)}</td><td>${window.escapeHtml(row.funcao)}</td><td>—</td><td>${window.escapeHtml(row.situacao)}</td></tr>`).join("")
+      ? parsedRows.map((row) => `<tr><td>${window.escapeHtml(row.matricula)}</td><td>${window.escapeHtml(row.nome)}</td><td>${window.escapeHtml(row.funcao)}</td><td>${row.maoDeObra ? (row.maoDeObra === "direta" ? "Direta" : "Indireta") : "—"}</td><td>${window.escapeHtml(row.situacao)}</td></tr>`).join("")
       : '<tr><td colspan="5">Nenhum registro encontrado no arquivo.</td></tr>';
 
     const extraNotes = [];
     if (parsedDuplicateCount) extraNotes.push(`${parsedDuplicateCount} matrícula${parsedDuplicateCount === 1 ? "" : "s"} duplicada${parsedDuplicateCount === 1 ? "" : "s"} no arquivo (apenas a primeira ocorrência será importada)`);
     if (parsedInvalidCount) extraNotes.push(`${parsedInvalidCount} registro${parsedInvalidCount === 1 ? "" : "s"} sem matrícula ignorado${parsedInvalidCount === 1 ? "" : "s"}`);
-    const baseNote = "Ao confirmar, todos os colaboradores cadastrados serão substituídos pelos deste arquivo (quem não estiver aqui será removido; encarregados já vinculados são preservados). O arquivo não traz frente de trabalho nem encarregado para os novos colaboradores: vincule depois pela lista de colaboradores cadastrados (Administração).";
+    const baseNote = "Ao confirmar, todos os colaboradores cadastrados serão substituídos pelos deste arquivo (quem não estiver aqui será removido; encarregados já vinculados são preservados). O arquivo não traz frente de trabalho nem encarregado para os novos colaboradores: o arquivo informa se a mão de obra é direta ou indireta (só a direta entra em equipes). Vincule depois pela lista de colaboradores cadastrados (Administração).";
     showWarning(parsedRows.length
       ? [baseNote, ...extraNotes].join(" ")
       : (extension === "xml" ? "Nenhum registro <Detalhes> válido foi encontrado nesse XML." : "Nenhum registro válido foi encontrado nesse arquivo."));
@@ -198,6 +209,7 @@
         funcao: row.funcao,
         setor: current?.setor || "",
         encarregado: current?.encarregado || "",
+        maoDeObra: row.maoDeObra || current?.maoDeObra || "",
         status: situacaoToStatus(row.situacao),
         createdAt: current?.createdAt || new Date().toISOString()
       };

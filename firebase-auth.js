@@ -28,6 +28,7 @@
       role: profile.role || "",
       roleValue: profile.roleValue || "",
       especialidade: profile.especialidade || "",
+      linkedForeman: profile.linkedForeman || "",
       photo: profile.photo || "",
       status: profile.status || "approved"
     };
@@ -198,6 +199,35 @@
     async getAllUsers() {
       const snapshot = await usersRef().get();
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    },
+    // Diretório para montar equipes (encarregados, e estagiários/engenheiros/DP vinculados a eles). Não exige ser administrador:
+    // as regras do banco deixam DP, encarregado e estagiário listar só esses dois perfis.
+    async getTeamDirectory() {
+      const snapshot = await usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "engenheiro", "dp"]).get();
+      const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
+      return {
+        foremen: people.filter((user) => user.roleValue === "encarregado"),
+        interns: people.filter((user) => user.roleValue !== "encarregado" && user.linkedForeman),
+        all: people
+      };
+    },
+    // Administrador: define (ou tira, com "") o encarregado a quem um estagiário/engenheiro/DP está vinculado.
+    async setUserLinkedForeman(userId, foremanName) {
+      await usersRef().doc(userId).update({ linkedForeman: foremanName || "", updatedAt: new Date().toISOString() });
+    },
+    // Ao vivo: avisa quando alguém se vincula/desvincula ou um encarregado entra/sai.
+    subscribeTeamDirectory(callback, onError) {
+      return usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "engenheiro", "dp"]).onSnapshot((snapshot) => {
+        const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
+        callback({
+          foremen: people.filter((user) => user.roleValue === "encarregado"),
+          interns: people.filter((user) => user.roleValue !== "encarregado" && user.linkedForeman),
+          all: people
+        });
+      }, (error) => {
+        console.warn("Falha ao acompanhar os vínculos ao vivo.", error);
+        if (onError) onError(error);
+      });
     },
     async updatePorterRequest(requestId, status) {
       await usersRef().doc(requestId).update({

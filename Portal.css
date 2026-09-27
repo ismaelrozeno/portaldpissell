@@ -163,3 +163,9 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
   .row-actions .table-action { order:4; }
   .row-actions .gate-confirm-btn { grid-column:1 / -1; min-height:2.8rem; font-size:.85rem; }
 }
+/* Botões de ação do topo da lista (ex.: "Equipes" ao lado de "Nova liberação") */
+.card-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
+.portal-button-secondary { color:#1769aa; background:#fff; border:1px solid #1769aa; }
+.portal-button-secondary:hover, .portal-button-secondary:focus-visible { background:#eaf3fb; }
+.portal-button[hidden] { display:none; }
+@media (max-width:600px) { .card-actions { flex-direction:column-reverse; width:100%; } }

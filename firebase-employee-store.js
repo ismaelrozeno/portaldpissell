@@ -11,6 +11,14 @@
       const snapshot = await employeesCollection().get();
       return snapshot.docs.map((doc) => doc.data());
     },
+    // Ao vivo: chama "callback" com a lista inteira sempre que qualquer colaborador mudar (aqui ou em outro aparelho).
+    // Devolve a função para parar de acompanhar.
+    subscribeEmployees(callback, onError) {
+      return employeesCollection().onSnapshot((snapshot) => callback(snapshot.docs.map((doc) => doc.data())), (error) => {
+        console.warn("Falha ao acompanhar os colaboradores ao vivo.", error);
+        if (onError) onError(error);
+      });
+    },
     async findByRegistration(matricula) {
       const normalized = normalizeRegistration(matricula);
       const doc = await employeesCollection().doc(normalized).get();
@@ -87,6 +95,12 @@
       };
       await ref.set(data);
       return this.getAll();
+    },
+    // Vincula (ou tira, com "") o encarregado de um colaborador mexendo SÓ nesse campo. É o que as regras do banco
+    // permitem ao DP e ao estagiário (o administrador pode tudo).
+    async setForeman(matricula, foremanName) {
+      const normalized = normalizeRegistration(matricula);
+      await employeesCollection().doc(normalized).update({ encarregado: foremanName || "" });
     },
     async remove(matricula) {
       const normalized = normalizeRegistration(matricula);

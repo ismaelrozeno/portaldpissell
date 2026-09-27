@@ -137,6 +137,9 @@
   async function renderRegisteredUsers() {
     const users = await window.portalAuthDemo.getAllUsers();
     const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
+    const helperForemen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved" && user.name);
+    const roleWords = { estagiario_engenharia: "Estagiário", engenheiro: "Engenheiro", dp: "DP" };
+    const helperSelect = (user) => `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="${roleWords[user.roleValue] || "Usuário"} vinculado a qual encarregado"><option value="">Sem vínculo com encarregado</option>${helperForemen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === user.linkedForeman ? " selected" : ""}>${roleWords[user.roleValue] || "Vinculado"} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>`;
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
     const query = window.normalizeSearchText(registeredUsersSearch?.value || "");
     const visible = query
@@ -146,7 +149,7 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
@@ -322,6 +325,15 @@
     if (button.dataset.employeeAction === "link-foreman") {
       const select = employeeList.querySelector(`[data-foreman-select="${CSS.escape(button.dataset.employeeId)}"]`);
       const foreman = select ? select.value : "";
+      if (foreman) {
+        const bosses = await getForemen();
+        if (bosses.some((boss) => foldText(boss.name) === foldText(employee.nome))) {
+          employeeResult.textContent = "Encarregado não entra em equipe (nem na dele, nem na de outro encarregado).";
+          employeeResult.classList.add("text-danger");
+          employeeResult.hidden = false;
+          return;
+        }
+      }
       await window.portalEmployeeStore.upsert({ ...employee, encarregado: foreman });
       employeeResult.textContent = foreman ? "Encarregado vinculado." : "Nenhum encarregado vinculado.";
       employeeResult.classList.toggle("text-danger", !foreman);
@@ -363,6 +375,20 @@
 
   porterSearch?.addEventListener("input", renderPorterRequests);
   registeredUsersSearch?.addEventListener("input", renderRegisteredUsers);
+  // Vínculo (estagiário/engenheiro/DP → encarregado): o mesmo que eles fazem na tela Equipes.
+  registeredUsersList.addEventListener("change", async (event) => {
+    const select = event.target.closest("select[data-link-user]");
+    if (!select) return;
+    select.disabled = true;
+    try {
+      await window.portalAuthDemo.setUserLinkedForeman(select.dataset.linkUser, select.value);
+    } catch (error) {
+      console.error("Falha ao salvar o vínculo com o encarregado.", error);
+      window.alert("Não foi possível salvar o vínculo. Tente de novo.");
+    }
+    select.disabled = false;
+    renderRegisteredUsers();
+  });
   allowedSearch?.addEventListener("input", renderAllowed);
 
   renderAllowed();
@@ -370,4 +396,20 @@
   renderPorterRequests();
   renderForemanOptions();
   renderRegisteredUsers();
+
+  // Ao vivo: se o DP, um estagiário ou um engenheiro vincular colaboradores pela tela Equipes, esta lista
+  // atualiza sozinha. Não redesenha enquanto alguém está mexendo num seletor da lista, para não atrapalhar.
+  let liveTimer = null;
+  let liveUsersTimer = null;
+  window.portalEmployeeStore.subscribeEmployees?.(() => {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      if (employeeList.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
+      renderEmployees();
+    }, 250);
+  });
+  window.portalAuthDemo.subscribeTeamDirectory?.(() => {
+    clearTimeout(liveUsersTimer);
+    liveUsersTimer = setTimeout(() => { renderRegisteredUsers(); renderForemanOptions(); }, 250);
+  });
 })();

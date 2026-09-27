@@ -88,7 +88,8 @@
     const allEmployeesRaw = await window.portalEmployeeStore?.getAll() || [];
     let employees;
     if (["encarregado", "estagiario_engenharia", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const myTeam = allEmployeesRaw.filter((item) => item.encarregado?.trim().toLowerCase() === session.name?.trim().toLowerCase());
+      const teamOwners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
+      const myTeam = allEmployeesRaw.filter((item) => teamOwners.includes(item.encarregado?.trim().toLowerCase()));
       const unassigned = allEmployeesRaw.filter((item) => !item.encarregado);
       const seen = new Set(myTeam.map((item) => item.matricula));
       employees = [...myTeam, ...unassigned.filter((item) => !seen.has(item.matricula))];

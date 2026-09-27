@@ -12,8 +12,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     estagiario_engenharia: {
       title: "Painel do estagiário de engenharia",
@@ -26,8 +26,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     seguranca_trabalho: {
       title: "Painel da segurança do trabalho",
@@ -40,8 +40,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "#activity-section"]
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     dp: {
       title: "Painel do Departamento Pessoal",
@@ -54,8 +54,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Nova liberação", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html"]
+      shortcuts: ["Conferir liberações", "Nova liberação", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html"]
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
@@ -68,8 +68,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Assinar abono", "Nova liberação", "Consultar frentes", "Histórico de assinaturas"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "#records-section", "#activity-section"]
+      shortcuts: ["Assinar abono", "Nova liberação", "Equipes e Excel", "Histórico de assinaturas"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "#activity-section"]
     },
     portaria: {
       title: "Painel da portaria",
@@ -96,6 +96,7 @@
     eyebrow: document.querySelector("#table-eyebrow"),
     tableTitle: document.querySelector("#table-title"),
     primaryAction: document.querySelector("#primary-action"),
+    secondaryAction: document.querySelector("#secondary-action"),
     shortcutTitle: document.querySelector("#shortcut-title"),
     shortcutList: document.querySelector("#shortcut-list"),
     table: document.querySelector("#records-table"),
@@ -141,12 +142,15 @@
     const specialty = session?.roleValue === "encarregado"
       ? specialtyLabels[session.especialidade] || "área não informada"
       : session?.roleValue === "estagiario_engenharia"
-        ? "Estagiário de Engenharia"
+        ? (session.linkedForeman ? `Estagiário de Engenharia · vinculado a ${session.linkedForeman}` : "Estagiário de Engenharia · escolha seu encarregado em Equipes e Excel")
         : session?.roleValue === "seguranca_trabalho"
           ? "Segurança do trabalho"
           : "selecione um cadastro de encarregado para visualizar";
+    // O estagiário cuida da equipe do encarregado a quem está vinculado (além de uma equipe que tenha no próprio nome).
+    const teamOwners = [session?.name, session?.roleValue === "estagiario_engenharia" ? session?.linkedForeman : ""]
+      .map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
     const team = isActingForeman
-      ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
+      ? employees.filter((employee) => teamOwners.includes(employee.encarregado?.trim().toLowerCase()))
       : [];
 
     elements.foremanName.textContent = name;
@@ -394,6 +398,8 @@
     elements.primaryAction.hidden = !profile.action;
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref || "#";
+    // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
+    elements.secondaryAction.hidden = profileKey !== "estagiario_engenharia";
     const employees = await window.portalEmployeeStore?.getAll() || [];
     const session = window.portalAuthDemo?.getSession();
     const allVisible = window.portalReleaseActions.visibleFor(await window.portalDemoStore?.getReleases() || []);
@@ -402,7 +408,7 @@
       ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : allVisible;
     const foremanTeam = foremanRoleValues.includes(profileKey) && foremanRoleValues.includes(session?.roleValue)
-      ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === session.name.trim().toLowerCase())
+      ? employees.filter((employee) => [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
       : employees;
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
