@@ -21,7 +21,7 @@ window.portalAvatars = (() => {
   const find = (id) => list.find((item) => item.id === id) || null;
   const url = (id) => (find(id) ? `images/avatars/${id}.png` : "");
   // Sem avatar escolhido (padrão de toda conta nova): iniciais do primeiro e do último nome, como no Gmail,
-  // numa cor fixa calculada a partir do nome (a mesma pessoa sempre tem a mesma cor).
+  // sempre no laranja do portal (igual para todo mundo).
   const ignoredWords = new Set(["da", "das", "de", "do", "dos", "e"]);
   function initials(name) {
     const words = String(name || "").trim().split(/\s+/).filter((word) => word && !ignoredWords.has(word.toLowerCase()));
@@ -30,12 +30,7 @@ window.portalAvatars = (() => {
     const last = words.length > 1 ? words[words.length - 1].charAt(0) : "";
     return (first + last).toUpperCase();
   }
-  const colors = ["#1a73e8", "#f5820a", "#188038", "#e37400", "#8430ce", "#007b83", "#ef6c00", "#3949ab", "#00796b", "#6d4c41", "#ad1457", "#5f6368"];
-  function color(name) {
-    let hash = 0;
-    for (const char of String(name || "").trim().toLowerCase()) hash = (hash * 31 + char.codePointAt(0)) >>> 0;
-    return colors[hash % colors.length];
-  }
+  const color = () => "#ef6c00";
   // Preenche um círculo com o avatar escolhido ou com as iniciais coloridas.
   function render(element, profile, alt = "") {
     if (!element) return;
