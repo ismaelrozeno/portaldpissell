@@ -168,10 +168,17 @@
     const chips = [];
     if (stage === "foreman") {
       chips.push(chip("no", `Recusada por <b>${short(release.refusedBy)}</b>${release.refusalReason ? ` · ${escapeHtml(release.refusalReason)}` : ""}`));
-    } else if (release.engineer && release.bonusStatus) {
-      chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Eng. <b>${short(release.engineer)}</b> · ${release.bonusStatus === "approved" ? "assinou como abonado" : "assinou como não abonado"}`));
     } else {
-      chips.push(chip("wait", "Engenheiro: aguardando"));
+      // Pedido do encarregado (o que ele marcou no formulário) aparece sempre que existir, mesmo depois de
+      // o engenheiro decidir, para dar para comparar o que foi pedido com o que foi assinado.
+      if (release.bonusRequest) {
+        chips.push(chip("info", `Pedido do encarregado: <b>${release.bonusRequest === "abonado" ? "Abonado" : "Não abonado"}</b>`));
+      }
+      if (release.engineer && release.bonusStatus) {
+        chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Eng. <b>${short(release.engineer)}</b> · ${release.bonusStatus === "approved" ? "assinou como abonado" : "assinou como não abonado"}`));
+      } else {
+        chips.push(chip("wait", "Engenheiro: aguardando"));
+      }
     }
     if (stage !== "foreman") {
       if (release.dpSigner) {

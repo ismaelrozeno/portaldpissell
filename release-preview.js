@@ -24,6 +24,7 @@
         <div class="release-sheet-line"><b>Está autorizado no dia de hoje a partir das:</b> <span id="preview-time"></span> hs</div>
         <div class="release-sheet-checks"><b>Movimentação:</b> <span id="preview-movement"></span><b>Motivo da saída:</b> <span id="preview-reason"></span><span id="preview-hours"></span></div>
         <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
+        <div class="release-sheet-hours" id="preview-bonus-request-row" hidden><b>Pedido do encarregado:</b> <span id="preview-bonus-request"></span></div>
         <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
         <div class="release-sheet-signature">Assinatura do colaborador: ______________________________________________</div>
         <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i><small id="preview-requester-time"></small></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i><small id="preview-engineer-time"></small></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i><small id="preview-dp-time"></small></span><span><b>PORTARIA</b><br><i class="signature-name" id="preview-gate"></i><small id="preview-gate-time"></small></span></footer>
@@ -203,6 +204,7 @@
       observation: detail || "Sem observação.",
       bonus: release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE"),
       bonusTone,
+      bonusRequest: release.bonusRequest === "abonado" ? "Abonado" : release.bonusRequest === "nao-abonado" ? "Não abonado" : "",
       requester: release.requester || "Não informado",
       requesterTime: formatDateTime(release.createdAt),
       engineer: release.engineer || "Pendente",
@@ -227,6 +229,8 @@
     set("#preview-reason", f.reason);
     set("#preview-hours", f.hours);
     set("#preview-observation", f.observation);
+    overlay.querySelector("#preview-bonus-request-row").hidden = !f.bonusRequest;
+    set("#preview-bonus-request", f.bonusRequest);
     const bonus = overlay.querySelector("#preview-bonus");
     bonus.textContent = f.bonus;
     bonus.className = `bonus-${f.bonusTone}`;
