@@ -47,7 +47,15 @@ window.portalAvatars = (() => {
       element.textContent = initials(profile?.name);
     }
   }
-  return { list, find, url, initials, color, render };
+  // Mesmo círculo em HTML, para listas (ex.: usuários cadastrados na Administração).
+  function html(profile, className = "user-avatar") {
+    const src = url(profile?.avatar);
+    const letters = initials(profile?.name).replace(/[<>&"]/g, "");
+    return src
+      ? `<span class="${className} has-image" aria-hidden="true"><img src="${src}" alt=""></span>`
+      : `<span class="${className} has-initials" aria-hidden="true" style="background:${color(profile?.name)};color:#fff">${letters}</span>`;
+  }
+  return { list, find, url, initials, color, render, html };
 })();
 
 (async function loadSharedComponents() {

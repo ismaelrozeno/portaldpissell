@@ -149,7 +149,7 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }

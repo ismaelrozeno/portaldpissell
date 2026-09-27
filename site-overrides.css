@@ -167,3 +167,11 @@ input[type="password"]::-ms-clear {
 .site-header .profile-avatar { flex: 0 0 auto; overflow: hidden; }
 .site-header .profile-avatar.has-image { background: #e8f1fa; }
 .site-header .profile-avatar img { width: 86%; height: 86%; object-fit: contain; }
+/* Círculo de avatar ou iniciais em listas de usuários (Administração) */
+.registered-user { display: flex; flex: 1 1 16rem; align-items: flex-start; gap: .75rem; min-width: 0; }
+.registered-user > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.registered-user .user-avatar { margin-top: .1rem; }
+.registered-user .form-select { max-width: 100%; }
+.user-avatar { display: grid; flex: 0 0 auto; width: 2.5rem; height: 2.5rem; place-items: center; overflow: hidden; border-radius: 50%; font-size: .9rem; font-weight: 800; letter-spacing: .02em; }
+.user-avatar.has-image { background: #e8f1fa; }
+.user-avatar img { width: 86%; height: 86%; object-fit: contain; }
