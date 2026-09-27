@@ -65,6 +65,12 @@
 @media print { .release-live,.release-launch-btn { display:none!important; }.release-stamp { animation:none!important; } }
 .release-preview-actions .release-undo-btn { background:#8b2930; }
 @media print { .release-undo-btn { display:none!important; } }
+/* Celular: os botões quebram em linhas (nada passa da largura da tela) e o "ao vivo" vai para uma linha curta no topo. */
+@media (max-width:520px) {
+  .release-preview-actions { flex-wrap:wrap; gap:.5rem; padding:.6rem 0; }
+  .release-preview-actions button { flex:1 1 auto; padding:.7rem .8rem; font-size:.95rem; white-space:nowrap; }
+  .release-live { order:-1; flex-basis:100%; margin:0; text-align:right; font-size:.7rem; }
+}
 .refuse-dialog { width:min(92vw,420px); padding:1.4rem; border:1px solid #dfe7f0; border-radius:1rem; color:#16283d; }.refuse-dialog::backdrop { background:rgba(0,20,45,.55); }.refuse-dialog h2 { margin:0 0 .4rem; color:#00142d; font-size:1.2rem; }.refuse-reasons { display:grid; gap:.6rem; margin:.5rem 0; }.refuse-reasons label { display:flex; align-items:center; gap:.6rem; padding:.7rem .8rem; border:1px solid #dfe7f0; border-radius:.5rem; cursor:pointer; }.refuse-buttons { display:flex; justify-content:flex-end; gap:.6rem; margin-top:1rem; }.refuse-buttons button { padding:.55rem .9rem; border-radius:.45rem; font-size:.85rem; font-weight:700; cursor:pointer; }
 /* Botões do pop-up de recusa (usado no painel inicial e na tela do engenheiro) */
 .refuse-dialog .bonus-yes { border:1px solid #4caa76; border-radius:.45rem; color:#17613b; background:#effbf4; }
