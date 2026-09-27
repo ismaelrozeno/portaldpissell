@@ -204,8 +204,6 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
   //  - DP e Administrador: "apagar da lixeira" APAGA DO BANCO DE DADOS, para todos os perfis, sem volta.
   const myId = () => session()?.uid || session()?.email || session()?.name || "";
   const has = (list) => (list || []).includes(myId());
-  const without = (list) => (list || []).filter((id) => id !== myId());
-  const withMe = (list) => [...new Set([...(list || []), myId()])];
 
   // Só no perfil do DP se apaga de verdade no banco: o próprio DP, ou o Administrador com o painel do DP aberto.
   // Nos demais perfis (mesmo o administrador operando-os) "apagar da lixeira" só some do histórico de quem apagou.
@@ -225,13 +223,16 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
   const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor));
   const trashFor = (releases) => releases.filter(isTrashed);
 
+  // Lixeira: mexe SÓ no id de quem está logado (atômico no banco), nunca na lista inteira — assim o que um
+  // engenheiro apaga nunca some da tela de outro engenheiro.
   async function trashRelease(release) {
     if (!myId()) return;
-    await store().updateRelease(release.id, { hiddenFor: withMe(release.hiddenFor) });
+    await store().addToList(release.id, "hiddenFor", myId());
   }
 
   async function restoreRelease(release) {
-    await store().updateRelease(release.id, { hiddenFor: without(release.hiddenFor) });
+    if (!myId()) return;
+    await store().removeFromList(release.id, "hiddenFor", myId());
   }
 
   // Apagar da lixeira: DP/Admin apagam no banco; os demais só somem do próprio histórico.
@@ -240,7 +241,8 @@ A liberação volta a ficar sem decisão do engenheiro.`)) return false;
       await store().removeRelease(release.id);
       return "database";
     }
-    await store().updateRelease(release.id, { purgedFor: withMe(release.purgedFor) });
+    if (!myId()) return "history";
+    await store().addToList(release.id, "purgedFor", myId());
     return "history";
   }
 

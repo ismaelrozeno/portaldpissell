@@ -81,9 +81,19 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Lixeira por usuário: numa atualização, as listas "hiddenFor"/"purgedFor" só podem ganhar ou perder
+    // o id de QUEM está logado. Ninguém esconde nem apaga a liberação do histórico de outra pessoa.
+    function onlyOwnIdChanged(field) {
+      let before = resource.data.get(field, []).toSet();
+      let after = request.resource.data.get(field, []).toSet();
+      return after.difference(before).hasOnly([request.auth.uid]) &&
+        before.difference(after).hasOnly([request.auth.uid]);
+    }
+
     match /releases/{releaseId} {
       allow read: if request.auth != null;
-      allow create, update: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor");
       // Só o DP (e o administrador) apaga uma liberação de verdade. Os outros perfis só a escondem do
       // próprio histórico (campo "hiddenFor"), sem apagar o documento.
       allow delete: if isDp() || isAdmin();

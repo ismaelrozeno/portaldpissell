@@ -61,6 +61,15 @@
       await releasesCollection().doc(id).update(changes);
       return this.getReleases();
     },
+    // Lixeira por usuário: põe/tira SÓ o id de quem está logado na lista (hiddenFor/purgedFor), de forma
+    // atômica no banco. Nunca regrava a lista inteira a partir de uma cópia antiga da tela — senão a ação
+    // de um usuário podia esconder ou apagar a liberação do histórico de outro.
+    async addToList(id, field, value) {
+      await releasesCollection().doc(id).update({ [field]: firebase.firestore.FieldValue.arrayUnion(value) });
+    },
+    async removeFromList(id, field, value) {
+      await releasesCollection().doc(id).update({ [field]: firebase.firestore.FieldValue.arrayRemove(value) });
+    },
     async removeRelease(id) {
       await releasesCollection().doc(id).delete();
       return this.getReleases();

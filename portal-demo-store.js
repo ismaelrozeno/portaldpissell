@@ -48,6 +48,14 @@
       write(releases);
       return releases;
     },
+    addToList(id, field, value) {
+      const releases = readCurrent().map((release) => release.id === id ? { ...release, [field]: [...new Set([...(release[field] || []), value])] } : release);
+      write(releases);
+    },
+    removeFromList(id, field, value) {
+      const releases = readCurrent().map((release) => release.id === id ? { ...release, [field]: (release[field] || []).filter((item) => item !== value) } : release);
+      write(releases);
+    },
     removeRelease(id) {
       const releases = readCurrent().filter((release) => release.id !== id);
       write(releases);
