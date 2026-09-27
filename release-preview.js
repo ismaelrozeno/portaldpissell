@@ -12,6 +12,7 @@
         <button type="button" id="print-release-preview">Imprimir / salvar PDF</button>
         <span class="release-live" title="A folha acompanha a liberação em tempo real">● ao vivo</span>
       </div>
+      <p class="release-launch-hint" id="launch-hint" role="status" hidden></p>
       <article class="release-sheet">
         <header class="release-sheet-header">
           <strong>DIRECIONAL</strong>
@@ -64,6 +65,18 @@
   function isDp() {
     const role = window.portalAuthDemo?.getSession()?.roleValue;
     return role === "dp" || (role === "administrador-analista" && dpContext);
+  }
+
+  // Por que o "Lançar abono" não aparece (só para o DP e o Administrador, para o botão nunca sumir sem explicação).
+  function launchHint(release) {
+    const role = window.portalAuthDemo?.getSession()?.roleValue;
+    if (!["dp", "administrador-analista"].includes(role) || release.abonoLaunchedAt || canLaunch(release)) return "";
+    const stage = window.portalReleaseFlow.stageOf(release);
+    if (release.bonusStatus === "denied") return "Engenheiro marcou NÃO ABONADO: não há abono para lançar no RM.";
+    if (!release.bonusStatus) return "O botão \"Lançar abono\" aparece depois que o engenheiro marcar ABONADO.";
+    if (!["dp", "gate", "exited"].includes(stage)) return "Esta liberação não está em etapa de lançamento no RM.";
+    if (!isDp()) return "Para lançar no RM, abra esta folha como Departamento Pessoal (em \"Acessar como\").";
+    return "";
   }
 
   function canLaunch(release) {
@@ -250,6 +263,9 @@
     set("#preview-gate", f.gate);
     set("#preview-gate-time", f.gateTime);
     overlay.querySelector("#launch-release-preview").hidden = !canLaunch(release);
+    const hint = launchHint(release);
+    overlay.querySelector("#launch-hint").textContent = hint;
+    overlay.querySelector("#launch-hint").hidden = !hint;
     overlay.querySelector("#undo-launch-release-preview").hidden = !(isDp() && release.abonoLaunchedAt);
     renderStamp(release, animate);
   }
