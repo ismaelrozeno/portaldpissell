@@ -22,7 +22,11 @@
   function showMessage(text) { message.textContent = text; message.hidden = false; }
   document.querySelector("#profile-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    await window.portalAuthDemo.updateProfile({ name: name.value.trim() });
+    const updated = await window.portalAuthDemo.updateProfile({ name: name.value.trim() });
+    // Sem avatar escolhido, as iniciais acompanham o novo nome.
+    renderAvatar(updated || { ...session, name: name.value.trim(), avatar: chosen });
+    window.portalRenderHeaderAvatar?.(updated || { ...session, name: name.value.trim(), avatar: chosen });
+    if (!picker.hidden) renderGrid();
     showMessage("Perfil atualizado.");
   });
   // Avatar: escolhido numa grade de imagens prontas (não há envio de foto própria).
@@ -32,13 +36,16 @@
   const grid = document.querySelector("#avatar-grid");
   let chosen = session.avatar || "";
   function renderAvatar(profile) {
-    const src = avatars.url(profile.avatar);
-    avatar.classList.toggle("has-image", !!src);
-    if (src) avatar.innerHTML = `<img src="${src}" alt="Avatar do perfil">`;
-    else avatar.textContent = (String(profile.name || "").trim().charAt(0) || "?").toUpperCase();
+    avatars.render(avatar, profile, "Avatar do perfil");
   }
   function renderGrid() {
-    grid.innerHTML = avatars.list.map((item) => `
+    // Primeira opção: as iniciais do nome (o padrão de toda conta). O id vazio significa "sem avatar".
+    const currentName = name.value.trim() || session.name;
+    const initialsOption = `
+      <button type="button" class="avatar-option avatar-option-initials${!chosen ? " is-selected" : ""}" role="radio" aria-checked="${!chosen}" data-avatar="" title="Iniciais do nome">
+        <span style="background:${avatars.color(currentName)}">${avatars.initials(currentName)}</span>
+      </button>`;
+    grid.innerHTML = initialsOption + avatars.list.map((item) => `
       <button type="button" class="avatar-option${item.id === chosen ? " is-selected" : ""}" role="radio" aria-checked="${item.id === chosen}" data-avatar="${item.id}" title="${item.label}">
         <img src="${avatars.url(item.id)}" alt="${item.label}" loading="lazy">
       </button>`).join("");

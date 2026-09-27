@@ -179,6 +179,8 @@
         matricula: isPorter ? "" : (profile.matricula || ""),
         status,
         photo: "",
+        // Conta nova começa sem avatar: o círculo mostra as iniciais do nome até a pessoa escolher um.
+        avatar: "",
         createdAt: new Date().toISOString()
       };
       await usersRef().doc(credential.user.uid).set(userDoc);

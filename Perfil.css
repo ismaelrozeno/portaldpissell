@@ -9,3 +9,5 @@ body.profile-page { background:#f4f7fb; color:#16283d; }.profile-page .site-head
 .avatar-option:hover, .avatar-option:focus-visible { transform:scale(1.06); border-color:#9cc3e6; outline:none; }
 .avatar-option.is-selected { border-color:#f5820a; background:#fff4e8; }
 .avatar-option img { width:100%; height:100%; object-fit:contain; }
+.avatar-option-initials span { display:grid; width:84%; height:84%; place-items:center; border-radius:50%; color:#fff; font-size:1.15rem; font-weight:800; letter-spacing:.02em; }
+.profile-avatar-large.has-initials { letter-spacing:.03em; }
