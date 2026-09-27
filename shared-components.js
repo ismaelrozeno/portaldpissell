@@ -30,7 +30,7 @@ window.portalAvatars = (() => {
     const last = words.length > 1 ? words[words.length - 1].charAt(0) : "";
     return (first + last).toUpperCase();
   }
-  const colors = ["#1a73e8", "#d93025", "#188038", "#e37400", "#8430ce", "#007b83", "#c5221f", "#3949ab", "#00796b", "#6d4c41", "#ad1457", "#5f6368"];
+  const colors = ["#1a73e8", "#f5820a", "#188038", "#e37400", "#8430ce", "#007b83", "#ef6c00", "#3949ab", "#00796b", "#6d4c41", "#ad1457", "#5f6368"];
   function color(name) {
     let hash = 0;
     for (const char of String(name || "").trim().toLowerCase()) hash = (hash * 31 + char.codePointAt(0)) >>> 0;
