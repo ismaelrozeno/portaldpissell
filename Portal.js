@@ -47,7 +47,7 @@
       title: "Painel do Departamento Pessoal",
       description: "Confira as liberações, autorize saídas e organize os registros.",
       eyebrow: "Conferência do DP",
-      tableTitle: "Aguardando autorização",
+      tableTitle: "Liberações da obra",
       action: "Nova liberação",
       actionHref: "Liberacao.html",
       team: "0",
@@ -410,10 +410,11 @@
     const releases = foremanRoleValues.includes(profileKey)
       ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : allVisible;
-    const foremanTeam = foremanRoleValues.includes(profileKey) && foremanRoleValues.includes(session?.roleValue)
+    // Mesma regra do quadro "Minha equipe": o administrador abrindo o perfil de encarregado não tem equipe própria.
+    const foremanTeam = foremanRoleValues.includes(session?.roleValue)
       ? employees.filter((employee) => [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
-      : employees;
-    elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : profileKey === "dp" ? employees.length : profile.team;
+      : [];
+    elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
     // Engenheiro: conta pelo abono ainda nao decidido, nao só pelo estágio — o DP pode
     // autorizar a saída antes dele decidir, então a pendência dele continua existindo
@@ -424,10 +425,19 @@
       const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"], seguranca_trabalho: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
       elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
     }
-    elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))).length;
-    elements.bonus.textContent = releases.filter((release) => release.bonusStatus === "approved" && ["gate", "exited"].includes(stageOf(release))).length;
+    // "Autorizadas hoje": só as que o DP autorizou hoje (data local), não todas as já autorizadas.
+    const localDay = (value) => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+    const today = localDay(Date.now());
+    elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))
+      && (release.dpDecisionAt ? localDay(release.dpDecisionAt) : release.date) === today).length;
+    // "Pendências de abono · aguardando engenheiro": liberações em andamento cujo abono o engenheiro ainda não decidiu.
+    elements.bonus.textContent = profileKey === "portaria" ? profile.bonus : releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
     renderForemanSummary(profileKey, employees);
-    elements.shortcutTitle.textContent = foremanRoleValues.includes(profileKey) ? "Operação" : profile.title.replace("Painel do ", "");
+    const shortcutTitle = profile.title.replace(/^Painel d[oa] /, "");
+    elements.shortcutTitle.textContent = foremanRoleValues.includes(profileKey) ? "Operação" : shortcutTitle.charAt(0).toUpperCase() + shortcutTitle.slice(1);
     elements.shortcutList.innerHTML = profile.shortcuts.map((shortcut, index) => {
       const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (foremanRoleValues.includes(profileKey) && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;

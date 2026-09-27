@@ -54,7 +54,7 @@
   logoutModal.innerHTML = `
     <div class="logout-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
       <button class="logout-modal__close" type="button" aria-label="Fechar confirmação">×</button>
-      <div class="logout-modal__icon" aria-hidden="true">⏻</div>
+      <div class="logout-modal__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></div>
       <h2 id="logout-modal-title">Sair da conta?</h2>
       <p>Você realmente deseja encerrar sua sessão?</p>
       <div class="logout-modal__actions">
