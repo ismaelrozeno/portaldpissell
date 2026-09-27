@@ -175,3 +175,6 @@ input[type="password"]::-ms-clear {
 .user-avatar { display: grid; flex: 0 0 auto; width: 2.5rem; height: 2.5rem; place-items: center; overflow: hidden; border-radius: 50%; font-size: .9rem; font-weight: 800; letter-spacing: .02em; }
 .user-avatar.has-image { background: #e8f1fa; }
 .user-avatar img { width: 86%; height: 86%; object-fit: contain; }
+/* Faixa de "sem conexão com o servidor" (firebase-release-store.js) */
+.connection-banner { position: fixed; left: 50%; bottom: 1rem; z-index: 2500; width: min(92vw, 560px); padding: .75rem 1rem; transform: translateX(-50%); border-radius: .7rem; color: #fff; background: #8b2930; box-shadow: 0 .6rem 1.6rem rgba(0, 20, 45, .3); font-size: .85rem; font-weight: 600; line-height: 1.35; text-align: center; }
+.connection-banner[hidden] { display: none; }

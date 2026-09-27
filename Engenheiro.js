@@ -93,9 +93,13 @@
     return renderRunning;
   }
 
+  // Liberações da última vez que a lista foi desenhada: o clique age na hora com elas, sem esperar o servidor.
+  let releaseById = new Map();
+
   async function renderNow() {
     // Na tela do engenheiro ninguém age como DP: apagar aqui só tira do histórico de quem apagou.
     const releases = actions.visibleFor(await window.portalDemoStore.getReleases());
+    releaseById = new Map(releases.map((release) => [release.id, release]));
     const order = { engineer: 0, dp: 1, foreman: 2, gate: 3, exited: 4, closed: 5 };
     const stageOf = flow.stageOf;
     const sorted = [...releases].sort((a, b) => order[stageOf(a)] - order[stageOf(b)]);
@@ -116,45 +120,71 @@
   filter.addEventListener("change", render);
   search?.addEventListener("input", render);
 
-  // Enquanto uma liberação está sendo salva, os botões do cartão dela ficam travados e o clicado mostra
-  // "Salvando…" (evita clique duplo). Sempre destrava no final, mesmo com erro de internet.
-  const busyReleases = new Set();
+  // Enquanto uma decisão é gravada, os botões do cartão ficam travados e o clicado mostra "Salvando…".
+  // Sempre destrava no final, mesmo com erro de internet.
+  // Cliques numa mesma liberação entram numa fila e são feitos um depois do outro, cada um com o estado mais
+  // novo (nenhum clique se perde, mesmo com internet lenta). Só o toque duplo acidental no MESMO botão, em
+  // menos de 0,8 s, é ignorado.
+  const releaseQueues = new Map();
+  let lastTap = { key: "", at: 0 };
+  function isDoubleTap(key) {
+    const now = Date.now();
+    const repeated = lastTap.key === key && now - lastTap.at < 800;
+    lastTap = { key, at: now };
+    return repeated;
+  }
+  function enqueue(id, task) {
+    const previous = releaseQueues.get(id) || Promise.resolve();
+    const current = previous.catch(() => {}).then(task);
+    releaseQueues.set(id, current);
+    current.finally(() => { if (releaseQueues.get(id) === current) releaseQueues.delete(id); });
+    return current;
+  }
   function setCardBusy(button, on) {
     button.closest("[data-release]")?.querySelectorAll("button").forEach((item) => { item.disabled = on; });
     if (on) {
-      button.dataset.label = button.textContent;
+      if (button.textContent !== "Salvando…") button.dataset.label = button.textContent;
       button.textContent = "Salvando…";
     } else if (button.dataset.label) {
       button.textContent = button.dataset.label;
     }
   }
 
-  list.addEventListener("click", async (event) => {
+  list.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-choice]");
     if (!button || button.disabled) return;
     const id = button.closest("[data-release]").dataset.release;
-    if (busyReleases.has(id)) return;
-    busyReleases.add(id);
+    const choice = button.dataset.choice;
+    if (isDoubleTap(`${id}:${choice}`)) return;
+    if (choice !== "view" && canSign() && button.textContent !== "Salvando…") {
+      button.dataset.label = button.textContent;
+      button.textContent = "Salvando…";
+    }
+    enqueue(id, () => handleChoice(button, id, choice));
+  });
+
+  async function handleChoice(button, id, choice) {
     try {
-      const releases = await window.portalDemoStore.getReleases();
-      const release = releases.find((item) => item.id === id);
+      // A lista pode ter sido redesenhada enquanto esperava na fila: usa a liberação mais nova.
+      const release = releaseById.get(id)
+        || (await window.portalDemoStore.getReleases()).find((item) => item.id === id);
       if (!release) return render();
-      if (button.dataset.choice === "view") {
+      if (choice === "view") {
         window.portalReleasePreview.show(release);
         return;
       }
       if (!canSign()) return;
       let run = null;
-      if (button.dataset.choice === "delete") {
+      if (choice === "delete") {
         if (!await actions.confirmText(actions.trashQuestion(release), "Mover para a lixeira")) return;
         run = () => actions.trashRelease(release);
-      } else if (button.dataset.choice === "refuse") {
+      } else if (choice === "refuse") {
         if (!actions.engineerCanRefuse(release)) return render();
         actions.openRefuseDialog(release, render);
         return;
       } else {
         if (!canAct(release)) return render();
-        run = () => actions.engineerToggleDecision(release, button.dataset.choice);
+        run = () => actions.engineerToggleDecision(release, choice);
       }
       setCardBusy(button, true);
       try {
@@ -167,9 +197,12 @@
       }
       render();
     } finally {
-      busyReleases.delete(id);
+      // Clique cancelado (ex.: "Cancelar" numa pergunta): devolve o texto do botão.
+      if (button.isConnected && button.textContent === "Salvando…" && !button.disabled) {
+        button.textContent = button.dataset.label || button.textContent;
+      }
     }
-  });
+  }
 
   if (isAdministrator) {
     adminSecurity.hidden = false;
@@ -187,5 +220,7 @@
       render();
     });
   }
+  // Lista ao vivo mudou (outra pessoa, ou a própria gravação confirmada): atualiza sozinho.
+  document.addEventListener("portal:releases-updated", render);
   render();
 })();

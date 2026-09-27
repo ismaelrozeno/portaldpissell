@@ -61,5 +61,6 @@
     render();
   });
   search.addEventListener("input", render);
+  document.addEventListener("portal:releases-updated", render);
   render();
 })();

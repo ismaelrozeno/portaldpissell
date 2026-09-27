@@ -226,6 +226,8 @@
   // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
   let trashMode = false;
   let shownReleases = [];
+  // Liberações da última vez que a tela foi desenhada: o clique age na hora com elas, sem esperar o servidor.
+  let releaseById = new Map();
 
   function renderToolbar(visibleCount, trashCount) {
     const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
@@ -249,10 +251,11 @@
     }
   }
 
-  async function renderRecords(profile) {
+  async function renderRecords(profile, prefetched) {
     const session = window.portalAuthDemo?.getSession();
     const actions = window.portalReleaseActions;
-    const allReleases = await window.portalDemoStore?.getReleases() || [];
+    const allReleases = prefetched || await window.portalDemoStore?.getReleases() || [];
+    releaseById = new Map(allReleases.map((release) => [release.id, release]));
     const trashed = actions.trashFor(allReleases);
     const releases = actions.visibleFor(allReleases);
     const flow = window.portalReleaseFlow;
@@ -345,13 +348,30 @@
     return refresh();
   });
 
-  // Enquanto uma liberação está sendo salva, os botões dela ficam desativados e o clicado mostra "Salvando…":
-  // evita clique duplo e deixa claro que a ação foi recebida. Sempre destrava no final, mesmo com erro.
-  const busyReleases = new Set();
+  // Enquanto uma ação é gravada, os botões da linha ficam desativados e o clicado mostra "Salvando…".
+  // Sempre destrava no final, mesmo com erro.
+  // Cliques numa mesma liberação entram numa fila e são feitos um depois do outro, cada um com o estado mais
+  // novo (nenhum clique se perde, mesmo com internet lenta). Só o toque duplo acidental no MESMO botão, em
+  // menos de 0,8 s, é ignorado.
+  const releaseQueues = new Map();
+  let lastTap = { key: "", at: 0 };
+  function isDoubleTap(key) {
+    const now = Date.now();
+    const repeated = lastTap.key === key && now - lastTap.at < 800;
+    lastTap = { key, at: now };
+    return repeated;
+  }
+  function enqueue(id, task) {
+    const previous = releaseQueues.get(id) || Promise.resolve();
+    const current = previous.catch(() => {}).then(task);
+    releaseQueues.set(id, current);
+    current.finally(() => { if (releaseQueues.get(id) === current) releaseQueues.delete(id); });
+    return current;
+  }
   function setRowBusy(button, on) {
     button.closest("tr")?.querySelectorAll("button").forEach((item) => { item.disabled = on; });
     if (on) {
-      button.dataset.label = button.textContent;
+      if (button.textContent !== "Salvando…") button.dataset.label = button.textContent;
       button.textContent = "Salvando…";
     } else if (button.dataset.label) {
       button.textContent = button.dataset.label;
@@ -363,15 +383,23 @@
     const button = event.target.closest("button[data-row-action]");
     if (!button || button.disabled) return;
     const id = button.dataset.releaseId;
-    if (busyReleases.has(id)) return;
+    const action = button.dataset.rowAction;
+    if (isDoubleTap(`${id}:${action}`)) return;
+    if (action !== "view" && button.textContent !== "Salvando…") {
+      button.dataset.label = button.textContent;
+      button.textContent = "Salvando…";
+    }
+    return enqueue(id, () => handleRowAction(button, id, action));
+  });
+
+  async function handleRowAction(button, id, action) {
     const actions = window.portalReleaseActions;
     const flow = window.portalReleaseFlow;
-    const action = button.dataset.rowAction;
     const refresh = () => renderProfile(activeProfileKey);
-    busyReleases.add(id);
+    // A tela pode ter sido redesenhada enquanto esperava na fila: usa a liberação mais nova.
     try {
-      const releases = await window.portalDemoStore?.getReleases() || [];
-      const release = releases.find((item) => item.id === id);
+      const release = releaseById.get(id)
+        || (await window.portalDemoStore?.getReleases() || []).find((item) => item.id === id);
       if (!release) return refresh();
       if (action === "view") {
         window.portalReleasePreview.show(release, { dpContext: activeProfileKey === "dp" });
@@ -419,12 +447,30 @@
       }
       return refresh();
     } finally {
-      busyReleases.delete(id);
+      // Clique cancelado (pergunta respondida com "Cancelar"): devolve o texto do botão.
+      if (button.isConnected && button.textContent === "Salvando…" && !button.disabled) {
+        button.textContent = button.dataset.label || button.textContent;
+        refresh();
+      }
     }
-  });
+  }
 
   let activeProfileKey = null;
+
+  // Colaboradores (só para contar a equipe): com internet ruim não prende a tela, usa a última lista carregada.
+  let lastEmployees = [];
+  async function employeesQuick() {
+    try {
+      const fresh = await Promise.race([window.portalEmployeeStore?.getAll(), new Promise((resolve) => setTimeout(() => resolve(null), 4000))]);
+      if (fresh) lastEmployees = fresh;
+    } catch (error) {
+      console.warn("Não foi possível atualizar os colaboradores.", error);
+    }
+    return lastEmployees;
+  }
   document.addEventListener("portal:release-changed", () => { if (activeProfileKey) renderProfile(activeProfileKey); });
+  // Lista ao vivo mudou (outra pessoa, ou a própria gravação confirmada): atualiza sozinho.
+  document.addEventListener("portal:releases-updated", () => { if (activeProfileKey) renderProfile(activeProfileKey); });
 
   // Redesenhos em fila: se chegar um pedido enquanto outro roda (ex.: vários cliques seguidos), roda só mais
   // uma vez no final com os dados mais novos, em vez de vários redesenhos ao mesmo tempo se atropelando.
@@ -464,9 +510,10 @@
     elements.primaryAction.href = profile.actionHref || "#";
     // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
     elements.secondaryAction.hidden = profileKey !== "estagiario_engenharia";
-    const employees = await window.portalEmployeeStore?.getAll() || [];
+    const employees = await employeesQuick();
     const session = window.portalAuthDemo?.getSession();
-    const allVisible = window.portalReleaseActions.visibleFor(await window.portalDemoStore?.getReleases() || []);
+    const allReleases = await window.portalDemoStore?.getReleases() || [];
+    const allVisible = window.portalReleaseActions.visibleFor(allReleases);
     // Encarregado, estagiário e segurança do trabalho veem (tabela, números e histórico) só o que eles mesmos solicitaram.
     const releases = foremanRoleValues.includes(profileKey)
       ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
@@ -503,7 +550,7 @@
       const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (foremanRoleValues.includes(profileKey) && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;
     }).join("");
-    await renderRecords(profileKey);
+    await renderRecords(profileKey, allReleases);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
       <li><span class="activity-dot ${["gate", "exited"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>

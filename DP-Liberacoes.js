@@ -110,6 +110,7 @@
     render();
   });
   document.addEventListener("portal:release-changed", render);
+  document.addEventListener("portal:releases-updated", render);
   clearHistory.hidden = !canClearHistory;
   securityBox.hidden = true;
   clearHistory.addEventListener("click", () => {
