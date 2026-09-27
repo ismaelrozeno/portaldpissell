@@ -18,7 +18,11 @@
         <p class="profile-kicker">Conta fixa do sistema</p>
         <h1 id="profile-title">Meu perfil</h1>
         <div class="profile-avatar-large" id="profile-avatar">A</div>
-        <label class="profile-upload">Alterar foto<input id="profile-photo" type="file" accept="image/*"></label>
+        <button class="profile-upload" id="profile-avatar-toggle" type="button" aria-expanded="false" aria-controls="avatar-picker">Escolher avatar</button>
+        <div class="avatar-picker" id="avatar-picker" hidden>
+          <p class="avatar-picker-title">Escolha seu avatar</p>
+          <div class="avatar-grid" id="avatar-grid" role="radiogroup" aria-label="Avatares disponíveis"></div>
+        </div>
         <form id="profile-form">
           <label for="profile-name">Nome</label>
           <input id="profile-name" type="text" required>
@@ -43,7 +47,7 @@
   <script src="firebase-init.js"></script>
   <script src="firebase-schema.js"></script>
 <script src="firebase-auth.js"></script>
-  <script src="shared-components.js?v=20260920-auth7"></script>
+  <script src="shared-components.js?v=20260927-avatar1"></script>
   <script src="Perfil.js"></script>
 </body>
 </html>

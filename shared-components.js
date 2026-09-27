@@ -1,3 +1,28 @@
+// Avatares de perfil (Microsoft Fluent Emoji 3D, licença MIT em images/avatars/LICENSE.txt).
+// O usuário escolhe um da lista; não há envio de foto própria. No perfil fica salvo só o id.
+window.portalAvatars = (() => {
+  const tones = [["default", "padrão"], ["light", "pele clara"], ["medium-light", "pele morena clara"], ["medium", "pele morena"], ["medium-dark", "pele morena escura"], ["dark", "pele escura"]];
+  const list = [
+    ...tones.map(([tone, label]) => ({ id: `pedreiro-${tone}`, label: `Pedreiro (${label})` })),
+    ...tones.map(([tone, label]) => ({ id: `pedreira-${tone}`, label: `Pedreira (${label})` })),
+    { id: "engenheiro-light", label: "Engenheiro" },
+    { id: "engenheiro-medium-dark", label: "Engenheiro" },
+    { id: "engenheira-light", label: "Engenheira" },
+    { id: "engenheira-medium-dark", label: "Engenheira" },
+    { id: "mecanico-medium", label: "Mecânico" },
+    { id: "mecanica-medium", label: "Mecânica" },
+    { id: "obra", label: "Obra" },
+    { id: "colete", label: "Colete refletivo" },
+    { id: "ferramentas", label: "Ferramentas" },
+    { id: "tijolo", label: "Tijolo" },
+    { id: "cavalete", label: "Cavalete de obra" },
+    { id: "esquadro", label: "Esquadro" }
+  ];
+  const find = (id) => list.find((item) => item.id === id) || null;
+  const url = (id) => (find(id) ? `images/avatars/${id}.png` : "");
+  return { list, find, url };
+})();
+
 (async function loadSharedComponents() {
   const protectedPages = new Set([
     "Portal.html", "Liberacao.html", "DP-Liberacoes.html", "Portaria.html",
@@ -75,6 +100,18 @@
     if (event.target === logoutModal) closeLogoutModal();
   });
   window.portalOpenLogoutModal = () => { logoutModal.hidden = false; };
+  // Círculo do cabeçalho: o avatar escolhido ou, sem avatar, a inicial do nome.
+  window.portalRenderHeaderAvatar = (profile) => {
+    const circle = document.querySelector(".site-header .profile-avatar");
+    if (!circle) return;
+    const src = window.portalAvatars.url(profile?.avatar);
+    circle.classList.toggle("has-image", !!src);
+    if (src) {
+      circle.innerHTML = `<img src="${src}" alt="">`;
+    } else {
+      circle.textContent = (String(profile?.name || "").trim().charAt(0) || "?").toUpperCase();
+    }
+  };
   const guestActions = document.querySelector("[data-guest-actions]");
   const profileAction = document.querySelector("[data-profile-action]");
   const profileLabel = document.querySelector("[data-profile-label]");
@@ -89,6 +126,7 @@
     profileAction.href = "Perfil.html";
     profileAction.setAttribute("aria-label", `Abrir perfil de ${session.name}`);
     if (profileLabel) profileLabel.textContent = session.name;
+    window.portalRenderHeaderAvatar(session);
     authenticatedLinks.forEach((link) => { link.hidden = false; });
     adminLinks.forEach((link) => {
       link.hidden = session.role !== "Administrador Analista" && session.roleValue !== "administrador-analista";

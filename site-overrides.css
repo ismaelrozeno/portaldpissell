@@ -164,3 +164,6 @@ input[type="password"]::-ms-clear {
     min-height: 68px;
   }
 }
+.site-header .profile-avatar { flex: 0 0 auto; overflow: hidden; }
+.site-header .profile-avatar.has-image { background: #e8f1fa; }
+.site-header .profile-avatar img { width: 86%; height: 86%; object-fit: contain; }

@@ -30,6 +30,7 @@
       especialidade: profile.especialidade || "",
       linkedForeman: profile.linkedForeman || "",
       photo: profile.photo || "",
+      avatar: profile.avatar || "",
       status: profile.status || "approved"
     };
   }
@@ -285,6 +286,7 @@
       const safeChanges = isFixedAdministrator ? { ...changes, email: currentSession.email } : changes;
       await usersRef().doc(user.uid).update({ ...safeChanges, updatedAt: new Date().toISOString() });
       currentSession = { ...currentSession, ...safeChanges };
+      writeSessionCache(currentSession);
       return currentSession;
     },
     logout() {
