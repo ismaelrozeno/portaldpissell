@@ -107,10 +107,8 @@
       : canLink
         ? `Escolha o encarregado de quem você é ${myWord} e toque em \"Me vincular como ${myWord}\". Você passa a ser como um segundo encarregado dessa equipe e pode montá-la no passo 2.`
         : "Escolha o encarregado para montar a equipe dele no passo 2.";
-    const warning = directoryBlocked
-      ? '<p class="teams-result is-error">⚠ Não consegui listar todos os encarregados cadastrados: o banco de dados ainda não liberou essa lista para o seu perfil. Por enquanto só aparecem encarregados que já têm colaboradores na equipe. Peça ao administrador para publicar as regras atualizadas do Firebase.</p>'
-      : "";
-    grid.innerHTML = warning + (names.length ? names.map((name) => {
+    // Aviso técnico (regras do Firebase pendentes) escondido da tela; a lista mostra o que já está liberado, sem alarme.
+    grid.innerHTML = (names.length ? names.map((name) => {
       const count = employees.filter((employee) => same(employee.encarregado, name)).length;
       const people = linkedLabel(name);
       const isMine = same(name, mineName);
