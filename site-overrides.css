@@ -104,6 +104,15 @@ input[type="password"]::-ms-clear {
 @media (max-width: 575.98px) {
   .site-header [data-profile-label] { max-width: 6.5rem; }
 }
+/* Celular (menu recolhido): perfil e sair ficam na mesma linha, entre o logo e o botão do menu. */
+@media (max-width: 767.98px) {
+  .site-header > .container-fluid { flex-wrap: nowrap; }
+  .site-header .account-actions { order: 1; min-width: 0; margin-left: auto; margin-right: .6rem; gap: .5rem; }
+  .site-header .navbar-toggler { order: 2; flex: 0 0 auto; }
+}
+@media (max-width: 374.98px) {
+  .site-header [data-profile-label] { max-width: 4.5rem; }
+}
 
 .site-header > .container-fluid {
   min-height: 76px;
