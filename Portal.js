@@ -267,7 +267,7 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
@@ -286,22 +286,18 @@
     const profileReleases = foremanRoleValues.includes(profile)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
-    // Ordem: o que precisa da ação do perfil aparece primeiro.
-    const priority = {
-      portaria: (release, stage) => (stage === "gate" ? 0 : 1),
-      engenheiro: (release, stage) => (actions.engineerCanAct(release) ? 0 : 1),
-      dp: (release, stage) => (actions.dpCanDecide(release) ? 0 : actions.needsLaunch(release) ? 1 : 2)
-    }[profile];
+    // Ordem: sempre por data de criação, mais recente primeiro (já vem assim do banco), igual para
+    // todos os perfis — nada de agrupar "o que precisa de ação" antes, senão uma liberação recente já
+    // decidida parece "sumir" atrás de uma antiga ainda pendente.
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
-    if (priority) rows = rows.map((row, index) => ({ ...row, index })).sort((a, b) => priority(a.release, a.stage) - priority(b.release, b.stage) || a.index - b.index);
     const visible = query ? rows.filter((row) => matches(row.release)) : rows;
     shownReleases = visible.map((row) => row.release);
     renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>

@@ -115,7 +115,15 @@
     text(ctx, fields.movement, left + 104, 236, { font: `13px ${SANS}` });
     text(ctx, "Motivo da saída:", 290, 236, { font: bold(13) });
     text(ctx, fields.reason, 400, 236, { font: `13px ${SANS}` });
-    text(ctx, fields.hours, right, 236, { font: `13px ${SANS}`, align: "right" });
+    // Pedido do encarregado (o que ele marcou no formulário) fica na mesma linha do motivo da saída —
+    // ali onde antes aparecia "release.hours" cru, que duplicava (e às vezes contradizia) o resultado
+    // já mostrado embaixo em "Tratamento das horas".
+    if (fields.bonusRequest) {
+      ctx.font = `13px ${SANS}`;
+      const valueWidth = ctx.measureText(fields.bonusRequest).width;
+      text(ctx, fields.bonusRequest, right, 236, { font: `13px ${SANS}`, align: "right" });
+      text(ctx, "Pedido:", right - valueWidth - 4, 236, { font: bold(13), align: "right" });
+    }
 
     // Observação
     text(ctx, "Motivo / observação:", left, 266, { font: bold(13) });

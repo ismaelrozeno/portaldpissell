@@ -127,8 +127,16 @@
         cursor += width(part.replace(/^\s+/, "")) + (part.trim() ? 6 : 8);
       }
     }
-    font("normal", 13);
-    text(fields.hours, right, 236, { align: "right" });
+    // Pedido do encarregado (o que ele marcou no formulário) fica na mesma linha do motivo da saída —
+    // ali onde antes aparecia "release.hours" cru, que duplicava (e às vezes contradizia) o resultado
+    // já mostrado embaixo em "Tratamento das horas".
+    if (fields.bonusRequest) {
+      font("normal", 13);
+      const valueWidth = width(fields.bonusRequest);
+      text(fields.bonusRequest, right, 236, { align: "right" });
+      font("bold", 13);
+      text("Pedido:", right - valueWidth - 4, 236, { align: "right" });
+    }
 
     // Observação
     font("bold", 13);
