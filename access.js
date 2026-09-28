@@ -143,7 +143,6 @@
   const registrationEmail = document.querySelector("#email-registro");
   const registrationPassword = document.querySelector("#senha-registro");
   const passwordConfirmation = document.querySelector("#senha-confirmacao-registro");
-  const developmentModal = document.querySelector("#registration-development-modal");
   const normalizeIdentity = window.portalAuthDemo?.normalizeIdentity || ((value) => value.trim().toUpperCase());
   const normalizeIdentityWhileTyping = (value) => String(value || "")
     .normalize("NFD")
