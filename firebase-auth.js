@@ -166,8 +166,21 @@
       }
     },
 
+    // Uma matrícula só pode ter um cadastro: o índice matrícula -> e-mail é criado uma única vez.
+    async isEnrollmentRegistered(matricula) {
+      const trimmed = String(matricula || "").trim();
+      if (!trimmed) return false;
+      const indexDoc = await matriculaIndexRef().doc(trimmed).get();
+      return indexDoc.exists;
+    },
+
     async register(profile, password) {
       const isPorter = profile.roleValue === "porteiro";
+      if (!isPorter && profile.matricula && (await this.isEnrollmentRegistered(profile.matricula))) {
+        const error = new Error("Matrícula já cadastrada.");
+        error.code = "portal/matricula-already-registered";
+        throw error;
+      }
       const credential = await auth().createUserWithEmailAndPassword(profile.email, password);
       const status = isPorter ? "pending-dp" : "approved";
       const userDoc = {
@@ -183,9 +196,24 @@
         avatar: "",
         createdAt: new Date().toISOString()
       };
-      await usersRef().doc(credential.user.uid).set(userDoc);
-      if (!isPorter && profile.matricula) {
-        await matriculaIndexRef().doc(profile.matricula).set({ email: profile.email });
+      let indexCreated = false;
+      try {
+        // O índice vem primeiro e funciona como trava: as regras do banco recusam criar de novo uma matrícula que já existe.
+        if (!isPorter && profile.matricula) {
+          await matriculaIndexRef().doc(profile.matricula).set({ email: profile.email, uid: credential.user.uid });
+          indexCreated = true;
+        }
+        await usersRef().doc(credential.user.uid).set(userDoc);
+      } catch (error) {
+        // Não deixa conta "fantasma" (login criado sem perfil): desfaz o que foi criado para a pessoa poder tentar de novo.
+        if (indexCreated) await matriculaIndexRef().doc(profile.matricula).delete().catch(() => {});
+        await credential.user.delete().catch(() => auth().signOut());
+        if (error?.code === "permission-denied" && !indexCreated && !isPorter) {
+          const duplicate = new Error("Matrícula já cadastrada.");
+          duplicate.code = "portal/matricula-already-registered";
+          throw duplicate;
+        }
+        throw error;
       }
       if (isPorter) {
         await auth().signOut();

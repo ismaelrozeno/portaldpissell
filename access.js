@@ -245,8 +245,12 @@
     registrationEmail.addEventListener("input", () => updateEmailState(false));
     registrationEmail.addEventListener("blur", () => updateEmailState(true));
 
+    // Evita cadastro duplicado por clique repetido: enquanto um envio está em andamento, os outros são ignorados.
+    let registrationInProgress = false;
+    let redirectingAfterRegistration = false;
     registrationForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (registrationInProgress) return;
       const message = document.querySelector("#registration-message");
       message.textContent = "";
       message.classList.remove("is-visible");
@@ -264,36 +268,37 @@
         return;
       }
 
-      const isPorter = registrationRole.value === "porteiro";
-      if (!isPorter && !(await window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value))) {
-        message.textContent = "Essa matrícula não está liberada para cadastro. Confira com o Administrador Analista.";
-        message.classList.add("is-visible");
-        registrationEnrollment.setCustomValidity("Matrícula não liberada para cadastro.");
-        registrationEnrollment.focus();
-        return;
-      }
-      if (!isPorter && !(await window.portalAuthDemo.isRegistrationAllowedForRole(registrationEnrollment.value, registrationRole.value))) {
-        message.textContent = "Esta matrícula não está autorizada para o perfil selecionado. No Administrador, confira se a matrícula foi liberada para a mesma função.";
-        message.classList.add("is-visible");
-        registrationEnrollment.setCustomValidity("Matrícula não autorizada para este perfil.");
-        registrationEnrollment.focus();
-        return;
-      }
-      if (!isPorter && !(await window.portalAuthDemo.isRegistrationIdentityAllowed(
-        registrationEnrollment.value,
-        registrationName.value,
-        registrationRole.value
-      ))) {
-        message.textContent = "O nome completo não corresponde à matrícula autorizada. Confira os dados com o Administrador Analista.";
-        registrationName.setCustomValidity("Nome não corresponde à matrícula autorizada.");
-        registrationName.focus();
-        return;
-      }
-      registrationName.setCustomValidity("");
-
+      registrationInProgress = true;
       const submitButton = registrationForm.querySelector('button[type="submit"]');
       if (submitButton) submitButton.disabled = true;
       try {
+        const isPorter = registrationRole.value === "porteiro";
+        if (!isPorter && !(await window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value))) {
+          message.textContent = "Essa matrícula não está liberada para cadastro. Confira com o Administrador Analista.";
+          message.classList.add("is-visible");
+          registrationEnrollment.setCustomValidity("Matrícula não liberada para cadastro.");
+          registrationEnrollment.focus();
+          return;
+        }
+        if (!isPorter && !(await window.portalAuthDemo.isRegistrationAllowedForRole(registrationEnrollment.value, registrationRole.value))) {
+          message.textContent = "Esta matrícula não está autorizada para o perfil selecionado. No Administrador, confira se a matrícula foi liberada para a mesma função.";
+          message.classList.add("is-visible");
+          registrationEnrollment.setCustomValidity("Matrícula não autorizada para este perfil.");
+          registrationEnrollment.focus();
+          return;
+        }
+        if (!isPorter && !(await window.portalAuthDemo.isRegistrationIdentityAllowed(
+          registrationEnrollment.value,
+          registrationName.value,
+          registrationRole.value
+        ))) {
+          message.textContent = "O nome completo não corresponde à matrícula autorizada. Confira os dados com o Administrador Analista.";
+          message.classList.add("is-visible");
+          registrationName.setCustomValidity("Nome não corresponde à matrícula autorizada.");
+          registrationName.focus();
+          return;
+        }
+        registrationName.setCustomValidity("");
         const registrationResult = await window.portalAuthDemo.register({
           name: normalizeIdentity(registrationName.value),
           email: registrationEmail.value.trim(),
@@ -310,15 +315,25 @@
           updateForemanSpecialtyVisibility();
           return;
         }
+        redirectingAfterRegistration = true;
         window.location.href = "Portal.html";
       } catch (error) {
-        message.textContent = error?.code === "auth/email-already-in-use"
-          ? "Já existe um cadastro com este e-mail."
-          : "Não foi possível concluir o cadastro. Tente novamente.";
+        if (error?.code === "portal/matricula-already-registered") {
+          message.textContent = "Esta matrícula já tem cadastro. Use \"Entrar\" com sua matrícula ou, se esqueceu a senha, \"Altere sua senha\".";
+          registrationEnrollment.setCustomValidity("Matrícula já cadastrada.");
+        } else {
+          message.textContent = error?.code === "auth/email-already-in-use"
+            ? "Já existe um cadastro com este e-mail."
+            : "Não foi possível concluir o cadastro. Tente novamente.";
+        }
         message.classList.add("is-visible");
         console.error("Falha no cadastro.", error);
       } finally {
-        if (submitButton) submitButton.disabled = false;
+        // Cadastro concluído: mantém o botão travado até a página do portal abrir.
+        if (!redirectingAfterRegistration) {
+          registrationInProgress = false;
+          if (submitButton) submitButton.disabled = false;
+        }
       }
     });
   }
