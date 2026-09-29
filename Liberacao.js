@@ -61,7 +61,7 @@
     const signatureDescription = document.querySelector("#signature-description");
     if (kicker) kicker.textContent = `${roleLabel} · Obra 369`;
     if (employeeHint) {
-      employeeHint.textContent = ["encarregado", "estagiario_engenharia", "seguranca_trabalho"].includes(session?.roleValue)
+      employeeHint.textContent = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)
         ? "Sua equipe e colaboradores ainda sem encarregado vinculado serão exibidos."
         : "Selecione o colaborador para registrar a liberação.";
     }
@@ -87,8 +87,8 @@
     const session = window.portalAuthDemo?.getSession();
     const allEmployeesRaw = await window.portalEmployeeStore?.getAll() || [];
     let employees;
-    if (["encarregado", "estagiario_engenharia", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const teamOwners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
+    if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)) {
+      const teamOwners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""].map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
       const myTeam = allEmployeesRaw.filter((item) => teamOwners.includes(item.encarregado?.trim().toLowerCase()));
       const unassigned = allEmployeesRaw.filter((item) => !item.encarregado);
       const seen = new Set(myTeam.map((item) => item.matricula));
@@ -183,7 +183,7 @@
       releaseButton();
       return;
     }
-    const isForeman = ["encarregado", "estagiario_engenharia", "seguranca_trabalho"].includes(session?.roleValue);
+    const isForeman = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue);
     if (existing && isForeman && window.portalReleaseFlow.stageOf(existing) !== "foreman") {
       errorMessage.textContent = "Esta liberação já está em análise e só pode ser editada se o engenheiro recusar.";
       errorMessage.hidden = false;

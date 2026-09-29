@@ -106,6 +106,7 @@
         dp: ["dp", "departamento pessoal"],
         encarregado: ["encarregado"],
         estagiario_engenharia: ["estagiario_engenharia", "estagiário de engenharia"],
+        analista: ["analista"],
         seguranca_trabalho: ["seguranca_trabalho", "segurança do trabalho", "seguranca do trabalho"],
         engenheiro: ["engenheiro", "engenheiro responsável"]
       };

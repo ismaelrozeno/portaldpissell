@@ -49,7 +49,7 @@
 
   async function getForemen() {
     const users = await window.portalAuthDemo.getAllUsers();
-    const foremanRoles = ["encarregado", "dp", "engenheiro", "estagiario_engenharia", "seguranca_trabalho"];
+    const foremanRoles = ["encarregado", "dp", "engenheiro", "estagiario_engenharia", "analista", "seguranca_trabalho"];
     return users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
   }
 
@@ -138,7 +138,7 @@
     const users = await window.portalAuthDemo.getAllUsers();
     const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
     const helperForemen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved" && user.name);
-    const roleWords = { estagiario_engenharia: "Estagiário", engenheiro: "Engenheiro", dp: "DP" };
+    const roleWords = { estagiario_engenharia: "Estagiário", analista: "Analista", engenheiro: "Engenheiro", dp: "DP" };
     const helperSelect = (user) => `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="${roleWords[user.roleValue] || "Usuário"} vinculado a qual encarregado"><option value="">Sem vínculo com encarregado</option>${helperForemen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === user.linkedForeman ? " selected" : ""}>${roleWords[user.roleValue] || "Vinculado"} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>`;
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
     const query = window.normalizeSearchText(registeredUsersSearch?.value || "");
@@ -149,7 +149,7 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "analista", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }

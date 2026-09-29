@@ -15,6 +15,21 @@
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
       shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
+    // Analista: por enquanto é o painel do estagiário de engenharia com outro nome.
+    analista: {
+      title: "Painel do analista",
+      description: "Acompanhe sua equipe e registre as liberações do dia.",
+      eyebrow: "Minha equipe",
+      tableTitle: "Minhas liberações",
+      action: "Nova liberação",
+      actionHref: "Liberacao.html",
+      team: "0",
+      pending: "0",
+      approved: "0",
+      bonus: "0",
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+    },
     estagiario_engenharia: {
       title: "Painel do estagiário de engenharia",
       description: "Acompanhe sua equipe e registre as liberações do dia.",
@@ -127,7 +142,9 @@
     "logistica-almoxarifado": "Encarregado de Logística / Almoxarifado"
   };
 
-  const foremanRoleValues = ["encarregado", "estagiario_engenharia", "seguranca_trabalho"];
+  const foremanRoleValues = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
+  // Perfis que trabalham na equipe do encarregado a quem estão vinculados.
+  const linkedRoleValues = ["estagiario_engenharia", "analista"];
 
   function renderForemanSummary(profileKey, employees) {
     const session = window.portalAuthDemo?.getSession();
@@ -143,11 +160,13 @@
       ? specialtyLabels[session.especialidade] || "área não informada"
       : session?.roleValue === "estagiario_engenharia"
         ? (session.linkedForeman ? `Estagiário de Engenharia · vinculado a ${session.linkedForeman}` : "Estagiário de Engenharia · escolha seu encarregado em Equipes e Excel")
+        : session?.roleValue === "analista"
+          ? (session.linkedForeman ? `Analista · vinculado a ${session.linkedForeman}` : "Analista · escolha seu encarregado em Equipes e Excel")
         : session?.roleValue === "seguranca_trabalho"
           ? "Segurança do trabalho"
           : "selecione um cadastro de encarregado para visualizar";
     // O estagiário cuida da equipe do encarregado a quem está vinculado (além de uma equipe que tenha no próprio nome).
-    const teamOwners = [session?.name, session?.roleValue === "estagiario_engenharia" ? session?.linkedForeman : ""]
+    const teamOwners = [session?.name, linkedRoleValues.includes(session?.roleValue) ? session?.linkedForeman : ""]
       .map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
     const team = isActingForeman
       ? employees.filter((employee) => teamOwners.includes(employee.encarregado?.trim().toLowerCase()))
@@ -509,7 +528,7 @@
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref || "#";
     // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
-    elements.secondaryAction.hidden = profileKey !== "estagiario_engenharia";
+    elements.secondaryAction.hidden = !linkedRoleValues.includes(profileKey);
     const employees = await employeesQuick();
     const session = window.portalAuthDemo?.getSession();
     const allReleases = await window.portalDemoStore?.getReleases() || [];
@@ -520,7 +539,7 @@
       : allVisible;
     // Mesma regra do quadro "Minha equipe": o administrador abrindo o perfil de encarregado não tem equipe própria.
     const foremanTeam = foremanRoleValues.includes(session?.roleValue)
-      ? employees.filter((employee) => [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
+      ? employees.filter((employee) => [session.name, linkedRoleValues.includes(session.roleValue) ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
       : [];
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
@@ -530,7 +549,7 @@
     if (profileKey === "engenheiro") {
       elements.pending.textContent = releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
     } else {
-      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"], seguranca_trabalho: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
+      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"], analista: ["engineer", "foreman", "dp"], seguranca_trabalho: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
       elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
     }
     // "Autorizadas hoje": só as que o DP autorizou hoje (data local), não todas as já autorizadas.

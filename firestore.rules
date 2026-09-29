@@ -13,10 +13,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "dp";
     }
 
+    // Analista: por enquanto tem os mesmos poderes do estagiário de engenharia.
     function isIntern() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "estagiario_engenharia";
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue in ["estagiario_engenharia", "analista"];
     }
 
     function isEngineer() {
@@ -46,11 +47,11 @@ service cloud.firestore {
       // Além do administrador, DP, encarregado, estagiário e engenheiro podem listar SÓ encarregados, estagiários,
       // engenheiros e DP (para montar e exportar equipes).
       allow list: if isAdmin() ||
-        ((isDp() || isForeman() || isLinker()) && resource.data.roleValue in ["encarregado", "estagiario_engenharia", "engenheiro", "dp"]);
+        ((isDp() || isForeman() || isLinker()) && resource.data.roleValue in ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]);
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && (request.auth.uid == userId || isAdmin() ||
         // O DP só pode vincular estagiário/engenheiro a um encarregado (campo "linkedForeman"), nada além disso.
-        (isDp() && resource.data.roleValue in ["estagiario_engenharia", "engenheiro"] &&
+        (isDp() && resource.data.roleValue in ["estagiario_engenharia", "analista", "engenheiro"] &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "updatedAt"])));
       allow delete: if isAdmin();
     }

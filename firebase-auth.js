@@ -234,7 +234,7 @@
     // Diretório para montar equipes (encarregados, e estagiários/engenheiros/DP vinculados a eles). Não exige ser administrador:
     // as regras do banco deixam DP, encarregado e estagiário listar só esses dois perfis.
     async getTeamDirectory() {
-      const snapshot = await usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "engenheiro", "dp"]).get();
+      const snapshot = await usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]).get();
       const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
       return {
         foremen: people.filter((user) => user.roleValue === "encarregado"),
@@ -248,7 +248,7 @@
     },
     // Ao vivo: avisa quando alguém se vincula/desvincula ou um encarregado entra/sai.
     subscribeTeamDirectory(callback, onError) {
-      return usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "engenheiro", "dp"]).onSnapshot((snapshot) => {
+      return usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]).onSnapshot((snapshot) => {
         const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
         callback({
           foremen: people.filter((user) => user.roleValue === "encarregado"),
@@ -287,6 +287,7 @@
         dp: ["dp", "departamento pessoal"],
         encarregado: ["encarregado"],
         estagiario_engenharia: ["estagiario_engenharia", "estagiário de engenharia"],
+        analista: ["analista"],
         seguranca_trabalho: ["seguranca_trabalho", "segurança do trabalho", "seguranca do trabalho"],
         engenheiro: ["engenheiro", "engenheiro responsável"]
       };

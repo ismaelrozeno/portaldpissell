@@ -4,7 +4,8 @@
   const role = session?.roleValue;
   const isAdmin = role === "administrador-analista";
   const isDp = role === "dp";
-  const isIntern = role === "estagiario_engenharia";
+  // Analista: por enquanto tem os mesmos poderes do estagiário de engenharia.
+  const isIntern = role === "estagiario_engenharia" || role === "analista";
   const isEngineer = role === "engenheiro";
   const isForeman = role === "encarregado" || role === "seguranca_trabalho";
   const $ = (selector) => document.querySelector(selector);
@@ -31,8 +32,8 @@
   const isLinked = isIntern || isEngineer;
   const canLink = isIntern || isEngineer || isDp;
   // Como a pessoa se chama nesta equipe (o texto da tela usa o cargo, nunca "ajudante").
-  const myWord = isIntern ? "estagiário" : isEngineer ? "engenheiro" : "DP";
-  const roleWord = (user) => (user.roleValue === "estagiario_engenharia" ? "Estagiário" : user.roleValue === "engenheiro" ? "Engenheiro" : "DP");
+  const myWord = role === "analista" ? "analista" : isIntern ? "estagiário" : isEngineer ? "engenheiro" : "DP";
+  const roleWord = (user) => (user.roleValue === "estagiario_engenharia" ? "Estagiário" : user.roleValue === "analista" ? "Analista" : user.roleValue === "engenheiro" ? "Engenheiro" : "DP");
   const canManage = isAdmin || isDp || isLinked;
   let employees = [];
   let foremen = [];
@@ -84,14 +85,14 @@
   function assignHtml(name) {
     const linkedHere = people.filter((user) => user.roleValue !== "encarregado" && same(user.linkedForeman, name));
     const candidates = people
-      .filter((user) => ["estagiario_engenharia", "engenheiro"].includes(user.roleValue) && !same(user.linkedForeman, name))
+      .filter((user) => ["estagiario_engenharia", "analista", "engenheiro"].includes(user.roleValue) && !same(user.linkedForeman, name))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     const safe = escapeHtml(name);
     return `<div class="foreman-assign">
-      <div class="foreman-assign-title">Estagiário / engenheiro desta equipe</div>
+      <div class="foreman-assign-title">Estagiário / analista / engenheiro desta equipe</div>
       ${linkedHere.length ? linkedHere.map((user) => `<div class="foreman-assign-row"><span>${roleWord(user)}: <strong>${escapeHtml(user.name)}</strong></span><button type="button" class="foreman-unlink" data-unassign="${escapeHtml(user.id)}" aria-label="Tirar ${escapeHtml(user.name)}">Tirar</button></div>`).join("") : '<div class="foreman-assign-empty">Nenhum vinculado.</div>'}
       <div class="foreman-assign-add">
-        <select data-assign-select="${safe}" aria-label="Estagiário para vincular a ${safe}"><option value="">Vincular estagiário…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${user.linkedForeman ? ` (hoje: ${escapeHtml(user.linkedForeman)})` : ""}</option>`).join("")}</select>
+        <select data-assign-select="${safe}" aria-label="Estagiário ou analista para vincular a ${safe}"><option value="">Vincular estagiário ou analista…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${user.linkedForeman ? ` (hoje: ${escapeHtml(user.linkedForeman)})` : ""}</option>`).join("")}</select>
         <button type="button" class="foreman-link" data-assign="${safe}">Vincular</button>
       </div>
     </div>`;
@@ -125,7 +126,7 @@
         <h3>${safe}</h3>
         <div class="foreman-badges">${badges}</div>
         <div class="foreman-meta"><strong>${count}</strong> colaborador(es) na equipe</div>
-        <div class="foreman-linked">${people.length ? escapeHtml(people.join(" · ")) : "Sem estagiário vinculado"}</div>
+        <div class="foreman-linked">${people.length ? escapeHtml(people.join(" · ")) : "Sem estagiário ou analista vinculado"}</div>
         <div class="foreman-actions">${actions}</div>
         ${canAssign ? assignHtml(name) : ""}
       </article>`;
