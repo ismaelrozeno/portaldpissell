@@ -178,3 +178,10 @@ input[type="password"]::-ms-clear {
 /* Faixa de "sem conexão com o servidor" (firebase-release-store.js) */
 .connection-banner { position: fixed; left: 50%; bottom: 1rem; z-index: 2500; width: min(92vw, 560px); padding: .75rem 1rem; transform: translateX(-50%); border-radius: .7rem; color: #fff; background: #8b2930; box-shadow: 0 .6rem 1.6rem rgba(0, 20, 45, .3); font-size: .85rem; font-weight: 600; line-height: 1.35; text-align: center; }
 .connection-banner[hidden] { display: none; }
+/* Botão carregando (window.portalButtonLoading em shared-components.js) */
+.is-loading { cursor: progress !important; }
+.is-loading:disabled { opacity: .9; }
+.button-spinner { display: inline-block; width: 1em; height: 1em; margin-right: .5em; border: .15em solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -.15em; animation: button-spin .7s linear infinite; }
+@keyframes button-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .button-spinner { animation-duration: 1.8s; } }
+.table-loading td { padding: 1.5rem 1rem; text-align: center; opacity: .75; }

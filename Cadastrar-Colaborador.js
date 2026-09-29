@@ -19,23 +19,34 @@
     foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${escapeHtml(foreman.name)}</option>`).join("");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const normalizedMatricula = registration.value.replace(/\D/g, "").slice(0, 7);
-    const existingEmployees = await window.portalEmployeeStore.getAll();
-    if (existingEmployees.some((item) => item.matricula === normalizedMatricula)) {
-      result.textContent = "Já existe um colaborador cadastrado com esta matrícula.";
+    const saveButton = form.querySelector('button[type="submit"]');
+    if (saveButton?.classList.contains("is-loading")) return;
+    const stopLoading = window.portalButtonLoading(saveButton, "Salvando…");
+    try {
+      const normalizedMatricula = registration.value.replace(/\D/g, "").slice(0, 7);
+      const existingEmployees = await window.portalEmployeeStore.getAll();
+      if (existingEmployees.some((item) => item.matricula === normalizedMatricula)) {
+        result.textContent = "Já existe um colaborador cadastrado com esta matrícula.";
+        result.hidden = false;
+        return;
+      }
+      await window.portalEmployeeStore.upsert({
+        matricula: registration.value,
+        nome: document.querySelector("#employee-name").value.trim(),
+        funcao: document.querySelector("#employee-role").value.trim(),
+        setor: document.querySelector("#employee-team").value.trim(),
+        encarregado: document.querySelector("#employee-foreman").value.trim()
+      });
+      await window.portalEmployeeStore.addAllowedRegistration(registration.value);
+      result.textContent = "Colaborador salvo.";
       result.hidden = false;
-      return;
+      form.reset();
+    } catch (error) {
+      console.error("Não foi possível salvar o colaborador.", error);
+      result.textContent = "Não foi possível salvar o colaborador. Tente novamente.";
+      result.hidden = false;
+    } finally {
+      stopLoading();
     }
-    await window.portalEmployeeStore.upsert({
-      matricula: registration.value,
-      nome: document.querySelector("#employee-name").value.trim(),
-      funcao: document.querySelector("#employee-role").value.trim(),
-      setor: document.querySelector("#employee-team").value.trim(),
-      encarregado: document.querySelector("#employee-foreman").value.trim()
-    });
-    await window.portalEmployeeStore.addAllowedRegistration(registration.value);
-    result.textContent = "Colaborador salvo.";
-    result.hidden = false;
-    form.reset();
   });
 })();

@@ -1,3 +1,30 @@
+// Botão "carregando" padrão do site: enquanto espera o servidor, trava o botão e mostra um giro com a etapa atual,
+// para ninguém achar que a tela travou. Chamar de novo no mesmo botão só troca o texto da etapa.
+// Uso: const stop = window.portalButtonLoading(button, "Salvando…"); ... stop(); // devolve o botão como era
+window.portalButtonLoading = (button, text) => {
+  if (!button) return () => {};
+  if (!button.classList.contains("is-loading")) {
+    button.dataset.loadingOriginal = button.innerHTML;
+    button.dataset.loadingWasDisabled = String(button.disabled);
+    button.classList.add("is-loading");
+    button.setAttribute("aria-busy", "true");
+    button.disabled = true;
+  }
+  const spinner = document.createElement("span");
+  spinner.className = "button-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+  button.replaceChildren(spinner, document.createTextNode(text || "Carregando…"));
+  return () => {
+    if (!button.classList.contains("is-loading")) return;
+    button.innerHTML = button.dataset.loadingOriginal;
+    button.disabled = button.dataset.loadingWasDisabled === "true";
+    button.classList.remove("is-loading");
+    button.removeAttribute("aria-busy");
+    delete button.dataset.loadingOriginal;
+    delete button.dataset.loadingWasDisabled;
+  };
+};
+
 // Avatares de perfil (Microsoft Fluent Emoji 3D, licença MIT em images/avatars/LICENSE.txt).
 // O usuário escolhe um da lista; não há envio de foto própria. No perfil fica salvo só o id.
 window.portalAvatars = (() => {

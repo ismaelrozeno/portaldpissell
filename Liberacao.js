@@ -142,6 +142,12 @@
 
   let isSubmitting = false;
   const submitButton = form.querySelector(".release-submit");
+  let stopLoading = () => {};
+  const releaseButton = () => {
+    isSubmitting = false;
+    stopLoading();
+    submitButton.disabled = false;
+  };
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -160,11 +166,11 @@
           ? "Marque entrada, saída ou as duas."
           : "Confira os campos obrigatórios antes de enviar a liberação.";
       errorMessage.hidden = false;
-      isSubmitting = false;
-      submitButton.disabled = false;
+      releaseButton();
       return;
     }
 
+    stopLoading = window.portalButtonLoading(submitButton, "Enviando liberação…");
     const selectedEmployee = selectedEmployeeName;
     const reason = document.querySelector('input[name="reason"]:checked').value;
     const bonusRequest = document.querySelector('input[name="bonus-request"]:checked')?.value || null;
@@ -174,12 +180,14 @@
     if (editId && !existing) {
       errorMessage.textContent = "Liberação não encontrada.";
       errorMessage.hidden = false;
+      releaseButton();
       return;
     }
     const isForeman = ["encarregado", "estagiario_engenharia", "seguranca_trabalho"].includes(session?.roleValue);
     if (existing && isForeman && window.portalReleaseFlow.stageOf(existing) !== "foreman") {
       errorMessage.textContent = "Esta liberação já está em análise e só pode ser editada se o engenheiro recusar.";
       errorMessage.hidden = false;
+      releaseButton();
       return;
     }
     const releaseData = {
@@ -223,14 +231,14 @@
       successMessage.innerHTML = '<span class="release-done-icon" aria-hidden="true">✓</span><strong>Concluído!</strong> Solicitação enviada ao engenheiro responsável para decisão do abono.<small>Voltando ao seu painel…</small>';
       successMessage.classList.add("is-done");
       successMessage.hidden = false;
+      window.portalButtonLoading(submitButton, "Enviado! Voltando ao painel…");
       successMessage.scrollIntoView({ behavior: "smooth", block: "center" });
       setTimeout(() => { window.location.href = "Portal.html"; }, 2200);
     } catch (err) {
       console.error(err);
       errorMessage.textContent = "Não foi possível registrar a liberação. Tente novamente.";
       errorMessage.hidden = false;
-      isSubmitting = false;
-      submitButton.disabled = false;
+      releaseButton();
     }
   });
 })();

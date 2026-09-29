@@ -191,12 +191,23 @@
       roleValue: allowRole.value,
       role: allowRole.options[allowRole.selectedIndex].textContent
     };
-    if (editingAllowedRegistration) {
-      await window.portalEmployeeStore.updateAllowedRegistration(editingAllowedRegistration, changes);
-      allowResult.textContent = "Matrícula permitida atualizada.";
-    } else {
-      await window.portalEmployeeStore.addAllowedRegistration(allowInput.value, changes);
-      allowResult.textContent = "Matrícula permitida adicionada.";
+    if (allowSubmit.classList.contains("is-loading")) return;
+    const stopLoading = window.portalButtonLoading(allowSubmit, "Salvando…");
+    try {
+      if (editingAllowedRegistration) {
+        await window.portalEmployeeStore.updateAllowedRegistration(editingAllowedRegistration, changes);
+        allowResult.textContent = "Matrícula permitida atualizada.";
+      } else {
+        await window.portalEmployeeStore.addAllowedRegistration(allowInput.value, changes);
+        allowResult.textContent = "Matrícula permitida adicionada.";
+      }
+    } catch (error) {
+      console.error("Não foi possível salvar a matrícula permitida.", error);
+      allowResult.textContent = "Não foi possível salvar a matrícula. Tente novamente.";
+      allowResult.hidden = false;
+      return;
+    } finally {
+      stopLoading();
     }
     allowResult.hidden = false;
     allowForm.reset();
@@ -209,23 +220,34 @@
   });
   employeeForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (employeeSubmit.classList.contains("is-loading")) return;
     const normalizedMatricula = employeeRegistration.value.replace(/\D/g, "").slice(0, 7);
-    if (!editingEmployee) {
-      const existingEmployees = await window.portalEmployeeStore.getAll();
-      if (existingEmployees.some((item) => item.matricula === normalizedMatricula)) {
-        employeeResult.textContent = "Já existe um colaborador cadastrado com esta matrícula. Use \"Editar\" na lista para atualizar os dados dele.";
-        employeeResult.hidden = false;
-        return;
+    const stopLoading = window.portalButtonLoading(employeeSubmit, "Salvando…");
+    try {
+      if (!editingEmployee) {
+        const existingEmployees = await window.portalEmployeeStore.getAll();
+        if (existingEmployees.some((item) => item.matricula === normalizedMatricula)) {
+          employeeResult.textContent = "Já existe um colaborador cadastrado com esta matrícula. Use \"Editar\" na lista para atualizar os dados dele.";
+          employeeResult.hidden = false;
+          return;
+        }
       }
+      const employeeData = {
+        matricula: employeeRegistration.value,
+        nome: window.portalAuthDemo.normalizeIdentity(document.querySelector("#employee-name").value),
+        funcao: document.querySelector("#employee-role").value.trim(),
+        setor: document.querySelector("#employee-team").value.trim(),
+        encarregado: window.portalAuthDemo.normalizeIdentity(document.querySelector("#employee-foreman").value)
+      };
+      await window.portalEmployeeStore.upsert(employeeData);
+    } catch (error) {
+      console.error("Não foi possível salvar o colaborador.", error);
+      employeeResult.textContent = "Não foi possível salvar o colaborador. Tente novamente.";
+      employeeResult.hidden = false;
+      return;
+    } finally {
+      stopLoading();
     }
-    const employeeData = {
-      matricula: employeeRegistration.value,
-      nome: window.portalAuthDemo.normalizeIdentity(document.querySelector("#employee-name").value),
-      funcao: document.querySelector("#employee-role").value.trim(),
-      setor: document.querySelector("#employee-team").value.trim(),
-      encarregado: window.portalAuthDemo.normalizeIdentity(document.querySelector("#employee-foreman").value)
-    };
-    await window.portalEmployeeStore.upsert(employeeData);
     employeeResult.textContent = editingEmployee
       ? "Colaborador atualizado."
       : "Colaborador de linha de frente salvo. Ele não recebeu acesso ao portal.";

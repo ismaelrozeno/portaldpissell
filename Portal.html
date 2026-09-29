@@ -6,7 +6,7 @@
   <meta name="description" content="Portal operacional da Obra 369.">
   <title>Portal | Obra 369</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="site-overrides.css">
+  <link rel="stylesheet" href="site-overrides.css?v=20260929-loading">
   <link rel="stylesheet" href="Portal.css">
   <link rel="stylesheet" href="Release-Preview.css">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
@@ -82,7 +82,7 @@
           <div class="table-responsive">
             <table class="portal-table">
               <thead><tr><th>Colaborador</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
-              <tbody id="records-table"></tbody>
+              <tbody id="records-table"><tr class="table-loading"><td colspan="5"><span class="button-spinner" aria-hidden="true"></span>Carregando registros…</td></tr></tbody>
             </table>
           </div>
           <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
@@ -120,7 +120,7 @@
 <script src="firebase-init.js"></script>
 <script src="firebase-schema.js"></script>
 <script src="firebase-auth.js"></script>
-  <script src="shared-components.js?v=20260927-avatar4"></script>
+  <script src="shared-components.js?v=20260929-loading"></script>
   <script src="firebase-employee-store.js"></script>
   <script src="firebase-release-store.js"></script>
   <script src="release-actions.js"></script>

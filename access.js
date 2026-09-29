@@ -78,8 +78,10 @@
   }
 
   if (loginForm && loginIdentifier && loginPassword) {
+    let loginInProgress = false;
     loginForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (loginInProgress) return;
 
       if (!loginForm.checkValidity()) {
         loginForm.reportValidity();
@@ -87,29 +89,38 @@
       }
 
       const loginError = document.querySelector("#login-error");
+      loginError.textContent = "";
+      loginError.classList.remove("is-visible");
+      const loginButton = loginForm.querySelector('button[type="submit"]');
+      loginInProgress = true;
+      const stopLoading = window.portalButtonLoading(loginButton, "Entrando…");
+      const showLoginError = (text) => {
+        loginError.textContent = text;
+        loginError.classList.add("is-visible");
+        loginInProgress = false;
+        stopLoading();
+      };
       window.portalAuthDemo.login(loginIdentifier.value, loginPassword.value).then((result) => {
         if (result === "pending") {
-          loginError.textContent = "Seu cadastro ainda está aguardando aprovação do Departamento Pessoal.";
-          loginError.classList.add("is-visible");
+          showLoginError("Seu cadastro ainda está aguardando aprovação do Departamento Pessoal.");
           return;
         }
         if (result === "rejected") {
-          loginError.textContent = "Seu cadastro foi reprovado pelo Departamento Pessoal. Fale com o DP para mais informações.";
-          loginError.classList.add("is-visible");
+          showLoginError("Seu cadastro foi reprovado pelo Departamento Pessoal. Fale com o DP para mais informações.");
           return;
         }
         if (!result) {
-          loginError.textContent = "Identificador ou senha inválidos.";
-          loginError.classList.add("is-visible");
+          showLoginError("Identificador ou senha inválidos.");
           return;
         }
+        // Login certo: o botão continua girando até a próxima página abrir.
+        window.portalButtonLoading(loginButton, "Abrindo o portal…");
         window.location.href = window.portalAuthDemo.getSession()?.roleValue === "administrador-analista"
           ? "Administrador-Portal.html"
           : "Portal.html";
       }).catch((error) => {
         console.error("Falha no login demonstrativo.", error);
-        loginError.textContent = "Não foi possível concluir o acesso.";
-        loginError.classList.add("is-visible");
+        showLoginError("Não foi possível concluir o acesso.");
       });
     });
   }
@@ -270,7 +281,7 @@
 
       registrationInProgress = true;
       const submitButton = registrationForm.querySelector('button[type="submit"]');
-      if (submitButton) submitButton.disabled = true;
+      const stopLoading = window.portalButtonLoading(submitButton, "Verificando matrícula…");
       try {
         const isPorter = registrationRole.value === "porteiro";
         if (!isPorter && !(await window.portalEmployeeStore.isRegistrationAllowed(registrationEnrollment.value))) {
@@ -299,6 +310,7 @@
           return;
         }
         registrationName.setCustomValidity("");
+        window.portalButtonLoading(submitButton, "Criando cadastro…");
         const registrationResult = await window.portalAuthDemo.register({
           name: normalizeIdentity(registrationName.value),
           email: registrationEmail.value.trim(),
@@ -316,6 +328,7 @@
           return;
         }
         redirectingAfterRegistration = true;
+        window.portalButtonLoading(submitButton, "Abrindo o portal…");
         window.location.href = "Portal.html";
       } catch (error) {
         if (error?.code === "portal/matricula-already-registered") {
@@ -332,7 +345,7 @@
         // Cadastro concluído: mantém o botão travado até a página do portal abrir.
         if (!redirectingAfterRegistration) {
           registrationInProgress = false;
-          if (submitButton) submitButton.disabled = false;
+          stopLoading();
         }
       }
     });

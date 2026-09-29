@@ -20,9 +20,22 @@
     email.disabled = true;
   }
   function showMessage(text) { message.textContent = text; message.hidden = false; }
-  document.querySelector("#profile-form").addEventListener("submit", async (event) => {
+  const profileForm = document.querySelector("#profile-form");
+  profileForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const updated = await window.portalAuthDemo.updateProfile({ name: name.value.trim() });
+    const saveButton = profileForm.querySelector('button[type="submit"]');
+    if (saveButton?.classList.contains("is-loading")) return;
+    const stopLoading = window.portalButtonLoading(saveButton, "Salvando…");
+    let updated;
+    try {
+      updated = await window.portalAuthDemo.updateProfile({ name: name.value.trim() });
+    } catch (error) {
+      console.error("Não foi possível salvar o perfil.", error);
+      showMessage("Não foi possível salvar o perfil. Tente novamente.");
+      return;
+    } finally {
+      stopLoading();
+    }
     // Sem avatar escolhido, as iniciais acompanham o novo nome.
     renderAvatar(updated || { ...session, name: name.value.trim(), avatar: chosen });
     window.portalRenderHeaderAvatar?.(updated || { ...session, name: name.value.trim(), avatar: chosen });
@@ -90,12 +103,16 @@
     changePassword.hidden = true;
   } else {
     changePassword.addEventListener("click", async () => {
+      if (changePassword.classList.contains("is-loading")) return;
+      const stopLoading = window.portalButtonLoading(changePassword, "Enviando e-mail…");
       try {
         await window.portalFirebaseAuth.sendPasswordResetEmail(session.email);
         showMessage(`Enviamos um link de redefinição de senha para ${session.email}.`);
       } catch (error) {
         console.error("Não foi possível enviar o e-mail de redefinição de senha.", error);
         showMessage("Não foi possível enviar o e-mail de redefinição de senha. Tente novamente mais tarde.");
+      } finally {
+        stopLoading();
       }
     });
   }
