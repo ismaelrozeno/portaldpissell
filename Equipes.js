@@ -64,10 +64,14 @@
     }
   }
 
-  // Nomes de encarregado: os cadastrados como usuário + os que já aparecem nos colaboradores.
+  // Nomes de encarregado: os cadastrados como usuário + os que já aparecem nos colaboradores
+  // + os colaboradores cuja função é "Encarregado" (mesmo sem conta no portal).
   function foremanNames() {
     const names = new Map();
     foremen.forEach((user) => names.set(fold(user.name), user.name));
+    employees.forEach((employee) => {
+      if (employee.nome && fold(employee.funcao).includes("encarregado") && !names.has(fold(employee.nome))) names.set(fold(employee.nome), employee.nome);
+    });
     employees.forEach((employee) => { if (employee.encarregado && !names.has(fold(employee.encarregado))) names.set(fold(employee.encarregado), employee.encarregado); });
     return [...names.values()].sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
   }
@@ -108,7 +112,7 @@
       : canLink
         ? `Escolha o encarregado de quem você é ${myWord} e toque em \"Me vincular como ${myWord}\". Você passa a ser como um segundo encarregado dessa equipe e pode montá-la no passo 2.`
         : "Escolha o encarregado para montar a equipe dele no passo 2.";
-    // Aviso técnico (regras do Firebase pendentes) escondido da tela; a lista mostra o que já está liberado, sem alarme.
+    if (directoryBlocked) $("#foremen-note").textContent += " Atenção: não foi possível listar todos os encarregados cadastrados; a lista abaixo mostra só os que já aparecem nos colaboradores. Se faltar alguém, avise o administrador (regras do Firebase).";
     grid.innerHTML = (names.length ? names.map((name) => {
       const count = employees.filter((employee) => same(employee.encarregado, name)).length;
       const people = linkedLabel(name);
