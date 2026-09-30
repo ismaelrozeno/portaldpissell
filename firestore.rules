@@ -95,10 +95,17 @@ service cloud.firestore {
         before.difference(after).hasOnly([request.auth.uid]);
     }
 
+    function signatureMatchesEmployee() {
+      let signature = request.resource.data.get("employeeSignature", null);
+      return signature == null || signature.get("matricula", "") == request.resource.data.get("registration", "");
+    }
+
     match /releases/{releaseId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor");
+      // A digital gravada na liberação tem de ser do mesmo colaborador da liberação.
+      allow create: if request.auth != null && signatureMatchesEmployee();
+      allow update: if request.auth != null && onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor") &&
+        signatureMatchesEmployee();
       // Só o DP (e o administrador) apaga uma liberação de verdade. Os outros perfis só a escondem do
       // próprio histórico (campo "hiddenFor"), sem apagar o documento.
       allow delete: if isDp() || isAdmin();
@@ -107,6 +114,19 @@ service cloud.firestore {
     match /monthlyClosures/{closureId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
+    }
+
+    // Digitais do Hamster DX (dado pessoal sensível, LGPD art. 11). Quem registra liberação lê uma de cada vez
+    // para conferir o dedo do colaborador; só o DP e o administrador listam, cadastram e apagam.
+    match /biometrics/{matricula} {
+      allow get: if isAdmin() || isDp() || isForeman() || isLinker();
+      allow list: if isAdmin() || isDp();
+      allow create, update: if (isAdmin() || isDp()) &&
+        request.resource.data.matricula == matricula &&
+        request.resource.data.template is string &&
+        request.resource.data.template.size() < 20000 &&
+        request.resource.data.consentAt is string;
+      allow delete: if isAdmin() || isDp();
     }
 
     match /importRuns/{importId} {
