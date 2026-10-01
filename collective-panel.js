@@ -149,7 +149,6 @@
     el.parentElement.classList.toggle("has-collective", showCard);
     const tabs = document.querySelector("#portal-view-tabs");
     tabs.hidden = !showCard;
-    tabs.querySelector("#tab-coletiva-count").textContent = sheets.length || "";
     if (!showCard) setView("individual");
     // Mesmo título pequeno do cartão de cima (ex.: "Assinaturas pendentes" para o engenheiro), para os dois combinarem.
     const eyebrow = document.querySelector("#table-eyebrow")?.textContent;
