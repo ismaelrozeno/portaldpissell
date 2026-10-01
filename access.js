@@ -1,3 +1,9 @@
+// Quem já está logado não precisa ver o login/cadastro: vai direto para o portal.
+(async () => {
+  await window.portalAuthDemo?.ready();
+  if (window.portalAuthDemo?.getSession()) window.location.replace("Portal.html");
+})();
+
 (function setupAccessTabs() {
   const matriculaInputs = Array.from(document.querySelectorAll('[name="matricula"]'));
 

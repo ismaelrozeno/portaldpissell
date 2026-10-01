@@ -151,8 +151,9 @@ window.portalAvatars = (() => {
     </div>`;
   document.body.append(logoutModal);
   const closeLogoutModal = () => { logoutModal.hidden = true; };
-  const confirmLogout = () => {
-    window.portalAuthDemo.logout();
+  const confirmLogout = async () => {
+    // Espera a saída terminar de verdade antes de abrir o login (senão a conta ainda aparece logada e o login manda de volta ao portal).
+    try { await window.portalAuthDemo.logout(); } catch (error) { console.warn("Falha ao sair da conta.", error); }
     window.location.href = "Acesso.html#login";
   };
   logoutModal.querySelector(".logout-modal__close").addEventListener("click", closeLogoutModal);

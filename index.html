@@ -122,19 +122,19 @@
   <script src="firebase-schema.js"></script>
 <script src="firebase-auth.js?v=20261001-gestor"></script>
 
-  <script src="shared-components.js?v=20260929-loading"></script>
+  <script src="shared-components.js?v=20261002a"></script>
 
   <script>
     // "Acessar o portal": quem já está logado vai direto para o portal; quem não está vai para o login.
     (async () => {
       const links = document.querySelectorAll('a[href="Acesso.html#login"]:not(.site-header a)');
       const go = () => (window.portalAuthDemo?.getSession() ? "Portal.html" : "Acesso.html#login");
-      links.forEach((link) => link.addEventListener("click", (event) => {
-        // Decide na hora do clique (a sessão pode ter terminado de carregar depois que a página abriu).
-        if (go() === "Portal.html") {
-          event.preventDefault();
-          window.location.href = "Portal.html";
-        }
+      links.forEach((link) => link.addEventListener("click", async (event) => {
+        // Espera a conta terminar de carregar antes de decidir: com internet lenta, clicar cedo demais mandava para o login
+        // mesmo com a pessoa já logada. (Se demorar demais, segue o link normal.)
+        event.preventDefault();
+        await Promise.race([window.portalAuthDemo?.ready(), new Promise((resolve) => setTimeout(resolve, 6000))]);
+        window.location.href = go();
       }));
       await window.portalAuthDemo?.ready();
       links.forEach((link) => { link.setAttribute("href", go()); });
