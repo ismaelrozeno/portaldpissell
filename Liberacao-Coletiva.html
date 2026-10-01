@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Registrar a liberação coletiva (lista de presença) de uma tarefa da Obra 369.">
+  <title>Liberação coletiva | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css?v=20260929-loading">
+  <link rel="stylesheet" href="Liberacao.css">
+  <link rel="stylesheet" href="Liberacao-Coletiva.css?v=20261001h">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+
+<body class="release-page">
+  <div data-site-header></div>
+
+  <main class="release-content">
+    <div class="container">
+      <a class="release-back" href="Portal.html">← Voltar ao painel</a>
+
+      <section class="release-card" aria-labelledby="release-title">
+        <div class="release-heading">
+          <div>
+            <p class="release-kicker" id="release-kicker">Liberação coletiva · Obra 369</p>
+            <h1 id="release-title">Liberação coletiva</h1>
+            <p>Escolha os colaboradores que fizeram a mesma tarefa no dia. A solicitação vai para o engenheiro, que assina como abonado ou não abonado para todos da lista.</p>
+          </div>
+        </div>
+
+        <form id="collective-form" novalidate>
+          <div class="release-fields">
+            <div class="release-field release-field-wide">
+              <label for="employee-search">Colaboradores <span aria-hidden="true">*</span></label>
+              <input type="text" id="employee-search" placeholder="Buscar por nome ou matrícula..." autocomplete="off">
+              <div id="employee-results" class="list-group mt-2" style="max-height:220px;overflow-y:auto" role="listbox" aria-label="Colaboradores encontrados"></div>
+              <div class="collective-toolbar">
+                <button type="button" class="collective-link" id="add-all">Adicionar toda a minha equipe</button>
+                <button type="button" class="collective-link collective-link-danger" id="clear-all" hidden>Limpar lista</button>
+              </div>
+              <small id="employee-hint">Pesquise e clique para adicionar. Quem já está na lista aparece marcado.</small>
+            </div>
+
+            <div class="release-field release-field-wide">
+              <div class="collective-count"><strong id="selected-count">0 colaboradores selecionados</strong><small id="selected-limit"></small></div>
+              <ol class="collective-chosen" id="chosen-list" aria-label="Colaboradores selecionados"></ol>
+            </div>
+
+            <div class="release-field">
+              <label for="release-date">Data <span aria-hidden="true">*</span></label>
+              <input id="release-date" type="date" required>
+            </div>
+
+            <div class="release-field">
+              <label for="release-time">Horário <span aria-hidden="true">*</span></label>
+              <input id="release-time" type="time" required>
+            </div>
+
+            <fieldset class="release-field release-field-wide">
+              <legend>Movimentação <span aria-hidden="true">*</span></legend>
+              <div class="release-options">
+                <label><input type="checkbox" name="movement" value="entrada"> Entrada</label>
+                <label><input type="checkbox" name="movement" value="saida"> Saída</label>
+              </div>
+            </fieldset>
+
+            <div class="release-field release-field-wide">
+              <label for="service">Motivo (tarefa realizada) <span aria-hidden="true">*</span></label>
+              <textarea id="service" rows="3" maxlength="250" placeholder="Descreva a tarefa realizada (ex.: montagem de andaime na torre 2)" required></textarea>
+              <small>O mesmo motivo vale para todos os colaboradores e aparece no campo "Motivo" da folha.</small>
+            </div>
+
+            <div class="release-field release-field-wide">
+              <label for="foreman-name">Encarregado</label>
+              <select id="foreman-name"><option value="">Selecione o encarregado</option></select>
+            </div>
+
+            <fieldset class="release-field release-field-wide">
+              <legend>Pedido de abono <span aria-hidden="true">*</span></legend>
+              <div class="release-options release-options-highlight">
+                <label><input type="radio" name="bonus-request" value="abonado" required> Abonado</label>
+                <label><input type="radio" name="bonus-request" value="nao-abonado"> Não abonado</label>
+              </div>
+              <small>Isso é um pedido para o engenheiro avaliar — a decisão final sobre o abono (para todos da lista) é sempre dele.</small>
+            </fieldset>
+
+            <div class="release-field release-field-wide">
+              <label for="engineer-name">Enviar para o engenheiro <span aria-hidden="true">*</span></label>
+              <select id="engineer-name"><option value="">Todos os engenheiros</option></select>
+              <small>"Todos" aparece no portal de todos os engenheiros; escolhendo um nome, só aparece no portal dele.</small>
+            </div>
+          </div>
+
+          <section class="signature-box" aria-labelledby="signature-title">
+            <div>
+              <span class="release-kicker">Assinatura eletrônica</span>
+              <h2 id="signature-title">Confirmar liberação</h2>
+              <p>Ao enviar, seu nome, perfil, data e hora serão registrados como assinatura de quem solicitou. Os colaboradores assinam na folha impressa.</p>
+            </div>
+            <label class="signature-check"><input id="signature-confirm" type="checkbox"> Confirmo os dados e assino esta solicitação.</label>
+          </section>
+
+          <p class="release-error" id="release-error" role="alert" hidden></p>
+          <p class="release-success" id="release-success" role="status" hidden></p>
+          <div class="release-actions">
+            <a class="release-secondary" href="Portal.html">Cancelar</a>
+            <button class="release-submit" type="submit">Enviar ao engenheiro</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="release-card collective-history" aria-labelledby="history-title">
+        <div class="release-heading">
+          <div>
+            <p class="release-kicker">Folhas já enviadas</p>
+            <h2 id="history-title">Liberações coletivas recentes</h2>
+          </div>
+        </div>
+        <ul class="collective-history-list" id="history-list"><li class="collective-empty">Carregando…</li></ul>
+      </section>
+    </div>
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="dom-utils.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="firebase-schema.js?v=20261001-coletiva"></script>
+  <script src="firebase-auth.js?v=20260929-analista"></script>
+  <script src="shared-components.js?v=20260929-loading"></script>
+  <script src="firebase-employee-store.js"></script>
+  <script src="collective-release-store.js?v=20261001i"></script>
+  <script src="collective-release-sheet.js?v=20261001f"></script>
+  <script src="Liberacao-Coletiva.js?v=20261001h"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

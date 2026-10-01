@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cadastro das digitais dos colaboradores no leitor Hamster DX.">
+  <title>Digitais dos colaboradores | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="site-overrides.css?v=20260929-loading">
+  <link rel="stylesheet" href="Importar-Colaboradores.css">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="import-page">
+  <div data-site-header></div>
+  <main class="import-content">
+    <div class="container-xl">
+      <a class="import-back" href="Portal.html">← Voltar ao portal</a>
+      <section class="import-heading">
+        <div>
+          <p class="import-kicker">Departamento Pessoal · Obra 369</p>
+          <h1>Digitais dos colaboradores</h1>
+          <p>Cadastre a digital no Hamster DX para o colaborador assinar as próprias liberações.</p>
+        </div>
+        <span class="import-security" id="reader-status">Procurando leitor…</span>
+      </section>
+
+      <div class="import-notice" id="reader-notice" hidden>
+        <strong>Leitor não encontrado neste computador</strong>
+        <span>Abra o Agente Biométrico no PC onde o Hamster DX está ligado. O cadastro só funciona nesse computador.</span>
+      </div>
+
+      <div class="import-layout">
+        <section class="import-card">
+          <h2>Colaboradores</h2>
+          <p class="import-help">Pesquise por nome ou matrícula e selecione o colaborador.</p>
+          <input id="bio-search" class="form-control" type="search" placeholder="Buscar por nome ou matrícula..." autocomplete="off">
+          <div id="bio-results" class="list-group mt-2" style="max-height:360px;overflow-y:auto" role="listbox" aria-label="Colaboradores encontrados"></div>
+          <p class="import-help mt-2 mb-0" id="bio-count"></p>
+        </section>
+
+        <aside class="import-card import-policy">
+          <h2>Cadastro da digital</h2>
+          <p class="import-help" id="bio-selected">Nenhum colaborador selecionado.</p>
+          <div id="bio-panel" hidden>
+            <label class="d-flex gap-2 align-items-start mb-3" style="font-size:.85rem">
+              <input id="bio-consent" type="checkbox" class="mt-1">
+              <span>O colaborador autorizou o uso da digital <strong>somente para assinar liberações</strong> neste portal (LGPD).</span>
+            </label>
+            <div class="d-grid gap-2">
+              <button class="import-submit" id="bio-enroll" type="button">Cadastrar digital</button>
+              <button class="import-secondary" id="bio-test" type="button">Testar digital</button>
+              <button class="import-secondary" id="bio-remove" type="button">Apagar digital</button>
+            </div>
+          </div>
+          <p class="import-result" id="bio-result" role="status" hidden></p>
+          <ul>
+            <li>O leitor pede o mesmo dedo algumas vezes. Siga as instruções da janela do leitor.</li>
+            <li>O portal guarda um modelo da digital, não a imagem do dedo.</li>
+            <li>Se o colaborador sair da empresa ou retirar a autorização, apague a digital.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="firebase-schema.js?v=20260930-biometria"></script>
+  <script src="firebase-auth.js?v=20260929-analista"></script>
+  <script src="firebase-employee-store.js"></script>
+  <script src="biometric-reader.js?v=20260930-biometria"></script>
+  <script src="dom-utils.js"></script>
+  <script src="shared-components.js?v=20260930-biometria"></script>
+  <script src="Biometria.js?v=20260930-biometria"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

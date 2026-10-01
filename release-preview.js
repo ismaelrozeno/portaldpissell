@@ -26,7 +26,7 @@
         <div class="release-sheet-checks"><b>Movimentação:</b> <span id="preview-movement"></span><b>Motivo da saída:</b> <span id="preview-reason"></span><b id="preview-bonus-request-label" hidden>Pedido:</b> <span id="preview-bonus-request"></span></div>
         <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
         <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
-        <div class="release-sheet-signature">Assinatura do colaborador: ______________________________________________</div>
+        <div class="release-sheet-signature">Assinatura do colaborador: <span id="preview-employee-signature"></span></div>
         <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i><small id="preview-requester-time"></small></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i><small id="preview-engineer-time"></small></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i><small id="preview-dp-time"></small></span><span><b>PORTARIA</b><br><i class="signature-name" id="preview-gate"></i><small id="preview-gate-time"></small></span></footer>
         <div class="release-stamp" id="release-stamp" hidden aria-label="Abono lançado no RM">
           <strong>LANÇADO</strong><span>NO RM</span><small id="stamp-detail"></small>
@@ -223,6 +223,10 @@
       bonus: release.bonusStatus === "approved" ? "ABONADO" : release.bonusStatus === "denied" ? "NÃO ABONADO" : (release.hours || "PENDENTE"),
       bonusTone,
       bonusRequest: release.bonusRequest === "abonado" ? "Abonado" : release.bonusRequest === "nao-abonado" ? "Não abonado" : "",
+      // Assinatura pela digital no Hamster DX; sem ela, fica a linha para assinar à mão na folha impressa.
+      employeeSignature: release.employeeSignature?.method === "biometria"
+        ? `Assinado com digital (Hamster DX) em ${formatDateTime(release.employeeSignature.signedAt)}`
+        : "",
       requester: release.requester || "Não informado",
       requesterTime: formatDateTime(release.createdAt),
       engineer: release.engineer || "Pendente",
@@ -254,6 +258,7 @@
     const bonus = overlay.querySelector("#preview-bonus");
     bonus.textContent = f.bonus;
     bonus.className = `bonus-${f.bonusTone}`;
+    set("#preview-employee-signature", f.employeeSignature || "______________________________________________");
     set("#preview-requester", f.requester);
     set("#preview-requester-time", f.requesterTime);
     set("#preview-engineer", f.engineer);

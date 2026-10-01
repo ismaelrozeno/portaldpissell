@@ -1,0 +1,68 @@
+/* Página "Liberação coletiva": seleção de colaboradores e histórico */
+.collective-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: .5rem; }
+.collective-link { padding: 0; border: 0; color: #1769aa; background: none; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.collective-link:hover { color: var(--release-orange); }
+.collective-link-danger { color: #b42318; }
+.collective-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; margin-bottom: .5rem; color: var(--release-navy); }
+.collective-chosen { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; counter-reset: chosen; }
+.collective-chosen li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .7rem; border: 1px solid var(--release-line); border-radius: .5rem; background: #f8fafc; font-size: .85rem; counter-increment: chosen; }
+.collective-chosen li::before { content: counter(chosen) "."; margin-right: .4rem; color: var(--release-muted); font-weight: 700; }
+.collective-chosen li span { flex: 1; min-width: 0; }
+.collective-chosen small { display: block; color: var(--release-muted); font-size: .72rem; }
+.collective-chosen button { padding: .1rem .5rem; border: 0; border-radius: .3rem; color: #8b2930; background: #fde5e6; font-size: 1rem; line-height: 1.4; cursor: pointer; }
+.collective-history { margin-top: 1.5rem; }
+.collective-history-list { display: grid; gap: .6rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.collective-history-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .8rem 1rem; border: 1px solid var(--release-line); border-radius: .6rem; }
+.collective-history-list strong { display: block; color: var(--release-navy); }
+.collective-history-list small { color: var(--release-muted); }
+.collective-history-list button { padding: .5rem .75rem; border: 1px solid #1769aa; border-radius: .45rem; color: #1769aa; background: #f2f8fd; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.collective-history-list button + button { margin-left: .4rem; border-color: #e0a2a6; color: #8b2930; background: #fff; }
+.collective-empty { color: var(--release-muted); }
+
+/* Folha "Lista de presença" (A4 retrato) */
+.cs-overlay { position: fixed; inset: 0; z-index: 2000; overflow: auto; padding: 0 1rem 1rem; background: rgba(0, 20, 45, .94); }
+.cs-overlay[hidden] { display: none; }
+.cs-dialog { width: 100%; max-width: 794px; margin: 0 auto; }
+.cs-actions { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; gap: .6rem; padding: .75rem 0; background: rgba(0, 20, 45, .92); }
+.cs-actions button { padding: .6rem .9rem; border: 0; border-radius: .4rem; color: #fff; background: #1769aa; font-weight: 700; cursor: pointer; }
+.cs-actions button:first-child { background: #617188; }
+.cs-sheet { width: 794px; margin: 0 auto; padding: 24px 28px; box-sizing: border-box; color: #111; background: #fff; font-family: Arial, sans-serif; font-size: 13px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.cs-sheet table { width: 100%; border-collapse: collapse; }
+.cs-sheet th, .cs-sheet td { border: 1px solid #555; padding: 4px 8px; }
+.cs-head { display: grid; grid-template-columns: 150px 1fr 360px; border: 1px solid #555; }
+.cs-logo { display: grid; place-items: center; padding: 14px 8px; border-right: 1px solid #555; color: #444; font-size: 18px; font-weight: 900; letter-spacing: .02em; }
+.cs-title { display: grid; place-items: center; padding: 10px; border-right: 1px solid #555; color: #777; font-family: Georgia, serif; font-size: 13px; letter-spacing: .08em; }
+.cs-meta { display: grid; grid-template-rows: 1fr auto; }
+.cs-meta div { display: grid; grid-template-columns: 70px 1fr; align-items: center; }
+.cs-meta div + div { border-top: 1px solid #555; }
+.cs-meta span { padding: 6px 8px; border-right: 1px solid #555; color: #777; font-family: Georgia, serif; font-size: 10px; letter-spacing: .1em; }
+.cs-meta strong { padding: 8px 10px; font-size: 13px; line-height: 1.3; text-transform: uppercase; overflow-wrap: anywhere; }
+.cs-meta div:first-child { min-height: 84px; }
+.cs-sign { margin: 6px 0 12px; }
+.cs-sign th { width: 12%; color: #555; background: #f2f2f2; font-family: Georgia, serif; font-size: 11px; font-weight: 700; text-align: center; }
+.cs-sign td { height: 34px; color: #666; font-size: 11px; text-transform: uppercase; }
+.cs-sign .cs-esign { width: 38%; color: #111; font-family: "Segoe Script", "Bradley Hand", cursive; font-size: 13px; text-transform: none; line-height: 1.1; }
+.cs-esign small { display: block; color: #555; font-family: Arial, sans-serif; font-size: 9px; }
+.cs-list thead th { color: #555; background: #eee; font-family: Georgia, serif; font-size: 11px; text-align: center; }
+.cs-list .cs-participants { padding: 6px; font-size: 13px; }
+.cs-list td { height: 25px; padding: 3px 8px; font-size: 13px; }
+.cs-list .cs-id { width: 34px; padding: 4px; color: #666; font-family: Georgia, serif; font-size: 11px; text-align: center; }
+.cs-list .cs-role { width: 120px; color: #555; font-family: Georgia, serif; font-size: 11px; text-align: center; }
+.cs-list th:nth-child(4) { width: 36%; }
+.cs-foot { margin: 8px 0 0; color: #666; font-size: 10px; text-align: right; }
+@media (max-width: 520px) { .cs-overlay { padding: 0 .5rem .5rem; } .cs-actions button { flex: 1; padding: .8rem; } }
+@page { size: A4 portrait; margin: 10mm; }
+@media print {
+  body:has(#collective-preview:not([hidden])) > *:not(#collective-preview) { display: none !important; }
+  html, body { width: auto !important; height: auto !important; overflow: visible !important; background: #fff !important; }
+  .cs-overlay { position: static !important; overflow: visible !important; padding: 0 !important; background: #fff !important; }
+  .cs-dialog { max-width: none; }
+  .cs-actions { display: none !important; }
+  .cs-sheet { zoom: .78 !important; width: 794px !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .cs-list tr, .cs-sign tr { break-inside: avoid; }
+}
+
+.cs-sign .cs-bonus { height: 28px; font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: none; }
+.cs-sign .cs-bonus-yes { color: #16803c; }
+.cs-sign .cs-bonus-no { color: #c62835; }
+.cs-sign .cs-bonus-wait { color: #8b5515; font-weight: 700; }

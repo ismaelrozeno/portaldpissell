@@ -40,9 +40,6 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .foreman-team small { display: block; margin-top: .15rem; color: var(--portal-muted); }
 .portal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 .portal-stats article { padding: 1.1rem 1.2rem; border-radius: 1rem; background: var(--portal-navy); color: #fff; }
-.portal-stats article:nth-child(2) { background: #244b70; }
-.portal-stats article:nth-child(3) { background: #1769aa; }
-.portal-stats article:nth-child(4) { background: #8b5515; }
 .portal-stats span, .portal-stats small { display: block; color: #d6e2ef; font-size: .8rem; }
 .portal-stats strong { display: block; margin: .35rem 0; font-size: 1.9rem; }
 .portal-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, .75fr); align-items: start; gap: 1.25rem; }

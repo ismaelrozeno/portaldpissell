@@ -14,11 +14,14 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <link rel="stylesheet" href="Portal.css?v=20261001-azul">
   <link rel="stylesheet" href="site-overrides.css?v=20260929-loading">
 
   <link rel="stylesheet" href="Portaria.css">
 
-  <link rel="stylesheet" href="Release-Preview.css">
+  <link rel="stylesheet" href="Release-Preview.css?v=20261001-print">
+  <link rel="stylesheet" href="Liberacao-Coletiva.css?v=20261001h">
+  <link rel="stylesheet" href="collective-panel.css?v=20261001m">
 
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
@@ -52,7 +55,14 @@
 
       </section>
 
-      <section class="gate-layout">
+      <div data-collective-host="page" data-profile="portaria" data-view="individual">
+
+      <div class="portal-view-tabs" id="portal-view-tabs" role="tablist" aria-label="Tipo de liberação" hidden>
+        <button class="portal-view-tab is-active" id="tab-individual" type="button" role="tab" aria-selected="true" data-view="individual">Liberações individuais</button>
+        <button class="portal-view-tab" id="tab-coletiva" type="button" role="tab" aria-selected="false" data-view="coletiva">Liberações coletivas <span id="tab-coletiva-count"></span></button>
+      </div>
+
+      <section class="collective-individual gate-layout">
 
         <article class="gate-card">
 
@@ -92,6 +102,24 @@
 
       </section>
 
+      <article class="portal-card" id="collective-section" hidden>
+        <div class="card-heading">
+          <div>
+            <span class="card-eyebrow" id="collective-eyebrow">Lista de presença</span>
+            <h2>Liberações coletivas</h2>
+          </div>
+          <strong id="collective-count">0 folhas</strong>
+        </div>
+        <div class="table-responsive">
+          <table class="portal-table">
+            <thead><tr><th>Liberação</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
+            <tbody id="collective-list"></tbody>
+          </table>
+        </div>
+      </article>
+
+    </div>
+
     </div>
 
   </main>
@@ -119,6 +147,10 @@
   <script src="release-actions.js"></script>
   <script src="release-preview.js"></script>
 
+  <script src="collective-release-store.js?v=20261001i"></script>
+  <script src="collective-release-sheet.js?v=20261001f"></script>
+  <script src="collective-panel.js?v=20261001o"></script>
+  <script src="collective-page.js?v=20261001"></script>
   <script src="Portaria.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>

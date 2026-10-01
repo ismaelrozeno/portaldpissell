@@ -130,10 +130,25 @@
       const bonusInput = document.querySelector(`input[name="bonus-request"][value="${release.bonusRequest}"]`);
       if (bonusInput) bonusInput.checked = true;
     }
+    if (release.targetEngineer) targetEngineer.value = release.targetEngineer;
     updateParticularField();
   }
 
+  // Engenheiros cadastrados no portal: o encarregado escolhe para quem a solicitação vai ("Todos" = qualquer um).
+  const targetEngineer = document.querySelector("#target-engineer");
+  async function loadEngineers() {
+    try {
+      const directory = await window.portalAuthDemo.getTeamDirectory();
+      const names = [...new Set(directory.all.filter((user) => user.roleValue === "engenheiro").map((user) => user.name))]
+        .sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+      targetEngineer.innerHTML = `<option value="">Todos os engenheiros</option>${names.map((name) => `<option value="${window.escapeHtml(name)}">${window.escapeHtml(name)}</option>`).join("")}`;
+    } catch (error) {
+      console.warn("Não foi possível listar os engenheiros.", error);
+    }
+  }
+
   updatePageCopy();
+  await loadEngineers();
   await renderEmployees();
 
   employeeSearch?.addEventListener("input", filterEmployees);
@@ -202,7 +217,9 @@
       reasonType: reason,
       reasonDetail: particularReason.value.trim(),
       reason: reason === "particular" ? particularReason.value.trim() : `Tarefa: ${particularReason.value.trim()}`,
-      requester: existing?.requester || session?.name || "Solicitante"
+      targetEngineer: targetEngineer.value,
+      requester: existing?.requester || session?.name || "Solicitante",
+      employeeSignature: null
     };
     try {
       if (!existing) {

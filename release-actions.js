@@ -282,7 +282,10 @@
 
   const isTrashed = (release) => has(release.hiddenFor) && !has(release.purgedFor);
   // Liberações que o usuário vê (fora da lixeira e não apagadas de vez). O 2º argumento existe só por compatibilidade.
-  const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor));
+  // Liberação enviada a um engenheiro específico ("targetEngineer") só aparece no portal dele; sem destino, vai para todos.
+  const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  const sentToOtherEngineer = (release) => session()?.roleValue === "engenheiro" && !!release.targetEngineer && !sameName(release.targetEngineer, session().name);
+  const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor) && !sentToOtherEngineer(release));
   const trashFor = (releases) => releases.filter(isTrashed);
 
   // Lixeira: mexe SÓ no id de quem está logado (atômico no banco), nunca na lista inteira — assim o que um

@@ -1,0 +1,69 @@
+/* Cartão "Liberações coletivas" no painel */
+/* Telas estreitas: o cartão das coletivas ocupa a largura toda e vem ANTES da lista individual (que pode ser enorme). */
+#collective-section { grid-column: 1 / -1; order: -1; }
+/* Telas largas (a tabela de liberações precisa de ~540 px): duas colunas iguais, individuais | coletivas. */
+@media (min-width: 1200px) {
+  #collective-section { grid-column: auto; order: 0; }
+  .portal-grid.has-collective { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+  /* Com a coluna mais estreita, o título fica numa linha e os dois botões laranja lado a lado embaixo dele. */
+  .portal-grid.has-collective #records-section .card-heading { flex-wrap: wrap; }
+  .portal-grid.has-collective #records-section .card-actions { flex-wrap: nowrap; }
+}
+#collective-section[hidden] { display: none; }
+#collective-section .card-heading { align-items: center; }
+#collective-section .card-heading > strong { flex: none; padding: .3rem .7rem; border-radius: 2rem; color: #1769aa; background: #eaf3fb; font-size: .8rem; white-space: nowrap; }
+.collective-list { display: grid; gap: .75rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.collective-list > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .9rem 1rem; border: 1px solid #dfe7f0; border-radius: .7rem; }
+.collective-info { display: grid; gap: .25rem; min-width: 0; flex: 1 1 280px; }
+.collective-info strong { color: #00142d; overflow-wrap: anywhere; }
+.collective-info small { color: #617188; }
+.collective-chip { justify-self: start; padding: .2rem .6rem; border-radius: 2rem; font-size: .75rem; font-weight: 700; }
+.collective-chip-wait { color: #8b5515; background: #fff2d6; }
+.collective-chip-yes { color: #17613b; background: #def5e8; }
+.collective-chip-no { color: #8b2930; background: #fde5e6; }
+.collective-buttons { display: flex; flex-wrap: wrap; gap: .4rem; }
+.collective-buttons button { padding: .55rem .8rem; border-radius: .45rem; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.collective-view { border: 1px solid #1769aa; color: #1769aa; background: #f2f8fd; }
+.collective-yes { border: 1px solid #4caa76; color: #17613b; background: #effbf4; }
+.collective-no { border: 1px solid #e0a2a6; color: #8b2930; background: #fff; }
+.collective-del { border: 1px solid #e2e6ec; color: #7a5a5d; background: #fff; }
+.collective-buttons button:disabled { opacity: .55; cursor: default; }
+@media (max-width: 600px) { .collective-buttons { width: 100%; } .collective-buttons button { flex: 1 1 auto; } }
+/* Celular: cabeçalho alinhado à esquerda como os outros cartões, e "Nova liberação" antes de "Liberação coletiva". */
+@media (max-width: 600px) {
+  #collective-section .card-heading { align-items: flex-start; }
+  #records-section .card-actions { flex-direction: column; }
+}
+
+/* Telas menores: seletor "Liberações individuais | Liberações coletivas", no mesmo estilo de Entrar | Registrar. */
+.portal-view-tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: .4rem; margin-bottom: 1.25rem; padding: .35rem; border-radius: .65rem; background: #dfe7f0; }
+.portal-view-tabs[hidden] { display: none; }
+.portal-view-tab { padding: .75rem .6rem; border: 0; border-radius: .45rem; color: #3d4f66; background: transparent; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.portal-view-tab:hover, .portal-view-tab:focus-visible, .portal-view-tab.is-active { color: #fff; background: #00142d; }
+.portal-view-tab:focus-visible { outline: 3px solid rgba(0, 20, 45, .35); outline-offset: 2px; }
+.portal-view-tab span:not(:empty)::before { content: "("; }
+.portal-view-tab span:not(:empty)::after { content: ")"; }
+@media (min-width: 1200px) { .portal-view-tabs.is-narrow-only { display: none; } }
+@media (max-width: 1199px) {
+  .portal-grid.has-collective[data-view="individual"] #collective-section { display: none; }
+  .portal-grid.has-collective[data-view="coletiva"] #records-section { display: none; }
+}
+
+/* Lixeira das liberações coletivas */
+.collective-trash-bar { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .25rem; }
+.collective-trash-bar button { padding: .5rem .8rem; border: 1px solid #dfe7f0; border-radius: .45rem; color: #16283d; background: #fff; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.collective-trash-bar button:disabled { opacity: .5; cursor: default; }
+.collective-trash-bar .is-danger { border-color: #e0a2a6; color: #8b2930; background: #fff5f5; }
+.collective-trash-notice { margin-top: .75rem; padding: .7rem .9rem; border-left: 4px solid #f5820a; border-radius: .5rem; color: #6e5b3d; background: #fff7e8; font-size: .82rem; line-height: 1.45; }
+.collective-trash-notice.is-danger { border-color: #c62835; color: #8b2930; background: #fde5e6; }
+.collective-trash-notice[hidden] { display: none; }
+.collective-restore { border: 1px solid #4caa76; color: #17613b; background: #effbf4; }
+
+/* A lista coletiva usa a mesma tabela das individuais; só ajusta o cabeçalho do cartão. */
+#collective-section .portal-table { margin-top: .25rem; }
+
+/* Telas próprias (Engenheiro, DP, Portaria): o seletor vale em qualquer largura e troca o conteúdo da página. */
+[data-collective-host="page"][data-view="individual"] #collective-section { display: none; }
+[data-collective-host="page"][data-view="coletiva"] .collective-individual { display: none; }
+[data-collective-host="page"] #collective-section { margin-top: 0; }
+[data-collective-host="page"] .portal-view-tabs { margin-top: 1rem; }

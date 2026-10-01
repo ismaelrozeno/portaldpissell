@@ -26,6 +26,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "engenheiro";
     }
 
+    function isPorter() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "porteiro";
+    }
+
     // Estagiário ou engenheiro: trabalham na equipe do encarregado a quem estão vinculados.
     function isLinker() {
       return isIntern() || isEngineer();
@@ -108,6 +114,25 @@ service cloud.firestore {
         signatureMatchesEmployee();
       // Só o DP (e o administrador) apaga uma liberação de verdade. Os outros perfis só a escondem do
       // próprio histórico (campo "hiddenFor"), sem apagar o documento.
+      allow delete: if isDp() || isAdmin();
+    }
+
+    // Liberação coletiva (lista de presença de uma tarefa do dia). Quem cria só grava em nome próprio;
+    // só o DP e o administrador apagam de verdade.
+    match /collectiveReleases/{sheetId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.createdByUid == request.auth.uid;
+      // O engenheiro só mexe nos campos da decisão do abono (assinatura dele).
+      allow update: if request.auth != null && (isAdmin() || isDp() || resource.data.createdByUid == request.auth.uid ||
+        (isEngineer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          ["engineer", "engineerRole", "engineerDecisionAt", "bonusStatus", "hours", "stage", "engineerUndoneAt", "engineerUndoneBy"])) ||
+        // A portaria só confirma a saída (assina como portaria) de uma folha já autorizada pelo DP.
+        (isPorter() && resource.data.get("stage", "") == "gate" && request.resource.data.stage == "exited" &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+            ["stage", "exitConfirmedBy", "exitConfirmedRole", "exitConfirmedAt"])) ||
+        // Lixeira: qualquer perfil só põe/tira o PRÓPRIO id nas listas "hiddenFor" e "purgedFor".
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["hiddenFor", "purgedFor"]) &&
+          onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor")));
       allow delete: if isDp() || isAdmin();
     }
 

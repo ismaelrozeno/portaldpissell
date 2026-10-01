@@ -69,8 +69,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Nova liberação", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html"]
+      shortcuts: ["Conferir liberações", "Nova liberação", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel", "Digitais dos colaboradores"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html", "Biometria.html"]
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
@@ -112,6 +112,7 @@
     tableTitle: document.querySelector("#table-title"),
     primaryAction: document.querySelector("#primary-action"),
     secondaryAction: document.querySelector("#secondary-action"),
+    collectiveAction: document.querySelector("#collective-action"),
     shortcutTitle: document.querySelector("#shortcut-title"),
     shortcutList: document.querySelector("#shortcut-list"),
     table: document.querySelector("#records-table"),
@@ -244,11 +245,20 @@
 
   // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
   let trashMode = false;
+  window.portalIsTrashMode = () => trashMode;
+  // Últimos números da barra, para a barra recalcular quando as liberações coletivas terminarem de carregar.
+  let lastToolbarCounts = [0, 0];
+  window.portalToolbarRefresh = () => renderToolbar(...lastToolbarCounts);
   let shownReleases = [];
   // Liberações da última vez que a tela foi desenhada: o clique age na hora com elas, sem esperar o servidor.
   let releaseById = new Map();
 
-  function renderToolbar(visibleCount, trashCount) {
+  function renderToolbar(individualVisible, individualTrash) {
+    lastToolbarCounts = [individualVisible, individualTrash];
+    // A barra é uma só: conta também as liberações coletivas.
+    const collective = window.portalCollectivePanel?.counts?.() || { visible: 0, trash: 0 };
+    const visibleCount = individualVisible + collective.visible;
+    const trashCount = individualTrash + collective.trash;
     const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
     const notice = document.querySelector("#trash-notice");
     const toolbar = document.querySelector("#records-toolbar");
@@ -300,6 +310,7 @@
         </td>
       </tr>`;
       }).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "A lixeira está vazia."}</td></tr>`;
+      window.portalCollectivePanel?.injectTrashRows?.();
       return;
     }
 
@@ -337,17 +348,22 @@
     const kind = button.dataset.toolbar;
     if (kind === "open-trash" || kind === "back") {
       trashMode = kind === "open-trash";
-      return renderRecords(activeProfileKey);
+      await renderRecords(activeProfileKey);
+      window.portalCollectivePanel?.render(activeProfileKey);
+      return;
     }
-    if (!shownReleases.length) return;
+    // Uma só lixeira: as liberações coletivas da lista entram junto nas ações em lote.
+    const collectiveCount = window.portalCollectivePanel?.items?.().length || 0;
+    if (!shownReleases.length && !collectiveCount) return;
     const list = [...shownReleases];
+    const total = list.length + collectiveCount;
     const dpContext = activeProfileKey === "dp";
-    if (kind === "trash-all" && !await actions.confirmText(actions.trashAllQuestion(list.length))) return;
-    if (kind === "restore-all" && !await actions.confirmText(actions.restoreAllQuestion(list.length))) return;
+    if (kind === "trash-all" && !await actions.confirmText(actions.trashAllQuestion(total))) return;
+    if (kind === "restore-all" && !await actions.confirmText(actions.restoreAllQuestion(total))) return;
     if (kind === "empty") {
-      if (!await actions.confirmText(actions.emptyQuestion(list.length, null, dpContext))) return;
+      if (!await actions.confirmText(actions.emptyQuestion(total, null, dpContext))) return;
       // Apagar do banco (DP/Admin) pede uma segunda confirmação: não tem volta.
-      if (actions.canHardDelete(dpContext) && !await actions.confirmText("ÚLTIMO AVISO\n" + list.length + " liberação(ões) serão APAGADAS DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.", "Apagar do banco")) return;
+      if (actions.canHardDelete(dpContext) && !await actions.confirmText("ÚLTIMO AVISO\n" + total + " liberação(ões) serão APAGADAS DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.", "Apagar do banco")) return;
     }
     const toolbarButtons = [...document.querySelectorAll("#records-toolbar button")];
     toolbarButtons.forEach((item) => { item.disabled = true; });
@@ -357,6 +373,7 @@
       if (kind === "trash-all") await actions.trashMany(list);
       else if (kind === "restore-all") await actions.restoreMany(list);
       else if (kind === "empty") await actions.emptyTrashMany(list, dpContext);
+      await window.portalCollectivePanel?.bulk(kind, dpContext);
     } catch (error) {
       console.error("Não foi possível concluir a ação na lista.", error);
       await actions.ask({ title: "Não foi possível salvar", message: "Verifique a internet e tente de novo.", okText: "OK", cancelText: null });
@@ -527,6 +544,8 @@
     elements.primaryAction.hidden = !profile.action;
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref || "#";
+    // Liberação coletiva (lista de presença): fica ao lado da "Nova liberação", para os mesmos perfis.
+    elements.collectiveAction.hidden = !profile.action;
     // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
     elements.secondaryAction.hidden = !linkedRoleValues.includes(profileKey);
     const employees = await employeesQuick();
@@ -570,6 +589,7 @@
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;
     }).join("");
     await renderRecords(profileKey, allReleases);
+    window.portalCollectivePanel?.render(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
       <li><span class="activity-dot ${["gate", "exited"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>

@@ -140,7 +140,8 @@
 
     // Assinatura do colaborador
     text(ctx, "Assinatura do colaborador:", left, 412, { font: `13px ${SANS}` });
-    line(ctx, 200, 560, 414);
+    if (fields.employeeSignature) text(ctx, fields.employeeSignature, 200, 411, { font: bold(12), color: "#17613b" });
+    else line(ctx, 200, 560, 414);
     line(ctx, left, right, 428);
 
     // Assinaturas

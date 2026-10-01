@@ -41,6 +41,11 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 .signature-box p { margin: 0; color: var(--release-muted); font-size: .82rem; }
 .signature-check { display: flex; align-items: center; gap: .5rem; color: var(--release-navy); font-size: .82rem; font-weight: 700; }
 .signature-check input { width: 1.1rem; height: 1.1rem; accent-color: var(--release-orange); }
+.biometric-button { padding: .65rem 1rem; border: 1px solid var(--release-orange); border-radius: .5rem; color: var(--release-orange); background: #fff; font-size: .85rem; font-weight: 700; }
+.biometric-button:disabled { opacity: .55; cursor: default; }
+.biometric-box.is-signed { border-color: #7cc79b; background: #eef9f2; }
+.biometric-box.is-signed .biometric-button { border-color: #17613b; color: #17613b; }
+.biometric-box.is-error #biometric-status { color: #b42318; }
 .release-error, .release-success { margin: 1rem 0 0; padding: .8rem 1rem; border-radius: .5rem; font-size: .85rem; }
 .release-error { color: #8b2930; background: #fde5e6; }
 .release-success { color: #17613b; background: #def5e8; }

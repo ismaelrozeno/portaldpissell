@@ -156,7 +156,12 @@
     // Assinatura do colaborador
     font("normal", 13);
     text("Assinatura do colaborador:", left, 412);
-    rule(200, 560, 414);
+    if (fields.employeeSignature) {
+      font("bold", 12, [23, 97, 59]);
+      text(fields.employeeSignature, 200, 411);
+    } else {
+      rule(200, 560, 414);
+    }
     rule(left, right, 428);
 
     // Assinaturas: nome em itálico (a fonte cursiva da imagem não existe no PDF)
