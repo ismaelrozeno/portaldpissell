@@ -79,14 +79,22 @@
   function injectTrashRows() {
     const tbody = document.querySelector("#records-table");
     if (!tbody) return;
-    tbody.querySelectorAll("tr[data-ctrash]").forEach((tr) => tr.remove());
-    if (!isTrashMode()) return;
+    if (!isTrashMode()) {
+      tbody.querySelectorAll("tr[data-ctrash]").forEach((tr) => tr.remove());
+      delete tbody.dataset.ctrashHtml;
+      return;
+    }
     trashMode = true;
     const query = window.normalizeSearchText(document.querySelector("#records-search")?.value || "");
     const rows = trash.filter((sheet) => !query || window.normalizeSearchText(sheet.motive).includes(query));
+    const html = rows.map(row).join("").replace(/<tr>/g, "<tr data-ctrash>");
+    // Já está igual na tela: não mexe (trocar os botões no meio de um clique fazia o clique se perder).
+    if (tbody.dataset.ctrashHtml === html && (!rows.length || tbody.querySelector("tr[data-ctrash]"))) return;
+    tbody.querySelectorAll("tr[data-ctrash]").forEach((tr) => tr.remove());
+    tbody.dataset.ctrashHtml = html;
     if (rows.length) {
       tbody.querySelector("td.empty-state")?.closest("tr")?.remove();
-      tbody.insertAdjacentHTML("beforeend", rows.map(row).join("").replace(/<tr>/g, "<tr data-ctrash>"));
+      tbody.insertAdjacentHTML("beforeend", html);
     } else if (!tbody.querySelector("tr")) {
       tbody.innerHTML = '<tr data-ctrash><td colspan="5" class="empty-state">A lixeira está vazia.</td></tr>';
     }
@@ -103,11 +111,20 @@
       setView("individual");
       return;
     }
-    let loadFailed = false;
+    loadFailed = false;
     try {
       const all = await store().getAll();
       sheets = store().visibleFor(all);
       trash = store().trashFor(all);
+      // Ações ainda sendo gravadas continuam valendo na tela (a lista que veio do servidor ainda pode estar antiga).
+      pending.forEach((kind, id) => {
+        const item = [...sheets, ...trash].find((entry) => entry.id === id);
+        if (!item) return;
+        sheets = sheets.filter((entry) => entry.id !== id);
+        trash = trash.filter((entry) => entry.id !== id);
+        if (kind === "trash") trash = [item, ...trash];
+        else if (kind === "restore") sheets = [item, ...sheets];
+      });
     } catch (error) {
       // O painel continua aparecendo, dizendo que não deu para carregar (ex.: sem internet ou regras do banco).
       console.warn("Não foi possível carregar as liberações coletivas.", error);
@@ -115,6 +132,19 @@
       trash = [];
       loadFailed = true;
     }
+    draw();
+  }
+
+  let loadFailed = false;
+  let lastListHtml = "";
+  // id da folha -> ação ainda em gravação ("trash" | "restore" | "purge").
+  const pending = new Map();
+
+  // Desenha a partir do que já está carregado (usado também pelas ações instantâneas).
+  function draw() {
+    const el = section();
+    if (!el) return;
+    const profileKey = profile;
     trashMode = isTrashMode();
     // O painel e o seletor aparecem sempre (mesmo sem folhas, para mostrar "Nenhuma liberação coletiva").
     // Uma só lixeira: com ela aberta, as coletivas apagadas entram na tabela da lixeira e o cartão some.
@@ -134,13 +164,45 @@
     const newIndividual = el.querySelector("#collective-new-individual");
     if (newIndividual) newIndividual.hidden = profileKey === "portaria";
     const shown = trashMode ? trash : sheets;
-    el.querySelector("#collective-list").innerHTML = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
+    // meio de um clique fazia o clique se perder.
+    if (listHtml !== lastListHtml) {
+      el.querySelector("#collective-list").innerHTML = listHtml;
+      lastListHtml = listHtml;
+    }
     el.querySelector("#collective-count").textContent = `${shown.length} ${shown.length === 1 ? "folha" : "folhas"}`;
     injectTrashRows();
     window.portalToolbarRefresh?.();
   }
 
-  const failBox = (title) => actions().ask({ title, message: "Verifique a internet e tente de novo.", okText: "OK", cancelText: null });
+  const failBox = (title, error) => actions().ask({ title, message: `Verifique a internet e tente de novo.${error?.code ? `\n(código: ${error.code})` : ""}`, okText: "OK", cancelText: null });
+
+  // Apagar / restaurar / apagar de vez: a tela muda NA HORA (sem esperar o servidor) e a gravação segue em segundo plano.
+  // Se o servidor recusar, a tela volta como estava e avisa o motivo.
+  async function mutate(kind, sheet) {
+    const before = { sheets: [...sheets], trash: [...trash] };
+    const me = store().myId();
+    const without = (list) => list.filter((item) => item.id !== sheet.id);
+    if (kind === "trash") { sheets = without(sheets); trash = [{ ...sheet, hiddenFor: [...(sheet.hiddenFor || []), me] }, ...trash]; }
+    else if (kind === "restore") { trash = without(trash); sheets = [{ ...sheet, hiddenFor: (sheet.hiddenFor || []).filter((id) => id !== me) }, ...sheets]; }
+    else { trash = without(trash); }
+    pending.set(sheet.id, kind);
+    draw();
+    try {
+      if (kind === "trash") await store().addToList(sheet.id, "hiddenFor", me);
+      else if (kind === "restore") await store().removeFromList(sheet.id, "hiddenFor", me);
+      else await purge(sheet);
+    } catch (error) {
+      console.error(error);
+      sheets = before.sheets;
+      trash = before.trash;
+      draw();
+      await failBox("Não foi possível concluir", error);
+    } finally {
+      pending.delete(sheet.id);
+    }
+  }
 
   // Tira UMA folha da lixeira de vez: o DP apaga do banco; os outros perfis só somem do próprio histórico.
   async function purge(sheet) {
@@ -152,14 +214,12 @@
   async function bulk(kind, dpContext) {
     const list = trashMode ? trash : sheets;
     const me = store().myId();
-    for (const sheet of list) {
-      if (kind === "trash-all") await store().addToList(sheet.id, "hiddenFor", me);
-      else if (kind === "restore-all") await store().removeFromList(sheet.id, "hiddenFor", me);
-      else if (kind === "empty") {
-        if (actions().canHardDelete(dpContext)) await store().remove(sheet.id);
-        else await store().addToList(sheet.id, "purgedFor", me);
-      }
-    }
+    await Promise.all(list.map((sheet) => {
+      if (kind === "trash-all") return store().addToList(sheet.id, "hiddenFor", me);
+      if (kind === "restore-all") return store().removeFromList(sheet.id, "hiddenFor", me);
+      if (kind === "empty") return actions().canHardDelete(dpContext) ? store().remove(sheet.id) : store().addToList(sheet.id, "purgedFor", me);
+      return null;
+    }));
   }
 
   // DP autoriza/nega a saída e assina na folha; a portaria confirma a saída e assina (mesmos campos das individuais).
@@ -259,20 +319,11 @@ Confirme só se todos já saíram.`,
       button.disabled = true;
       await dpOrGate(sheet, action);
     } else if (action === "trash" || action === "restore" || action === "purge") {
-      button.disabled = true;
-      try {
-        if (action === "trash") await store().addToList(sheet.id, "hiddenFor", store().myId());
-        else if (action === "restore") await store().removeFromList(sheet.id, "hiddenFor", store().myId());
-        else {
-          const message = canHard() ? `${sheet.motive}\nIsto APAGA DO BANCO, para todos os perfis. Não tem como recuperar.` : `${sheet.motive}\nSome só do seu histórico.`;
-          if (!await actions().ask({ title: "Apagar de vez?", message, okText: "Apagar" })) { button.disabled = false; return; }
-          await purge(sheet);
-        }
-      } catch (error) {
-        console.error(error);
-        await failBox("Não foi possível concluir");
+      if (action === "purge") {
+        const message = canHard() ? `${sheet.motive}\nIsto APAGA DO BANCO, para todos os perfis. Não tem como recuperar.` : `${sheet.motive}\nSome só do seu histórico.`;
+        if (!await actions().ask({ title: "Apagar de vez?", message, okText: "Apagar" })) return;
       }
-      await render(profile);
+      await mutate(action, sheet);
     }
   });
 
