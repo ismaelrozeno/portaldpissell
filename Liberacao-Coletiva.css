@@ -19,7 +19,7 @@
 .collective-history-list button + button { margin-left: .4rem; border-color: #e0a2a6; color: #8b2930; background: #fff; }
 .collective-empty { color: var(--release-muted); }
 
-/* Folha "Lista de presença" (A4 retrato) */
+/* Folha "Liberação coletiva" (A4 retrato) */
 .cs-overlay { position: fixed; inset: 0; z-index: 2000; overflow: auto; padding: 0 1rem 1rem; background: rgba(0, 20, 45, .94); }
 .cs-overlay[hidden] { display: none; }
 .cs-dialog { width: 100%; max-width: 794px; margin: 0 auto; }

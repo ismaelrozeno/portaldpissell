@@ -1,4 +1,4 @@
-// Folha "Lista de presença" da liberação coletiva (A4 retrato, no modelo de papel da obra).
+// Folha "Liberação coletiva" da liberação coletiva (A4 retrato, no modelo de papel da obra).
 // Uso: window.portalCollectiveSheet.show(sheet)
 (() => {
   const MIN_ROWS = 24;
@@ -72,7 +72,7 @@
     return `
       <header class="cs-head">
         <div class="cs-logo">DIRECIONAL</div>
-        <div class="cs-title">LISTA DE PRESENÇA</div>
+        <div class="cs-title">LIBERAÇÃO COLETIVA</div>
         <div class="cs-meta">
           <div><span>MOTIVO</span><strong>${esc(sheet.motive || "")}</strong></div>
           <div><span>DATA</span><strong>${esc(formatDate(sheet.date))}</strong></div>
@@ -110,7 +110,7 @@
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("collective-release-pdf.js?v=20261001b");
+    if (!window.portalCollectivePdf) await loadScript("collective-release-pdf.js?v=20261001c");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -158,7 +158,7 @@
       return;
     }
     const css = new URL("Liberacao-Coletiva.css?v=20261001h", document.baseURI).href;
-    win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Lista de presença · Obra 369</title>
+    win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
     win.document.close();
@@ -175,7 +175,7 @@
     if (overlay) return overlay;
     document.body.insertAdjacentHTML("beforeend", `
       <div class="cs-overlay" id="collective-preview" hidden>
-        <section class="cs-dialog" role="dialog" aria-modal="true" aria-label="Lista de presença">
+        <section class="cs-dialog" role="dialog" aria-modal="true" aria-label="Liberação coletiva">
           <div class="cs-actions">
             <button type="button" id="cs-close">Fechar</button>
             <button type="button" id="cs-print">Imprimir / salvar PDF</button>

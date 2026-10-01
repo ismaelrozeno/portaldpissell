@@ -1,4 +1,4 @@
-// Desenha a folha "Lista de presença" (liberação coletiva) como PDF vetorial A4 retrato (jsPDF), igual à tela.
+// Desenha a folha "Liberação coletiva" (liberação coletiva) como PDF vetorial A4 retrato (jsPDF), igual à tela.
 // Uso: window.portalCollectivePdf.build(sheet, labels) -> Blob. Os textos já formatados vêm de collective-release-sheet.js.
 (() => {
   const M = 10;          // margem (mm)
@@ -33,7 +33,7 @@
     cell(M + 110, hy, 80, hh * 0.65);
     cell(M + 110, hy + hh * 0.65, 80, hh * 0.35);
     textIn("DIRECIONAL", M, hy, 50, hh, { align: "center", size: 17, style: "bold", color: [68, 68, 68] });
-    textIn("LISTA DE PRESENÇA", M + 50, hy, 60, hh, { align: "center", size: 10, color: [119, 119, 119], family: "times" });
+    textIn("LIBERAÇÃO COLETIVA", M + 50, hy, 60, hh, { align: "center", size: 10, color: [119, 119, 119], family: "times" });
     textIn("MOTIVO", M + 110, hy, 22, hh * 0.65, { size: 6.5, color: [119, 119, 119], family: "times" });
     // Motivo longo: letra menor e mais linhas, para não cortar o texto.
     const mLen = String(f.motive || "").length;
