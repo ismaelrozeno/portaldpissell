@@ -72,3 +72,8 @@
 .collective-head-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
 .collective-head-actions .portal-button[hidden] { display: none; }
 @media (max-width: 600px) { .collective-head-actions { width: 100%; justify-content: space-between; } }
+
+/* "Nova liberação" dentro do cartão das coletivas: só aparece quando a aba "Liberações coletivas" está aberta em tela menor
+   (aí o cartão das individuais, onde fica o botão original, está escondido). */
+#collective-new-individual { display: none; }
+@media (max-width: 1199px) { .portal-grid.has-collective[data-view="coletiva"] #collective-new-individual:not([hidden]) { display: inline-block; } }
