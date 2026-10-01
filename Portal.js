@@ -6,7 +6,7 @@
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
       tableTitle: "Minhas liberações",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
@@ -21,7 +21,7 @@
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
       tableTitle: "Minhas liberações",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
@@ -35,7 +35,7 @@
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
       tableTitle: "Minhas liberações",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
@@ -49,7 +49,7 @@
       description: "Acompanhe sua equipe e registre as liberações do dia.",
       eyebrow: "Minha equipe",
       tableTitle: "Minhas liberações",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
@@ -63,13 +63,13 @@
       description: "Confira as liberações, autorize saídas e organize os registros.",
       eyebrow: "Conferência do DP",
       tableTitle: "Liberações da obra",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Nova liberação", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel", "Digitais dos colaboradores"],
+      shortcuts: ["Conferir liberações", "Nova liberação individual", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel", "Digitais dos colaboradores"],
       shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html", "Biometria.html"]
     },
     engenheiro: {
@@ -77,13 +77,13 @@
       description: "Você recebe as liberações primeiro: decida o abono ou recuse devolvendo ao encarregado.",
       eyebrow: "Assinaturas pendentes",
       tableTitle: "Liberações para análise",
-      action: "Nova liberação",
+      action: "Nova liberação individual",
       actionHref: "Liberacao.html",
       team: "0",
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Assinar abono", "Nova liberação", "Equipes e Excel", "Histórico de assinaturas"],
+      shortcuts: ["Assinar abono", "Nova liberação individual", "Equipes e Excel", "Histórico de assinaturas"],
       shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "#activity-section"]
     },
     portaria: {
@@ -544,7 +544,7 @@
     elements.primaryAction.hidden = !profile.action;
     elements.primaryAction.textContent = profile.action;
     elements.primaryAction.href = profile.actionHref || "#";
-    // Liberação coletiva (lista de presença): fica ao lado da "Nova liberação", para os mesmos perfis.
+    // Liberação coletiva (lista de presença): fica ao lado da "Nova liberação individual", para os mesmos perfis.
     elements.collectiveAction.hidden = !profile.action;
     // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
     elements.secondaryAction.hidden = !linkedRoleValues.includes(profileKey);
