@@ -80,3 +80,9 @@
 
 /* Pergunta "Confirmar saída": a lista de colaboradores rola quando é grande */
 #ask-dialog #ask-message { max-height: 45vh; overflow-y: auto; }
+
+/* Aviso curto de que a ação deu certo (ou falhou) */
+.collective-toast { position: fixed; left: 50%; bottom: 1.5rem; z-index: 3000; max-width: min(92vw, 28rem); padding: .8rem 1.2rem; border-radius: .7rem; color: #fff; background: #17613b; box-shadow: 0 10px 30px rgba(0, 20, 45, .35); font-size: .92rem; font-weight: 700; text-align: center; transform: translateX(-50%); animation: collective-toast-in .2s ease-out; }
+.collective-toast.is-error { background: #8b2930; }
+.collective-toast[hidden] { display: none; }
+@keyframes collective-toast-in { from { opacity: 0; transform: translate(-50%, .6rem); } to { opacity: 1; transform: translate(-50%, 0); } }

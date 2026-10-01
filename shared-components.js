@@ -199,3 +199,19 @@ window.portalAvatars = (() => {
 })().catch((error) => {
   console.error("Falha ao carregar os componentes compartilhados.", error);
 });
+
+// Aplicativo: deixa o portal instalável (manifest + service worker) em todas as páginas que carregam este arquivo.
+(() => {
+  const head = document.head;
+  const add = (tag, attrs) => {
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+    head.append(el);
+  };
+  if (!head.querySelector('link[rel="manifest"]')) add("link", { rel: "manifest", href: "manifest.webmanifest" });
+  if (!head.querySelector('meta[name="theme-color"]')) add("meta", { name: "theme-color", content: "#00142d" });
+  if (!head.querySelector('link[rel="apple-touch-icon"]')) add("link", { rel: "apple-touch-icon", href: "icons/apple-touch-icon.png" });
+  if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => { /* sem service worker o site funciona igual */ }));
+  }
+})();

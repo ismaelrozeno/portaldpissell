@@ -29,7 +29,12 @@
     const decided = sheet.bonusStatus;
     const stage = stageOf(sheet);
     const stageInfo = sheetApi().STAGES[stage];
-    const btn = (cls, action, label) => `<button class="${cls}" type="button" data-collective="${action}" data-id="${id}">${label}</button>`;
+    const busyKind = pending.get(sheet.id);
+    const busyText = { trash: "Movendo para a lixeira…", restore: "Restaurando…", purge: "Apagando…" };
+    const btn = (cls, action, label) => {
+      const mine = busyKind && action === busyKind;
+      return `<button class="${cls}" type="button" data-collective="${action}" data-id="${id}"${busyKind ? " disabled" : ""}>${mine ? `<span class="button-spinner" aria-hidden="true"></span>${busyText[busyKind]}` : label}</button>`;
+    };
     const chip = (kind, html) => `<span class="sig-chip sig-${kind}">${html}</span>`;
     const chips = [];
     if (sheet.bonusRequest) chips.push(chip("info", `Pedido do encarregado: <b>${sheet.bonusRequest === "abonado" ? "Abonado" : "Não abonado"}</b>`));
@@ -116,15 +121,6 @@
       const all = await store().getAll();
       sheets = store().visibleFor(all);
       trash = store().trashFor(all);
-      // Ações ainda sendo gravadas continuam valendo na tela (a lista que veio do servidor ainda pode estar antiga).
-      pending.forEach((kind, id) => {
-        const item = [...sheets, ...trash].find((entry) => entry.id === id);
-        if (!item) return;
-        sheets = sheets.filter((entry) => entry.id !== id);
-        trash = trash.filter((entry) => entry.id !== id);
-        if (kind === "trash") trash = [item, ...trash];
-        else if (kind === "restore") sheets = [item, ...sheets];
-      });
     } catch (error) {
       // O painel continua aparecendo, dizendo que não deu para carregar (ex.: sem internet ou regras do banco).
       console.warn("Não foi possível carregar as liberações coletivas.", error);
@@ -178,15 +174,25 @@
 
   const failBox = (title, error) => actions().ask({ title, message: `Verifique a internet e tente de novo.${error?.code ? `\n(código: ${error.code})` : ""}`, okText: "OK", cancelText: null });
 
-  // Apagar / restaurar / apagar de vez: a tela muda NA HORA (sem esperar o servidor) e a gravação segue em segundo plano.
-  // Se o servidor recusar, a tela volta como estava e avisa o motivo.
+  // Mensagem curta no pé da tela ("Folha movida para a lixeira ✓"), para a pessoa saber que deu certo.
+  let toastTimer = null;
+  function toast(text, ok = true) {
+    let el = document.querySelector("#collective-toast");
+    if (!el) {
+      document.body.insertAdjacentHTML("beforeend", '<div id="collective-toast" class="collective-toast" role="status" aria-live="polite" hidden></div>');
+      el = document.querySelector("#collective-toast");
+    }
+    el.textContent = text;
+    el.classList.toggle("is-error", !ok);
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 3500);
+  }
+
+  // Apagar / restaurar / apagar de vez: a linha mostra "Salvando…" (botões travados) até o servidor confirmar; só então a folha
+  // muda de lugar e aparece o aviso de que deu certo. Se o servidor recusar, a folha fica onde estava e avisa o motivo.
   async function mutate(kind, sheet) {
-    const before = { sheets: [...sheets], trash: [...trash] };
     const me = store().myId();
-    const without = (list) => list.filter((item) => item.id !== sheet.id);
-    if (kind === "trash") { sheets = without(sheets); trash = [{ ...sheet, hiddenFor: [...(sheet.hiddenFor || []), me] }, ...trash]; }
-    else if (kind === "restore") { trash = without(trash); sheets = [{ ...sheet, hiddenFor: (sheet.hiddenFor || []).filter((id) => id !== me) }, ...sheets]; }
-    else { trash = without(trash); }
     pending.set(sheet.id, kind);
     draw();
     try {
@@ -195,13 +201,19 @@
       else await purge(sheet);
     } catch (error) {
       console.error(error);
-      sheets = before.sheets;
-      trash = before.trash;
-      draw();
-      await failBox("Não foi possível concluir", error);
-    } finally {
       pending.delete(sheet.id);
+      draw();
+      toast("Não foi possível concluir. Nada foi alterado.", false);
+      await failBox("Não foi possível concluir", error);
+      return;
     }
+    const without = (list) => list.filter((item) => item.id !== sheet.id);
+    if (kind === "trash") { sheets = without(sheets); trash = [{ ...sheet, hiddenFor: [...(sheet.hiddenFor || []), me] }, ...trash]; }
+    else if (kind === "restore") { trash = without(trash); sheets = [{ ...sheet, hiddenFor: (sheet.hiddenFor || []).filter((id) => id !== me) }, ...sheets]; }
+    else { trash = without(trash); }
+    pending.delete(sheet.id);
+    draw();
+    toast(kind === "trash" ? "Folha movida para a lixeira ✓" : kind === "restore" ? "Folha restaurada ✓" : (canHard() ? "Folha apagada do banco ✓" : "Folha apagada do seu histórico ✓"));
   }
 
   // Tira UMA folha da lixeira de vez: o DP apaga do banco; os outros perfis só somem do próprio histórico.

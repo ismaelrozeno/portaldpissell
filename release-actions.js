@@ -43,8 +43,14 @@
         if (answered) return;
         answered = true;
         askDialog.removeEventListener("close", onClose);
-        if (askDialog.open) askDialog.close();
-        resolve(value);
+        if (askDialog.open) {
+          // Só responde DEPOIS do evento "close" desta janela: ele chega com atraso e, se sobrasse, cancelaria na hora a
+          // próxima pergunta feita em seguida (era o que fazia a 2ª confirmação do "Apagar do banco" nunca aparecer).
+          askDialog.addEventListener("close", () => resolve(value), { once: true });
+          askDialog.close();
+        } else {
+          resolve(value);
+        }
       };
       const onClose = () => finish(input ? null : false);
       askDialog.addEventListener("close", onClose);
