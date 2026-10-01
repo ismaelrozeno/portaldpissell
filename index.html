@@ -124,6 +124,23 @@
 
   <script src="shared-components.js?v=20260929-loading"></script>
 
+  <script>
+    // "Acessar o portal": quem já está logado vai direto para o portal; quem não está vai para o login.
+    (async () => {
+      const links = document.querySelectorAll('a[href="Acesso.html#login"]:not(.site-header a)');
+      const go = () => (window.portalAuthDemo?.getSession() ? "Portal.html" : "Acesso.html#login");
+      links.forEach((link) => link.addEventListener("click", (event) => {
+        // Decide na hora do clique (a sessão pode ter terminado de carregar depois que a página abriu).
+        if (go() === "Portal.html") {
+          event.preventDefault();
+          window.location.href = "Portal.html";
+        }
+      }));
+      await window.portalAuthDemo?.ready();
+      links.forEach((link) => { link.setAttribute("href", go()); });
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>

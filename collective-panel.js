@@ -158,17 +158,50 @@
     if (newButton) newButton.hidden = profileKey === "portaria";
     const newIndividual = el.querySelector("#collective-new-individual");
     if (newIndividual) newIndividual.hidden = profileKey === "portaria";
-    const shown = trashMode ? trash : sheets;
-    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    // Busca: colaborador da folha, motivo, solicitante, engenheiro/DP/portaria que assinou, data e situação.
+    const query = window.normalizeSearchText(document.querySelector("#collective-search")?.value || "");
+    const base = trashMode ? trash : sheets;
+    const shown = query ? base.filter((sheet) => window.normalizeSearchText([
+      sheet.motive, sheet.requester, sheet.foreman, sheet.targetEngineer, sheet.engineer, sheet.dpSigner, sheet.exitConfirmedBy, sheet.date,
+      window.portalCollectiveSheet.statusLabel(sheet), ...(sheet.participants || []).flatMap((person) => [person.nome, person.matricula, person.funcao])
+    ].filter(Boolean).join(" ")).includes(query)) : base;
+    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhuma liberação coletiva encontrada para a busca." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
     // meio de um clique fazia o clique se perder.
     if (listHtml !== lastListHtml) {
       el.querySelector("#collective-list").innerHTML = listHtml;
       lastListHtml = listHtml;
     }
-    el.querySelector("#collective-count").textContent = `${shown.length} ${shown.length === 1 ? "folha" : "folhas"}`;
     injectTrashRows();
+    refreshStats();
     window.portalToolbarRefresh?.();
+  }
+
+  // Cartões de resumo do Meu portal: as liberações coletivas entram na conta, com as mesmas regras das individuais.
+  function refreshStats() {
+    const tiles = { pending: document.querySelector("#stat-pending"), approved: document.querySelector("#stat-approved"), bonus: document.querySelector("#stat-bonus") };
+    if (!tiles.pending || !tiles.approved || !tiles.bonus) return;
+    const me = session();
+    const foremanRoles = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
+    // Encarregado/estagiário/segurança contam só o que eles mesmos solicitaram.
+    const mine = foremanRoles.includes(profile) ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : sheets;
+    const open = (sheet) => !["foreman", "closed"].includes(stageOf(sheet));
+    const day = (value) => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+    const today = day(Date.now());
+    const extra = { pending: 0, approved: 0, bonus: 0 };
+    if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet)).length;
+    else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp").length;
+    else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet))).length;
+    extra.approved = mine.filter((sheet) => ["gate", "exited"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today).length;
+    if (profile !== "portaria") extra.bonus = mine.filter((sheet) => !sheet.bonusStatus && open(sheet)).length;
+    Object.entries(tiles).forEach(([key, tile]) => {
+      const base = Number(tile.dataset.base);
+      if (tile.dataset.base === undefined || Number.isNaN(base)) return; // "—" (portaria) ou ainda não calculado
+      tile.textContent = base + extra[key];
+    });
   }
 
   const failBox = (title, error) => actions().ask({ title, message: `Verifique a internet e tente de novo.${error?.code ? `\n(código: ${error.code})` : ""}`, okText: "OK", cancelText: null });
@@ -352,6 +385,8 @@ Confirme só se todos já saíram.`,
       tab.setAttribute("aria-selected", String(active));
     });
   }
+  // Busca da lista coletiva: filtra enquanto digita.
+  document.querySelector("#collective-search")?.addEventListener("input", () => draw());
   document.querySelector("#portal-view-tabs")?.addEventListener("click", (event) => {
     const tab = event.target.closest(".portal-view-tab");
     if (tab) setView(tab.dataset.view);
@@ -359,6 +394,7 @@ Confirme só se todos já saíram.`,
 
   window.portalCollectivePanel = Object.freeze({
     render,
+    refreshStats,
     bulk,
     injectTrashRows,
     // O que está na lista agora (para a barra única contar e agir junto com as individuais).
