@@ -7,10 +7,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "administrador-analista";
     }
 
+    // DP de verdade, ou analista com o privilégio "dp" dado pelo administrador (campo "privileges" do usuário).
     function isDp() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "dp";
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "dp" ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "analista" &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("privileges", []).hasAny(["dp"])));
     }
 
     // Analista: por enquanto tem os mesmos poderes do estagiário de engenharia.
@@ -55,7 +58,9 @@ service cloud.firestore {
       allow list: if isAdmin() ||
         ((isDp() || isForeman() || isLinker()) && resource.data.roleValue in ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]);
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin() ||
+      // A própria conta não pode mudar o próprio perfil nem os próprios privilégios (só o administrador).
+      allow update: if request.auth != null && ((request.auth.uid == userId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges"])) || isAdmin() ||
         // O DP só pode vincular estagiário/engenheiro a um encarregado (campo "linkedForeman"), nada além disso.
         (isDp() && resource.data.roleValue in ["estagiario_engenharia", "analista", "engenheiro"] &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "updatedAt"])));

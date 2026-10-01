@@ -3,7 +3,7 @@
   const session = window.portalAuthDemo?.getSession();
   const role = session?.roleValue;
   const isAdmin = role === "administrador-analista";
-  const isDp = role === "dp";
+  const isDp = role === "dp" || !!window.portalAuthDemo?.isDpDelegate?.();
   const flow = window.portalReleaseFlow;
   const store = window.portalBackupStore;
 

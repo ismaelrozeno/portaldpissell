@@ -269,22 +269,25 @@
 
   // Só no perfil do DP se apaga de verdade no banco: o próprio DP, ou o Administrador com o painel do DP aberto.
   // Nos demais perfis (mesmo o administrador operando-os) "apagar da lixeira" só some do histórico de quem apagou.
+  const isDpDelegate = () => session()?.roleValue === "analista" && (session()?.privileges || []).includes("dp");
+  const isManager = () => session()?.roleValue === "engenheiro" && (session()?.privileges || []).includes("gestor");
   const canHardDelete = (dpContext) => {
     const role = session()?.roleValue;
-    return role === "dp" || (role === "administrador-analista" && !!dpContext);
+    return role === "dp" || ((role === "administrador-analista" || isDpDelegate()) && !!dpContext);
   };
 
   // O administrador só age como DP na tela/painel do DP (dpContext) — usado no lançamento de abono.
   function actsAsDp(dpContext) {
     const role = session()?.roleValue;
-    return role === "dp" || (role === "administrador-analista" && !!dpContext);
+    return role === "dp" || ((role === "administrador-analista" || isDpDelegate()) && !!dpContext);
   }
 
   const isTrashed = (release) => has(release.hiddenFor) && !has(release.purgedFor);
   // Liberações que o usuário vê (fora da lixeira e não apagadas de vez). O 2º argumento existe só por compatibilidade.
   // Liberação enviada a um engenheiro específico ("targetEngineer") só aparece no portal dele; sem destino, vai para todos.
   const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
-  const sentToOtherEngineer = (release) => session()?.roleValue === "engenheiro" && !!release.targetEngineer && !sameName(release.targetEngineer, session().name);
+  // O engenheiro Gestor recebe todas, mesmo as enviadas a outro engenheiro.
+  const sentToOtherEngineer = (release) => session()?.roleValue === "engenheiro" && !isManager() && !!release.targetEngineer && !sameName(release.targetEngineer, session().name);
   const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor) && !sentToOtherEngineer(release));
   const trashFor = (releases) => releases.filter(isTrashed);
 

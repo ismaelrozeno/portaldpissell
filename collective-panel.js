@@ -119,6 +119,9 @@
     // Mesmo título pequeno do cartão de cima (ex.: "Assinaturas pendentes" para o engenheiro), para os dois combinarem.
     const eyebrow = document.querySelector("#table-eyebrow")?.textContent;
     if (eyebrow) el.querySelector("#collective-eyebrow").textContent = eyebrow;
+    // Atalho para criar uma nova liberação coletiva (a portaria só consulta, não cria).
+    const newButton = el.querySelector("#collective-new");
+    if (newButton) newButton.hidden = profileKey === "portaria";
     const shown = trashMode ? trash : sheets;
     el.querySelector("#collective-list").innerHTML = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     el.querySelector("#collective-count").textContent = `${shown.length} ${shown.length === 1 ? "folha" : "folhas"}`;

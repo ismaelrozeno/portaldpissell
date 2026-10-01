@@ -134,6 +134,23 @@
       : `<p class="text-muted mb-0">${query ? "Nenhum resultado para a busca." : "Nenhum cadastro de porteiro recebido."}</p>`;
   }
 
+  // Privilégios que o administrador pode dar, por perfil.
+  const PRIVILEGES = {
+    engenheiro: { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Recebe TODAS as liberações, individuais e coletivas." },
+    analista: { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Opera o portal do DP, continuando analista." }
+  };
+  const privilegeMenu = (user) => {
+    const def = PRIVILEGES[user.roleValue];
+    const items = def
+      ? `<li><h6 class="dropdown-header">Privilégios</h6></li><li><button class="dropdown-item ${(user.privileges || []).includes(def.key) ? "text-danger fw-semibold" : ""}" type="button" data-privilege-user="${escapeHtml(user.id)}" data-privilege-key="${def.key}" data-privilege-grant="${(user.privileges || []).includes(def.key) ? "0" : "1"}">${(user.privileges || []).includes(def.key) ? def.revoke : def.grant}</button></li><li><span class="dropdown-item-text small text-muted">${def.note}</span></li>`
+      : '<li><span class="dropdown-item-text small text-muted">Este perfil não tem privilégios para dar.</span></li>';
+    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:15rem">${items}</ul></div>`;
+  };
+  const privilegeBadge = (user) => {
+    const def = PRIVILEGES[user.roleValue];
+    return def && (user.privileges || []).includes(def.key) ? `<small class="d-block mt-1"><span class="badge text-bg-primary">${def.label}</span></small>` : "";
+  };
+
   async function renderRegisteredUsers() {
     const users = await window.portalAuthDemo.getAllUsers();
     const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
@@ -149,10 +166,40 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${["estagiario_engenharia", "analista", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="badge ${statusClass}">${statusLabel}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${privilegeBadge(user)}${["estagiario_engenharia", "analista", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="d-flex align-items-center gap-2"><span class="badge ${statusClass}">${statusLabel}</span>${privilegeMenu(user)}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
+
+  registeredUsersList.addEventListener("click", async (event) => {
+    const item = event.target.closest("[data-privilege-user]");
+    if (!item) return;
+    const users = await window.portalAuthDemo.getAllUsers();
+    const user = users.find((entry) => entry.id === item.dataset.privilegeUser);
+    const def = user && PRIVILEGES[user.roleValue];
+    if (!def) return;
+    const grant = item.dataset.privilegeGrant === "1";
+    const current = Array.isArray(user.privileges) ? user.privileges : [];
+    const next = grant ? [...current, def.key] : current.filter((key) => key !== def.key);
+    // Sem janela de confirmação (o navegador pode bloqueá-la): salva na hora e avisa na tela. Dá para desfazer pelo mesmo menu.
+    const feedback = document.querySelector("#privilege-feedback");
+    const say = (text, ok) => {
+      feedback.textContent = text;
+      feedback.className = `alert py-2 mt-3 mb-0 ${ok ? "alert-success" : "alert-danger"}`;
+      feedback.hidden = false;
+      clearTimeout(say.timer);
+      if (ok) say.timer = setTimeout(() => { feedback.hidden = true; }, 6000);
+    };
+    try {
+      await window.portalAuthDemo.setUserPrivileges(user.id, next);
+    } catch (error) {
+      console.error("Não foi possível salvar o privilégio.", error);
+      say(`Não foi possível salvar o privilégio de ${user.name} (${error.code || "erro"}). Verifique a internet e as regras do banco.`, false);
+      return;
+    }
+    say(grant ? `${user.name} agora tem o privilégio "${def.label}". ${def.note}` : `Privilégio "${def.label}" revogado de ${user.name}.`, true);
+    await renderRegisteredUsers();
+  });
 
   function lookupAllowedEmployee() {
     normalizeInput(allowInput);

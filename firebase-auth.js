@@ -29,6 +29,8 @@
       roleValue: profile.roleValue || "",
       especialidade: profile.especialidade || "",
       linkedForeman: profile.linkedForeman || "",
+      // Privilégios dados pelo administrador: "gestor" (engenheiro) e "dp" (analista com acesso de DP).
+      privileges: Array.isArray(profile.privileges) ? profile.privileges : [],
       photo: profile.photo || "",
       avatar: profile.avatar || "",
       status: profile.status || "approved"
@@ -133,6 +135,14 @@
   window.portalAuthDemo = Object.freeze({
     ready: () => readyPromise,
     getSession: () => currentSession,
+    // Engenheiro Gestor recebe todas as liberações, mesmo as enviadas a outro engenheiro.
+    isManager: () => currentSession?.roleValue === "engenheiro" && (currentSession.privileges || []).includes("gestor"),
+    // Analista com acesso de DP: opera o portal do DP como o Administrador Analista faz.
+    isDpDelegate: () => currentSession?.roleValue === "analista" && (currentSession.privileges || []).includes("dp"),
+    // Administrador: define os privilégios de um usuário (lista de nomes, ex.: ["gestor"]).
+    async setUserPrivileges(userId, privileges) {
+      await usersRef().doc(userId).update({ privileges: [...new Set(privileges)], updatedAt: new Date().toISOString() });
+    },
     normalizeIdentity,
     isFixedAdministratorIdentifier,
 

@@ -67,3 +67,8 @@
 [data-collective-host="page"][data-view="coletiva"] .collective-individual { display: none; }
 [data-collective-host="page"] #collective-section { margin-top: 0; }
 [data-collective-host="page"] .portal-view-tabs { margin-top: 1rem; }
+
+/* Botão "Liberação coletiva" dentro do cartão das coletivas, ao lado do contador de folhas */
+.collective-head-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
+.collective-head-actions .portal-button[hidden] { display: none; }
+@media (max-width: 600px) { .collective-head-actions { width: 100%; justify-content: space-between; } }

@@ -23,7 +23,9 @@
       const session = window.portalAuthDemo?.getSession();
       const role = session?.roleValue;
       const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
-      if (role === "dp" || role === "administrador-analista") return sheets;
+      if (role === "dp" || role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) return sheets;
+      // Engenheiro Gestor recebe todas as folhas, mesmo as enviadas a outro engenheiro.
+      if (role === "engenheiro" && window.portalAuthDemo?.isManager?.()) return sheets;
       if (role === "engenheiro") return sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, session.name));
       // Portaria: só o que o DP autorizou (aguardando saída ou saída já confirmada).
       if (role === "porteiro") return sheets.filter((sheet) => ["gate", "exited"].includes(sheet.stage));

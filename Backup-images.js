@@ -3,7 +3,7 @@
 (async () => {
   await window.portalAuthDemo?.ready();
   const role = window.portalAuthDemo?.getSession()?.roleValue;
-  if (role !== "dp" && role !== "administrador-analista") return; // Backup.js já mostra o aviso de acesso
+  if (role !== "dp" && role !== "administrador-analista" && !window.portalAuthDemo?.isDpDelegate?.()) return; // Backup.js já mostra o aviso de acesso
 
   const $ = (selector) => document.querySelector(selector);
   const show = (element, text, isError) => {

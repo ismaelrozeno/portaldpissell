@@ -1,7 +1,7 @@
 (async () => {
   await window.portalAuthDemo?.ready();
   const session = window.portalAuthDemo?.getSession();
-  if (!["administrador-analista", "dp"].includes(session?.roleValue)) {
+  if (!["administrador-analista", "dp"].includes(session?.roleValue) && !window.portalAuthDemo?.isDpDelegate?.()) {
     window.location.replace("Portal.html");
     return;
   }

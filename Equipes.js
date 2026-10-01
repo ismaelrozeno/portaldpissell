@@ -3,7 +3,7 @@
   const session = window.portalAuthDemo?.getSession();
   const role = session?.roleValue;
   const isAdmin = role === "administrador-analista";
-  const isDp = role === "dp";
+  const isDp = role === "dp" || !!window.portalAuthDemo?.isDpDelegate?.();
   // Analista: por enquanto tem os mesmos poderes do estagiário de engenharia.
   const isIntern = role === "estagiario_engenharia" || role === "analista";
   const isEngineer = role === "engenheiro";

@@ -64,13 +64,13 @@
   let dpContext = false;
   function isDp() {
     const role = window.portalAuthDemo?.getSession()?.roleValue;
-    return role === "dp" || (role === "administrador-analista" && dpContext);
+    return role === "dp" || ((role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) && dpContext);
   }
 
   // Por que o "Lançar abono" não aparece (só para o DP e o Administrador, para o botão nunca sumir sem explicação).
   function launchHint(release) {
     const role = window.portalAuthDemo?.getSession()?.roleValue;
-    if (!["dp", "administrador-analista"].includes(role) || release.abonoLaunchedAt || canLaunch(release)) return "";
+    if (!(["dp", "administrador-analista"].includes(role) || window.portalAuthDemo?.isDpDelegate?.()) || release.abonoLaunchedAt || canLaunch(release)) return "";
     const stage = window.portalReleaseFlow.stageOf(release);
     if (release.bonusStatus === "denied") return "Engenheiro marcou NÃO ABONADO: não há abono para lançar no RM.";
     if (!release.bonusStatus) return "O botão \"Lançar abono\" aparece depois que o engenheiro marcar ABONADO.";

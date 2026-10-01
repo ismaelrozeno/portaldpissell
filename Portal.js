@@ -598,6 +598,9 @@
 
   const session = window.portalAuthDemo?.getSession();
   const isAdministrator = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
+  // Analista com acesso de DP (dado pelo administrador): alterna só entre o painel de analista e o do DP.
+  const isDpDelegate = !!window.portalAuthDemo?.isDpDelegate?.();
+  const delegateProfiles = ["analista", "dp"];
   // O cadastro salva o perfil como "porteiro", mas o painel dele se chama "portaria".
   const profileKey = (session?.roleValue === "porteiro" ? "portaria" : session?.roleValue)
     || (session?.role?.toLowerCase().includes("engenheiro") ? "engenheiro"
@@ -608,13 +611,20 @@
   const savedAdminProfile = () => {
     try {
       const saved = localStorage.getItem(adminProfileKey);
+      if (isDpDelegate) return delegateProfiles.includes(saved) ? saved : "analista";
       return profiles[saved] ? saved : "dp";
     } catch (error) {
-      return "dp";
+      return isDpDelegate ? "analista" : "dp";
     }
   };
   let initialProfile = profiles[profileKey] ? profileKey : "dp";
-  if (isAdministrator) {
+  if (isAdministrator || isDpDelegate) {
+    if (isDpDelegate) {
+      // Só os dois painéis a que ele tem direito.
+      [...elements.adminProfile.options].forEach((option) => { if (!delegateProfiles.includes(option.value)) option.remove(); });
+      const hint = elements.adminSwitcher.querySelector("small");
+      if (hint) hint.textContent = "Você tem acesso de DP: alterne entre o painel de Analista e o do Departamento Pessoal.";
+    }
     initialProfile = savedAdminProfile();
     elements.adminSwitcher.hidden = false;
     elements.adminProfile.value = initialProfile;
