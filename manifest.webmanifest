@@ -1,7 +1,7 @@
 {
-  "name": "Portal DP · Issell Informática",
-  "short_name": "Portal DP",
-  "description": "Portal do Departamento Pessoal da Obra 369: liberações, assinaturas e portaria.",
+  "name": "Tarefas Online - LI",
+  "short_name": "Tarefas Online - LI",
+  "description": "Tarefas Online da Obra 369: liberações, assinaturas e portaria.",
   "id": "./",
   "start_url": "Portal.html",
   "scope": "./",
@@ -10,8 +10,23 @@
   "theme_color": "#00142d",
   "lang": "pt-BR",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
