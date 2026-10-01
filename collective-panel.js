@@ -319,9 +319,14 @@ Confirme só se todos já saíram.`,
       button.disabled = true;
       await dpOrGate(sheet, action);
     } else if (action === "trash" || action === "restore" || action === "purge") {
-      if (action === "purge") {
-        const message = canHard() ? `${sheet.motive}\nIsto APAGA DO BANCO, para todos os perfis. Não tem como recuperar.` : `${sheet.motive}\nSome só do seu histórico.`;
-        if (!await actions().ask({ title: "Apagar de vez?", message, okText: "Apagar" })) return;
+      // Mesmas perguntas das liberações individuais.
+      const named = { name: `"${sheet.motive}" (liberação coletiva · ${(sheet.participants || []).length} colaboradores)` };
+      if (action === "trash") {
+        if (!await actions().confirmText(`Mover para a lixeira?\n\nLiberação coletiva: ${sheet.motive}\n${(sheet.participants || []).length} colaboradores · você pode restaurar depois. Some só da sua tela inicial.`, "Mover para a lixeira")) return;
+      } else if (action === "purge") {
+        if (!await actions().confirmText(actions().emptyQuestion(1, named, profile === "dp"), "Apagar")) return;
+        // Apagar do banco (DP/Admin) pede uma segunda confirmação: não tem volta.
+        if (canHard() && !await actions().confirmText(`ÚLTIMO AVISO\nA liberação coletiva "${sheet.motive}" será APAGADA DO BANCO DE DADOS agora.\nIsso NÃO pode ser desfeito.`, "Apagar do banco")) return;
       }
       await mutate(action, sheet);
     }
