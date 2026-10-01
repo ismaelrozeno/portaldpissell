@@ -240,6 +240,22 @@
         })
       });
     } else if (action === "authorize" || action === "deny" || action === "confirm-exit") {
+      // A portaria confirma a saída de TODOS os colaboradores da folha: pergunta antes e lista quem foi autorizado.
+      if (action === "confirm-exit") {
+        const people = sheet.participants || [];
+        const names = people.map((person, i) => `${i + 1}. ${person.nome}${person.funcao ? ` — ${person.funcao}` : ""}`).join("\n");
+        const ok = await actions().ask({
+          title: `Confirmar a saída de ${people.length} ${people.length === 1 ? "colaborador" : "colaboradores"}?`,
+          message: `${sheet.motive}
+Autorizados pelo DP:
+
+${names}
+
+Confirme só se todos já saíram.`,
+          okText: "Confirmar saída"
+        });
+        if (!ok) return;
+      }
       button.disabled = true;
       await dpOrGate(sheet, action);
     } else if (action === "trash" || action === "restore" || action === "purge") {

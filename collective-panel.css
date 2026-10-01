@@ -77,3 +77,6 @@
    (aí o cartão das individuais, onde fica o botão original, está escondido). */
 #collective-new-individual { display: none; }
 @media (max-width: 1199px) { .portal-grid.has-collective[data-view="coletiva"] #collective-new-individual:not([hidden]) { display: inline-block; } }
+
+/* Pergunta "Confirmar saída": a lista de colaboradores rola quando é grande */
+#ask-dialog #ask-message { max-height: 45vh; overflow-y: auto; }
