@@ -130,7 +130,8 @@ service cloud.firestore {
       // O engenheiro só mexe nos campos da decisão do abono (assinatura dele).
       allow update: if request.auth != null && (isAdmin() || isDp() || resource.data.createdByUid == request.auth.uid ||
         (isEngineer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-          ["engineer", "engineerRole", "engineerDecisionAt", "bonusStatus", "hours", "stage", "engineerUndoneAt", "engineerUndoneBy"])) ||
+          ["engineer", "engineerRole", "engineerDecisionAt", "bonusStatus", "hours", "stage", "status", "engineerUndoneAt", "engineerUndoneBy",
+           "dpSigner", "dpRole", "dpDecisionAt", "refusedBy", "refusedAt", "refusalReasons", "refusalReason"])) ||
         // A portaria só confirma a saída (assina como portaria) de uma folha já autorizada pelo DP.
         (isPorter() && resource.data.get("stage", "") == "gate" && request.resource.data.stage == "exited" &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(

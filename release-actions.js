@@ -170,7 +170,8 @@
   let refuseDialog = null;
 
   // Pop-up para escolher o motivo da recusa (criado na primeira vez que é usado).
-  function openRefuseDialog(release, onDone) {
+  // "custom" (opcional) adapta o pop-up a outro tipo de liberação: { target: texto, refuse: async (motivos) => ... }.
+  function openRefuseDialog(release, onDone, custom) {
     if (!refuseDialog) {
       document.body.insertAdjacentHTML("beforeend", `
         <dialog id="refuse-dialog" class="refuse-dialog" aria-labelledby="refuse-title">
@@ -188,7 +189,7 @@
     }
     const reasonsBox = refuseDialog.querySelector("#refuse-reasons");
     const error = refuseDialog.querySelector("#refuse-error");
-    refuseDialog.querySelector("#refuse-target").textContent = `${release.name} · solicitado por ${release.requester}`;
+    refuseDialog.querySelector("#refuse-target").textContent = custom?.target ?? `${release.name} · solicitado por ${release.requester}`;
     reasonsBox.innerHTML = flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
     error.textContent = "Selecione pelo menos um motivo.";
     error.hidden = true;
@@ -210,7 +211,7 @@
       confirmButton.disabled = true;
       confirmButton.textContent = "Salvando…";
       try {
-        await engineerRefuse(release, reasons);
+        await (custom?.refuse ? custom.refuse(reasons) : engineerRefuse(release, reasons));
         refuseDialog.close();
       } catch (failure) {
         console.error("Não foi possível recusar a liberação.", failure);

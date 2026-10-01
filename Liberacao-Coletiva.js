@@ -164,12 +164,15 @@
   });
 
   // ---------- Envio ----------
+  const editId = new URLSearchParams(window.location.search).get("edit");
+  let editing = null;
   let isSubmitting = false;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (isSubmitting) return;
     errorMessage.hidden = true;
     successMessage.hidden = true;
+    if (editId && !editing) return fail("Não é possível reenviar: esta liberação não está aberta para edição.");
     const movement = [...document.querySelectorAll('input[name="movement"]:checked')].map((input) => input.value);
     if (!chosen.size) return fail("Selecione pelo menos um colaborador.");
     if (!movement.length) return fail("Marque entrada, saída ou as duas.");
@@ -200,7 +203,29 @@
       createdByUid: session?.uid || ""
     };
     try {
-      await window.portalCollectiveStore.save(sheet);
+      if (editId) {
+        // Reenvio depois da recusa: volta para o engenheiro e guarda a recusa anterior no histórico. Quem criou não muda.
+        const { createdByUid, requester, requesterRole, ...changes } = sheet;
+        await window.portalCollectiveStore.update(editId, {
+          ...changes,
+          requestedAt: new Date().toISOString(),
+          bonusStatus: null,
+          hours: "Pendente",
+          engineer: null,
+          engineerRole: null,
+          engineerDecisionAt: null,
+          dpSigner: null,
+          dpRole: null,
+          dpDecisionAt: null,
+          refusalHistory: [...(editing.refusalHistory || []), { by: editing.refusedBy, at: editing.refusedAt, reason: editing.refusalReason }],
+          refusedBy: null,
+          refusedAt: null,
+          refusalReason: null,
+          refusalReasons: null
+        });
+      } else {
+        await window.portalCollectiveStore.save(sheet);
+      }
       successMessage.innerHTML = '<span class="release-done-icon" aria-hidden="true">✓</span><strong>Concluído!</strong> Solicitação enviada ao engenheiro para decisão do abono.<small>Voltando ao seu painel…</small>';
       successMessage.classList.add("is-done");
       successMessage.hidden = false;
@@ -219,6 +244,36 @@
 
   await loadEmployees();
   await loadSigners(rawEmployees);
+
+  // ?edit=ID: ajustar e reenviar uma liberação coletiva recusada pelo engenheiro.
+  if (editId) {
+    try {
+      editing = (await window.portalCollectiveStore.getAll()).find((item) => item.id === editId) || null;
+    } catch (error) {
+      console.error(error);
+    }
+    if (editing && editing.stage !== "foreman") {
+      fail("Esta liberação já está em análise e só pode ser editada se o engenheiro recusar.");
+      editing = null;
+    } else if (!editing) {
+      fail("Liberação coletiva não encontrada.");
+    } else {
+      document.querySelector("#release-title").textContent = "Editar e reenviar liberação coletiva";
+      submitButton.textContent = "Reenviar ao engenheiro";
+      const refusal = document.querySelector("#release-refusal");
+      refusal.textContent = `Recusada por ${editing.refusedBy || "engenheiro"}: ${editing.refusalReason || "sem motivo informado"}. Ajuste os dados e envie novamente.`;
+      refusal.hidden = editing.stage !== "foreman";
+      (editing.participants || []).forEach((person) => chosen.set(person.matricula, person));
+      document.querySelector("#release-date").value = editing.date || "";
+      document.querySelector("#release-time").value = editing.time || "";
+      service.value = editing.motive || "";
+      document.querySelectorAll('input[name="movement"]').forEach((input) => { input.checked = (editing.movement || ["saida"]).includes(input.value); });
+      const bonus = document.querySelector(`input[name="bonus-request"][value="${editing.bonusRequest}"]`);
+      if (bonus) bonus.checked = true;
+      if (editing.foreman) foremanSelect.value = editing.foreman;
+      if (editing.targetEngineer) engineerSelect.value = editing.targetEngineer;
+    }
+  }
   renderChosen();
   loadHistory();
 })();

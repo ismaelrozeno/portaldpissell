@@ -21,7 +21,7 @@
   // Mesma regra da liberação individual: quem já decidiu pode corrigir a própria decisão (clicando de novo desfaz).
   const sheetApi = () => window.portalCollectiveSheet;
   const stageOf = (sheet) => sheetApi().stageOf(sheet);
-  const canDecide = (sheet) => profile === "engenheiro" && stageOf(sheet) !== "closed"
+  const canDecide = (sheet) => profile === "engenheiro" && !["closed", "foreman"].includes(stageOf(sheet))
     && (!sheet.bonusStatus || String(sheet.engineer || "").trim().toLowerCase() === String(session()?.name || "").trim().toLowerCase());
 
   function row(sheet) {
@@ -42,6 +42,10 @@
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
     else if (stage === "gate") chips.push(chip("wait", "Portaria: aguardando saída"));
 
+    if (stage === "foreman") {
+      chips.length = 0;
+      chips.push(chip("no", `Recusada por <b>${esc(sheet.refusedBy || "")}</b>${sheet.refusalReason ? ` · ${esc(sheet.refusalReason)}` : ""}`));
+    }
     const engineerButtons = canDecide(sheet)
       ? `${btn("row-yes-btn", "approved", decided === "approved" ? "Abonado ✓" : "Abonado")}${btn("row-no-btn", "denied", decided === "denied" ? "Não abonado ✓" : "Não abonado")}`
       : "";
@@ -52,10 +56,15 @@
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
       ? btn("gate-confirm-btn", "confirm-exit", "Confirmar saída")
       : "";
+    // Recusar: só enquanto o engenheiro ainda não decidiu o abono (mesma regra das individuais).
+    const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
+    // Folha recusada volta para quem solicitou ajustar e reenviar.
+    const mine = sheet.createdByUid === session()?.uid || session()?.roleValue === "administrador-analista";
+    const editButton = stage === "foreman" && mine ? `<a class="table-action" href="Liberacao-Coletiva.html?edit=${id}">Editar e reenviar</a>` : "";
     const view = btn("release-view-btn", "view", "Visualizar folha");
     const buttons = trashMode
       ? `${btn("row-yes-btn", "restore", "Restaurar")}${view}${btn("row-delete-btn", "purge", canHard() ? "Apagar do banco" : "Apagar de vez")}`
-      : `${gateButtons}${dpButtons}${engineerButtons}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
+      : `${gateButtons}${dpButtons}${engineerButtons}${refuseButton}${editButton}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
     const people = (sheet.participants || []).length;
     return `<tr>
       <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small><div class="sig-chips">${chips.join("")}</div></td>
@@ -210,6 +219,26 @@
     else if (action === "approved" || action === "denied") {
       button.disabled = true;
       await decide(sheet, action);
+    } else if (action === "refuse") {
+      if (!await actions().ensureEngineerSignature()) return;
+      const who = session();
+      actions().openRefuseDialog(sheet, () => render(profile), {
+        target: `Liberação coletiva: ${sheet.motive} · solicitada por ${sheet.requester}`,
+        refuse: (reasons) => store().update(sheet.id, {
+          stage: "foreman",
+          status: "pending",
+          bonusStatus: null,
+          hours: "Pendente",
+          // Se o DP já tinha autorizado, a autorização cai: ele decide de novo depois do reenvio.
+          dpSigner: null,
+          dpRole: null,
+          dpDecisionAt: null,
+          refusedBy: who?.name || "Engenheiro responsável",
+          refusedAt: new Date().toISOString(),
+          refusalReasons: reasons,
+          refusalReason: reasons.join(" e ")
+        })
+      });
     } else if (action === "authorize" || action === "deny" || action === "confirm-exit") {
       button.disabled = true;
       await dpOrGate(sheet, action);

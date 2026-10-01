@@ -22,6 +22,7 @@
   // Mesmo fluxo da liberação individual: engenheiro (abono) -> DP (autoriza a saída) -> portaria (confirma a saída).
   const STAGES = {
     engineer: { label: "Aguardando engenheiro", tone: "pending" },
+    foreman: { label: "Recusada pelo engenheiro", tone: "denied" },
     dp: { label: "Aguardando DP", tone: "pending" },
     gate: { label: "Autorizada · aguardando saída", tone: "approved" },
     exited: { label: "Saída confirmada", tone: "approved" },
@@ -32,6 +33,7 @@
   const statusLabel = (sheet) => {
     const stage = stageOf(sheet);
     const abono = sheet.bonusStatus ? ` · ${sheet.bonusStatus === "approved" ? "Abonado" : "Não abonado"} por ${sheet.engineer || "engenheiro"}` : "";
+    if (stage === "foreman") return `Recusada por ${sheet.refusedBy || "engenheiro"}${sheet.refusalReason ? `: ${sheet.refusalReason}` : ""}`;
     return stage === "engineer"
       ? `Aguardando engenheiro${sheet.targetEngineer ? ` (${sheet.targetEngineer})` : ""}`
       : `${STAGES[stage].label}${abono}`;
