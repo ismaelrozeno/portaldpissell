@@ -105,9 +105,10 @@
     const sorted = [...releases].sort((a, b) => order[stageOf(a)] - order[stageOf(b)]);
     const stageFiltered = sorted.filter((release) => filter.value === "all" || needsDecision(release));
     const query = window.normalizeSearchText(search?.value || "");
-    const visible = query
-      ? stageFiltered.filter((release) => window.normalizeSearchText(`${release.name} ${release.requester}`).includes(query))
-      : stageFiltered;
+    // Busca por texto + filtro por data (De/Até ao lado da busca).
+    const visible = stageFiltered.filter((release) =>
+      (!query || window.normalizeSearchText(`${release.name} ${release.requester}`).includes(query))
+      && window.portalDateFilter.matches(search, window.portalDateFilter.dayOf(release)));
     const pending = releases.filter(needsDecision).length;
     counter.textContent = `${pending} pendentes`;
     pendingSummary.textContent = pending;

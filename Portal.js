@@ -290,7 +290,11 @@
     const releases = actions.visibleFor(allReleases);
     const flow = window.portalReleaseFlow;
     const query = window.normalizeSearchText(elements.recordsSearch?.value || "");
-    const matches = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team}`).includes(query);
+    // Busca por texto + filtro por data (De/Até ao lado da busca).
+    const matchesText = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team}`).includes(query);
+    const matchesDate = (release) => window.portalDateFilter.matches(elements.recordsSearch, window.portalDateFilter.dayOf(release));
+    const matches = (release) => matchesText(release) && matchesDate(release);
+    const filtering = !!query || !window.portalDateFilter.matches(elements.recordsSearch, "");
 
     if (trashMode) {
       const rows = trashed.filter(matches);
@@ -310,7 +314,7 @@
           <button class="row-delete-btn" type="button" data-row-action="purge" data-release-id="${escapeHtml(release.id)}">${actions.canHardDelete(activeProfileKey === "dp") ? "Apagar do banco" : "Apagar de vez"}</button>
         </td>
       </tr>`;
-      }).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "A lixeira está vazia."}</td></tr>`;
+      }).join("") : `<tr><td colspan="5" class="empty-state">${filtering ? "Nenhum registro encontrado para os filtros." : "A lixeira está vazia."}</td></tr>`;
       window.portalCollectivePanel?.injectTrashRows?.();
       return;
     }
@@ -326,7 +330,7 @@
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
-    const visible = query ? rows.filter((row) => matches(row.release)) : rows;
+    const visible = rows.filter((row) => matches(row.release));
     shownReleases = visible.map((row) => row.release);
     renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
@@ -337,7 +341,7 @@
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
-    `).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhum registro encontrado para a busca." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
+    `).join("") : `<tr><td colspan="5" class="empty-state">${filtering ? "Nenhum registro encontrado para os filtros." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
   }
 
   // Botões da barra (Lixeira, Apagar tudo, Restaurar tudo, Esvaziar lixeira).

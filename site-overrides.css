@@ -185,3 +185,10 @@ input[type="password"]::-ms-clear {
 @keyframes button-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .button-spinner { animation-duration: 1.8s; } }
 .table-loading td { padding: 1.5rem 1rem; text-align: center; opacity: .75; }
+
+/* Filtro de data padrao ao lado da busca (date-filter.js) */
+.date-filter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 0; font-size: .82rem; }
+.date-filter-field { display: inline-flex; align-items: center; gap: .35rem; color: #5b6678; font-weight: 600; }
+.date-filter input[type="date"] { padding: .4rem .55rem; border: 1px solid #c9d3e0; border-radius: .45rem; font-size: .82rem; color: #16283d; background: #fff; }
+.date-filter-clear { padding: .4rem .7rem; border: 1px solid #c9d3e0; border-radius: .45rem; background: #fff; color: #1769aa; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.date-filter-clear:hover { background: #f0f5fb; }

@@ -159,13 +159,19 @@
     const newIndividual = el.querySelector("#collective-new-individual");
     if (newIndividual) newIndividual.hidden = profileKey === "portaria";
     // Busca: colaborador da folha, motivo, solicitante, engenheiro/DP/portaria que assinou, data e situação.
-    const query = window.normalizeSearchText(document.querySelector("#collective-search")?.value || "");
+    const searchEl = document.querySelector("#collective-search");
+    const query = window.normalizeSearchText(searchEl?.value || "");
     const base = trashMode ? trash : sheets;
-    const shown = query ? base.filter((sheet) => window.normalizeSearchText([
-      sheet.motive, sheet.requester, sheet.foreman, sheet.targetEngineer, sheet.engineer, sheet.dpSigner, sheet.exitConfirmedBy, sheet.date,
-      window.portalCollectiveSheet.statusLabel(sheet), ...(sheet.participants || []).flatMap((person) => [person.nome, person.matricula, person.funcao])
-    ].filter(Boolean).join(" ")).includes(query)) : base;
-    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${query ? "Nenhuma liberação coletiva encontrada para a busca." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    // Busca por texto + filtro por data (De/Até ao lado da busca).
+    const shown = base.filter((sheet) => {
+      if (!window.portalDateFilter.matches(searchEl, window.portalDateFilter.dayOf(sheet))) return false;
+      if (!query) return true;
+      return window.normalizeSearchText([
+        sheet.motive, sheet.requester, sheet.foreman, sheet.targetEngineer, sheet.engineer, sheet.dpSigner, sheet.exitConfirmedBy, sheet.date,
+        window.portalCollectiveSheet.statusLabel(sheet), ...(sheet.participants || []).flatMap((person) => [person.nome, person.matricula, person.funcao])
+      ].filter(Boolean).join(" ")).includes(query);
+    });
+    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
     // meio de um clique fazia o clique se perder.
     if (listHtml !== lastListHtml) {
