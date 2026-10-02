@@ -10,3 +10,17 @@ body.import-page { background:var(--imp-bg); color:#16283d; }.import-page .site-
 .import-actions { display:flex; justify-content:flex-end; gap:.65rem; margin-top:1.25rem; }.import-secondary,.import-submit { padding:.7rem 1rem; border-radius:.5rem; font-size:.82rem; font-weight:700; cursor:pointer; }.import-secondary { border:1px solid var(--imp-line); color:var(--imp-blue); background:#fff; }.import-submit { border:0; color:#fff; background:var(--imp-orange); }.import-submit:hover { background:#d96800; }.import-submit:disabled { cursor:default; opacity:.55; }
 .manual-employee-form { display:grid; max-width:680px; gap:.55rem; }.manual-employee-form label { margin-top:.35rem; color:var(--imp-navy); font-size:.85rem; font-weight:700; }.manual-employee-form input { padding:.75rem .85rem; border:1px solid var(--imp-line); border-radius:.5rem; font:inherit; }.manual-employee-form input:focus { border-color:var(--imp-orange); outline:2px solid rgba(245,130,10,.2); }.manual-employee-form button { margin-top:.75rem; }
 @media (max-width:760px) { .import-heading { align-items:flex-start; flex-direction:column; }.import-layout { grid-template-columns:1fr; } }.@media (max-width:560px) { .import-preview-heading,.import-actions { align-items:stretch; flex-direction:column; }.import-actions button { width:100%; }.import-table { min-width:600px; } }
+
+.bio-install { margin-bottom:1.5rem; padding:1rem 1.25rem; border:1px solid var(--imp-line, #dde3ee); border-radius:.75rem; background:#fff; }
+.bio-install-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+.bio-install-head h2 { margin:0 0 .15rem; font-size:1.05rem; }
+.bio-install-head p { margin:0; font-size:.85rem; color:#5b6678; }
+.bio-install-buttons { display:flex; gap:.6rem; flex-wrap:wrap; }
+.bio-install-buttons a { text-decoration:none; text-align:center; }
+.bio-install-steps { margin-top:.9rem; }
+.bio-install-steps summary { cursor:pointer; font-size:.88rem; font-weight:700; color:#8b5515; }
+.bio-install-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:1.25rem; margin-top:.9rem; }
+.bio-install-grid h3 { margin:0 0 .4rem; font-size:.9rem; }
+.bio-install-grid ol { margin:0 0 .5rem; padding-left:1.1rem; font-size:.84rem; }
+.bio-install-grid small { color:#6b7280; }
+@media (max-width:900px) { .bio-install-grid { grid-template-columns:1fr; } .bio-install-buttons, .bio-install-buttons a { width:100%; } }

@@ -552,6 +552,9 @@
     elements.collectiveAction.hidden = !profile.action;
     // Botão extra ao lado do principal: "Equipes" é um poder do estagiário de engenharia.
     elements.secondaryAction.hidden = !linkedRoleValues.includes(profileKey);
+    // Link discreto do DP para o cadastro de digitais (leitor biométrico).
+    const bioLink = document.querySelector("#dp-bio-link");
+    if (bioLink) bioLink.hidden = profileKey !== "dp";
     const employees = await employeesQuick();
     const session = window.portalAuthDemo?.getSession();
     const allReleases = await window.portalDemoStore?.getReleases() || [];
