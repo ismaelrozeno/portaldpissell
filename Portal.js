@@ -297,7 +297,7 @@
     const filtering = !!query || !window.portalDateFilter.matches(elements.recordsSearch, "");
 
     if (trashMode) {
-      const rows = trashed.filter(matches);
+      const rows = window.portalSortFilter.sort(trashed.filter(matches), elements.recordsSearch);
       shownReleases = rows;
       renderToolbar(releases.length, trashed.length);
       elements.table.innerHTML = rows.length ? rows.map((release) => {
@@ -330,7 +330,12 @@
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
-    const visible = rows.filter((row) => matches(row.release));
+    const visible = window.portalSortFilter.sort(rows.filter((row) => matches(row.release)), elements.recordsSearch, {
+      createdAt: (row) => String(row.release.createdAt || row.release.date || ""),
+      stage: (row) => row.stage,
+      name: (row) => row.release.name || "",
+      bonus: (row) => row.release.bonusStatus || ""
+    });
     shownReleases = visible.map((row) => row.release);
     renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `

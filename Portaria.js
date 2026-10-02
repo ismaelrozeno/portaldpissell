@@ -20,6 +20,8 @@
     const authorizations = releases.map((release) => ({
       id: release.id,
       day: window.portalDateFilter.dayOf(release),
+      createdAt: release.createdAt || release.date || "",
+      bonusStatus: release.bonusStatus || "",
       stage: flow.stageOf(release),
       exitConfirmedBy: release.exitConfirmedBy,
       exitConfirmedAt: release.exitConfirmedAt,
@@ -33,10 +35,16 @@
       dp: dpText[flow.stageOf(release)]
     }));
     const query = search.value.trim().toLowerCase();
-    // Busca por texto + filtro por data (De/Até ao lado da busca).
-    const visible = authorizations.filter((item) =>
+    // Busca por texto + filtro por data + ordenação (ao lado da busca).
+    const filtered = authorizations.filter((item) =>
       `${item.name} ${item.registration}`.toLowerCase().includes(query)
       && window.portalDateFilter.matches(search, item.day));
+    const visible = window.portalSortFilter.sort(filtered, search, {
+      createdAt: (item) => String(item.createdAt || item.day || ""),
+      stage: (item) => item.stage,
+      name: (item) => item.name || "",
+      bonus: (item) => item.bonusStatus || ""
+    });
     results.innerHTML = visible.length ? visible.map((item) => `
       <article class="gate-result ${item.status === "blocked" ? "is-blocked" : "is-ready"}">
         <div class="gate-result-head"><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.registration)}</small></div><span class="gate-status ${item.status}">${statusText[item.status]}</span></div>

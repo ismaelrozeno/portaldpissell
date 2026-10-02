@@ -163,13 +163,20 @@
     const query = window.normalizeSearchText(searchEl?.value || "");
     const base = trashMode ? trash : sheets;
     // Busca por texto + filtro por data (De/Até ao lado da busca).
-    const shown = base.filter((sheet) => {
+    const filtered = base.filter((sheet) => {
       if (!window.portalDateFilter.matches(searchEl, window.portalDateFilter.dayOf(sheet))) return false;
       if (!query) return true;
       return window.normalizeSearchText([
         sheet.motive, sheet.requester, sheet.foreman, sheet.targetEngineer, sheet.engineer, sheet.dpSigner, sheet.exitConfirmedBy, sheet.date,
         window.portalCollectiveSheet.statusLabel(sheet), ...(sheet.participants || []).flatMap((person) => [person.nome, person.matricula, person.funcao])
       ].filter(Boolean).join(" ")).includes(query);
+    });
+    // Ordenação (seletor ao lado da busca das coletivas).
+    const shown = window.portalSortFilter.sort(filtered, searchEl, {
+      createdAt: (sheet) => String(sheet.createdAt || sheet.date || ""),
+      stage: (sheet) => stageOf(sheet),
+      name: (sheet) => sheet.motive || "",
+      bonus: (sheet) => sheet.bonusStatus || ""
     });
     const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no

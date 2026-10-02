@@ -48,7 +48,8 @@
     const releases = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases());
     const selected = filter.value;
     const term = fold(search.value.trim());
-    const visible = releases.filter((release) => (selected === "launch" ? needsLaunch(release) : (filterMatches[selected] || filterMatches.all)(flow.stageOf(release))) && matchesSearchAndDate(release, term));
+    const filtered = releases.filter((release) => (selected === "launch" ? needsLaunch(release) : (filterMatches[selected] || filterMatches.all)(flow.stageOf(release))) && matchesSearchAndDate(release, term));
+    const visible = window.portalSortFilter.sort(filtered, search);
     filterCount.textContent = `${visible.length} de ${releases.length} liberações`;
     list.innerHTML = visible.length ? visible.map((release) => {
       const stage = flow.stageOf(release);
