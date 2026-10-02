@@ -224,9 +224,10 @@
       bonusTone,
       bonusRequest: release.bonusRequest === "abonado" ? "Abonado" : release.bonusRequest === "nao-abonado" ? "Não abonado" : "",
       // Assinatura pela digital no Hamster DX; sem ela, fica a linha para assinar à mão na folha impressa.
-      employeeSignature: release.employeeSignature?.method === "biometria"
-        ? `Assinado com digital (Hamster DX) em ${formatDateTime(release.employeeSignature.signedAt)}`
-        : "",
+      employeeSignature: "",
+      employeeBio: release.employeeSignature?.method === "biometria"
+        ? { seed: release.employeeSignature.fingerprintHash || release.employeeSignature.matricula || release.name, name: release.employeeSignature.nome || release.name || "", when: formatDateTime(release.employeeSignature.signedAt) }
+        : null,
       requester: release.requester || "Não informado",
       requesterTime: formatDateTime(release.createdAt),
       engineer: release.engineer || "Pendente",
@@ -258,7 +259,13 @@
     const bonus = overlay.querySelector("#preview-bonus");
     bonus.textContent = f.bonus;
     bonus.className = `bonus-${f.bonusTone}`;
-    set("#preview-employee-signature", f.employeeSignature || "______________________________________________");
+    const signatureBox = overlay.querySelector("#preview-employee-signature");
+    if (f.employeeBio && window.portalFingerprint) {
+      const bio = f.employeeBio;
+      signatureBox.innerHTML = `<span class="bio-signature">${window.portalFingerprint.svg(bio.seed, 62)}<span class="bio-signature-text"><small>Assinado biometricamente por digital</small><small>${escapeHtml(bio.name)}</small><small>${escapeHtml(bio.when)}</small></span><i class="signature-name bio-signature-name">${escapeHtml(bio.name)}</i></span>`;
+    } else {
+      signatureBox.textContent = f.employeeSignature || "______________________________________________";
+    }
     set("#preview-requester", f.requester);
     set("#preview-requester-time", f.requesterTime);
     set("#preview-engineer", f.engineer);

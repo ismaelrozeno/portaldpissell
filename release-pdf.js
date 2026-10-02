@@ -156,7 +156,18 @@
     // Assinatura do colaborador
     font("normal", 13);
     text("Assinatura do colaborador:", left, 412);
-    if (fields.employeeSignature) {
+    if (fields.employeeBio && window.portalFingerprint) {
+      const bio = fields.employeeBio;
+      doc.setDrawColor(17);
+      doc.setLineWidth(0.12);
+      window.portalFingerprint.strokes(bio.seed).forEach((run) => {
+        for (let i = 1; i < run.length; i += 1) doc.line(X(214 + run[i - 1][0] * 32), Y(389 + run[i - 1][1] * 32), X(214 + run[i][0] * 32), Y(389 + run[i][1] * 32));
+      });
+      font("normal", 8, [17, 17, 17]);
+      ["Assinado biometricamente por digital", bio.name.toUpperCase(), bio.when].forEach((row, i) => text(row, 252, 398 + i * 11));
+      font("italic", 14, [17, 17, 17]);
+      text(bio.name, 440, 416);
+    } else if (fields.employeeSignature) {
       font("bold", 12, [23, 97, 59]);
       text(fields.employeeSignature, 200, 411);
     } else {

@@ -234,7 +234,8 @@
       return `${decide}${refuse}${view}${del}`;
     }
     if (profile === "dp") {
-      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}` : "";
+      const sign = actions.canSignBiometric(release) ? btn("row-yes-btn", "sign-bio", "Assinar com digital") : "";
+      const decide = actions.dpCanDecide(release) ? `${sign}${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}` : "";
       // O lançamento do abono no RM é feito só na folha de liberação ("Visualizar liberação").
       return `${decide}${view}${del}`;
     }
@@ -457,6 +458,9 @@
         if (flow.stageOf(release) !== "gate") return refresh();
         if (!await actions.confirmText(`Confirmar a saída de ${release.name}?`)) return;
         run = () => actions.confirmExit(release);
+      } else if (action === "sign-bio") {
+        if (!actions.canSignBiometric(release)) return refresh();
+        run = () => actions.signBiometric(release);
       } else if (action === "authorize" || action === "deny") {
         if (!actions.dpCanDecide(release)) return refresh();
         run = () => actions.dpDecide(release, action === "authorize");

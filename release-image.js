@@ -140,7 +140,19 @@
 
     // Assinatura do colaborador
     text(ctx, "Assinatura do colaborador:", left, 412, { font: `13px ${SANS}` });
-    if (fields.employeeSignature) text(ctx, fields.employeeSignature, 200, 411, { font: bold(12), color: "#17613b" });
+    if (fields.employeeBio && window.portalFingerprint) {
+      const bio = fields.employeeBio;
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 0.9;
+      ctx.lineCap = "round";
+      window.portalFingerprint.strokes(bio.seed).forEach((run) => {
+        ctx.beginPath();
+        run.forEach(([x, y], index) => (index ? ctx.lineTo(214 + x * 32, 389 + y * 32) : ctx.moveTo(214 + x * 32, 389 + y * 32)));
+        ctx.stroke();
+      });
+      ["Assinado biometricamente por digital", bio.name.toUpperCase(), bio.when].forEach((row, i) => text(ctx, row, 252, 398 + i * 11, { font: `8.5px ${SANS}` }));
+      text(ctx, bio.name, 440, 416, { font: `15px ${SCRIPT}` });
+    } else if (fields.employeeSignature) text(ctx, fields.employeeSignature, 200, 411, { font: bold(12), color: "#17613b" });
     else line(ctx, 200, 560, 414);
     line(ctx, left, right, 428);
 

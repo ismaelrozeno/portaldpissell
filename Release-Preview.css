@@ -26,6 +26,11 @@
 .release-sheet-block { min-height:0; padding:.55rem 0; }.release-sheet-block p { min-height:32px; }
 .release-sheet-hours { padding:.55rem 0; }.release-sheet-hours strong { margin-top:.3rem; }
 .release-sheet-signature { padding:.8rem 0; }
+.release-sheet-signature .bio-signature { display:inline-flex; align-items:center; gap:.6rem; vertical-align:middle; margin-left:.4rem; }
+.bio-signature .fingerprint-art { flex:none; }
+.bio-signature-text { display:flex; flex-direction:column; line-height:1.2; font-size:.68rem; text-transform:uppercase; }
+.bio-signature-text small { font-size:inherit; }
+.release-sheet-signature .bio-signature-name { margin:0 0 0 .8rem; font-size:1.05rem; text-transform:none; white-space:nowrap; }
 .release-sheet footer { padding-top:.9rem; }
 @media (max-width:520px) { .release-preview-overlay { padding:0 .5rem .5rem; }.release-preview-actions { justify-content:stretch; }.release-preview-actions button { flex:1; padding:.8rem; font-size:1rem; } }
 /* Impressão: meia folha A4 no topo de uma A4 retrato, com margens de 10 mm (área útil de 190 mm = ~718 px).

@@ -248,6 +248,30 @@
     });
   }
 
+  // Assinatura do colaborador com a digital (leitor Hamster DX), feita no DP.
+  const canSignBiometric = (release) => dpCanDecide(release) && release.employeeSignature?.method !== "biometria";
+
+  async function signBiometric(release) {
+    const reader = window.portalBiometricReader;
+    if (!reader) {
+      await ask({ title: "Leitor indisponível", message: "O leitor biométrico não foi carregado nesta tela.", okText: "OK", cancelText: null });
+      return false;
+    }
+    const go = await ask({ title: "Assinar com digital", message: `${release.name} deve colocar o dedo cadastrado no leitor Hamster DX.
+
+Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
+    if (!go) return false;
+    try {
+      const signature = await reader.signAs(release.registration);
+      await store().updateRelease(release.id, { employeeSignature: signature });
+      return true;
+    } catch (error) {
+      const noEnrollment = error.code === "sem-cadastro";
+      await ask({ title: noEnrollment ? "Digital não cadastrada" : "Não foi possível assinar", message: (error.message || "Falha no leitor biométrico.") + (noEnrollment ? "\n\nCadastre a digital em Biometria." : ""), okText: "OK", cancelText: null });
+      return false;
+    }
+  }
+
   // Abono aprovado pelo engenheiro que o DP ainda precisa lançar no RM.
   const needsLaunch = (release) => release.bonusStatus === "approved"
     && !release.abonoLaunchedAt
@@ -391,6 +415,8 @@ Deseja continuar?`;
     openRefuseDialog,
     dpCanDecide,
     dpDecide,
+    canSignBiometric,
+    signBiometric,
     needsLaunch,
     canConfirmExit,
     confirmExit
