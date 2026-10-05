@@ -226,7 +226,8 @@
       // Assinatura pela digital no Hamster DX; sem ela, fica a linha para assinar à mão na folha impressa.
       employeeSignature: "",
       employeeBio: release.employeeSignature?.method === "biometria"
-        ? { seed: release.employeeSignature.fingerprintHash || release.employeeSignature.matricula || release.name, name: release.employeeSignature.nome || release.name || "", when: formatDateTime(release.employeeSignature.signedAt) }
+        // Digital + hora da assinatura: cada assinatura tem um desenho próprio (não o mesmo para a pessoa toda vez).
+        ? { seed: `${release.employeeSignature.fingerprintHash || release.employeeSignature.matricula || release.name}|${release.employeeSignature.signedAt || ""}`, name: release.employeeSignature.nome || release.name || "", when: formatDateTime(release.employeeSignature.signedAt) }
         : null,
       requester: release.requester || "Não informado",
       requesterTime: formatDateTime(release.createdAt),

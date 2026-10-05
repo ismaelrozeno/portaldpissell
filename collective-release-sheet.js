@@ -45,7 +45,8 @@
     return signature?.method === "biometria" ? signature : null;
   };
   const signedCount = (sheet) => (sheet.participants || []).filter((person) => signatureOf(sheet, person)).length;
-  const bioSeed = (signature) => signature.fingerprintHash || signature.matricula;
+  // Digital + hora da assinatura: cada assinatura tem um desenho próprio, como na liberação individual.
+  const bioSeed = (signature) => `${signature.fingerprintHash || signature.matricula}|${signature.signedAt || ""}`;
 
   // Valores já formatados da folha, usados pelo PDF (os mesmos que a tela mostra).
   function pdfFields(sheet) {

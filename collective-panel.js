@@ -64,7 +64,7 @@
       : "";
     // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, enquanto a folha está em andamento.
     const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate"].includes(stage) && signedBio < people
-      ? btn("row-yes-btn", "bio", "Assinar com digital")
+      ? btn("row-bio-btn", "bio", "Assinar com digital")
       : "";
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
       ? btn("gate-confirm-btn", "confirm-exit", "Confirmar saída")

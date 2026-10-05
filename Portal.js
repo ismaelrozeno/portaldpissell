@@ -211,6 +211,9 @@
       } else if (stage === "gate") {
         chips.push(chip("wait", "Portaria: aguardando saída"));
       }
+      // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
+      if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", "Digital do colaborador · assinou"));
+      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando"));
     }
     return `<div class="sig-chips">${chips.join("")}</div>`;
   }
@@ -234,10 +237,10 @@
       return `${decide}${refuse}${view}${del}`;
     }
     if (profile === "dp") {
-      const sign = actions.canSignBiometric(release) ? btn("row-yes-btn", "sign-bio", "Assinar com digital") : "";
-      const decide = actions.dpCanDecide(release) ? `${sign}${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}` : "";
+      const sign = actions.canSignBiometric(release) ? btn("row-bio-btn", "sign-bio", "Assinar com digital") : "";
+      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}` : "";
       // O lançamento do abono no RM é feito só na folha de liberação ("Visualizar liberação").
-      return `${decide}${view}${del}`;
+      return `${sign}${decide}${view}${del}`;
     }
     // Encarregado / estagiário: só edita e reenvia quando o engenheiro recusou. "Apagar" só some do histórico dele.
     const edit = stage === "foreman" ? `<a class="table-action" href="Liberacao.html?edit=${encodeURIComponent(release.id)}">Editar e reenviar</a>` : "";

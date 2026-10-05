@@ -248,8 +248,9 @@
     });
   }
 
-  // Assinatura do colaborador com a digital (leitor Hamster DX), feita no DP.
-  const canSignBiometric = (release) => dpCanDecide(release) && release.employeeSignature?.method !== "biometria";
+  // Assinatura do colaborador com a digital (leitor Hamster DX), feita no DP. Como na coletiva, vale também depois de
+  // autorizada (aguardando saída): o colaborador costuma assinar quando passa no DP para sair.
+  const canSignBiometric = (release) => ["engineer", "dp", "gate"].includes(flow().stageOf(release)) && release.employeeSignature?.method !== "biometria";
 
   async function signBiometric(release) {
     const reader = window.portalBiometricReader;
