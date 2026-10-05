@@ -33,9 +33,19 @@
     const select = wrap.querySelector(".sort-filter-select");
     search._sortSelect = select;
     select.addEventListener("change", () => {
+      // A pessoa escolheu: o padrao do perfil nao muda mais a escolha dela.
+      search._sortTouched = true;
       // Reaproveita o listener de busca que a tela ja tem, para redesenhar.
       search.dispatchEvent(new Event("input", { bubbles: true }));
     });
+  }
+
+  // Ordem padrao do perfil (ex.: engenheiro = pendentes de abono primeiro). Nao troca o que a pessoa ja escolheu.
+  function setDefault(search, mode) {
+    if (!search) return;
+    enhance(search);
+    if (search._sortTouched || !OPTIONS.some(([v]) => v === mode)) return;
+    search._sortSelect.value = mode;
   }
 
   function value(search) {
@@ -65,10 +75,12 @@
         break;
       case "unbonused": {
         // Aguardando decisão de abono: sem abono definido e ainda ativa (nem recusada, nem encerrada).
+        // Entre as pendentes, a mais antiga primeiro (fila: quem espera ha mais tempo); o resto, mais recentes primeiro.
         const waiting = (r) => (!bonus(r) && !["foreman", "closed", "exited"].includes(stage(r))) ? 0 : 1;
         copy.sort((a, b) => {
           const ra = waiting(a), rb = waiting(b);
-          return ra !== rb ? ra - rb : byRecent(a, b);
+          if (ra !== rb) return ra - rb;
+          return ra === 0 ? createdAt(a).localeCompare(createdAt(b)) : byRecent(a, b);
         });
         break;
       }
@@ -103,5 +115,5 @@
     init();
   }
 
-  window.portalSortFilter = Object.freeze({ init, value, sort, OPTIONS });
+  window.portalSortFilter = Object.freeze({ init, value, sort, setDefault, OPTIONS });
 })();

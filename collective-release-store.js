@@ -23,10 +23,16 @@
     },
     // Quem vê o quê: o engenheiro, só o que foi enviado a ele (ou a "todos"); DP e administrador, tudo;
     // encarregado e demais solicitantes, só o que eles mesmos enviaram.
-    byRole(sheets) {
+    // profileKey: perfil aberto no Meu portal. O administrador troca de perfil e, como nas individuais, vê pelo perfil
+    // aberto: como encarregado/estagiário/analista/segurança, só o que ele mesmo enviou; como portaria, só o autorizado.
+    byRole(sheets, profileKey) {
       const session = window.portalAuthDemo?.getSession();
       const role = session?.roleValue;
       const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+      if (role === "administrador-analista" && profileKey) {
+        if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === session.uid);
+        if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(sheet.stage));
+      }
       if (role === "dp" || role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) return sheets;
       // Engenheiro Gestor recebe todas as folhas, mesmo as enviadas a outro engenheiro.
       if (role === "engenheiro" && window.portalAuthDemo?.isManager?.()) return sheets;
@@ -38,13 +44,13 @@
     // Lixeira de cada usuário (como nas liberações individuais): "hiddenFor" = está na lixeira de quem apagou,
     // "purgedFor" = apagada de vez só do histórico dele. Mexe só no id de quem está logado.
     myId: () => window.portalAuthDemo?.getSession()?.uid || "",
-    visibleFor(sheets) {
+    visibleFor(sheets, profileKey) {
       const me = this.myId();
-      return this.byRole(sheets).filter((sheet) => !(sheet.hiddenFor || []).includes(me) && !(sheet.purgedFor || []).includes(me));
+      return this.byRole(sheets, profileKey).filter((sheet) => !(sheet.hiddenFor || []).includes(me) && !(sheet.purgedFor || []).includes(me));
     },
-    trashFor(sheets) {
+    trashFor(sheets, profileKey) {
       const me = this.myId();
-      return this.byRole(sheets).filter((sheet) => (sheet.hiddenFor || []).includes(me) && !(sheet.purgedFor || []).includes(me));
+      return this.byRole(sheets, profileKey).filter((sheet) => (sheet.hiddenFor || []).includes(me) && !(sheet.purgedFor || []).includes(me));
     },
     async addToList(id, field, value) {
       await collection().doc(id).update({ [field]: firebase.firestore.FieldValue.arrayUnion(value) });

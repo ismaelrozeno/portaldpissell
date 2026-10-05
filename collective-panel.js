@@ -79,7 +79,7 @@
       ? `${btn("row-yes-btn", "restore", "Restaurar")}${view}${btn("row-delete-btn", "purge", canHard() ? "Apagar do banco" : "Apagar de vez")}`
       : `${gateButtons}${bioButton}${dpButtons}${engineerButtons}${refuseButton}${editButton}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
     return `<tr>
-      <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small><div class="sig-chips">${chips.join("")}</div></td>
+      <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small>${window.portalCreatedLabel?.(sheet.createdAt) || ""}<div class="sig-chips">${chips.join("")}</div></td>
       <td data-label="Frente" class="col-frente">Coletiva</td>
       <td data-label="Horário" class="col-horario">${esc(sheet.time || "—")}</td>
       <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(stageInfo.label)}</span></td>
@@ -114,6 +114,8 @@
 
   async function render(profileKey) {
     profile = profileKey;
+    // Mesma ordem padrão das individuais: o engenheiro vê primeiro as pendentes de abono.
+    window.portalSortFilter?.setDefault(document.querySelector("#collective-search"), profileKey === "engenheiro" ? "unbonused" : "recent");
     const el = section();
     if (!el) return;
     if (!store()) {
@@ -126,8 +128,8 @@
     loadFailed = false;
     try {
       const all = await store().getAll();
-      sheets = store().visibleFor(all);
-      trash = store().trashFor(all);
+      sheets = store().visibleFor(all, profileKey);
+      trash = store().trashFor(all, profileKey);
     } catch (error) {
       // O painel continua aparecendo, dizendo que não deu para carregar (ex.: sem internet ou regras do banco).
       console.warn("Não foi possível carregar as liberações coletivas.", error);

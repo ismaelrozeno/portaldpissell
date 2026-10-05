@@ -212,7 +212,7 @@
         chips.push(chip("wait", "Portaria: aguardando saída"));
       }
       // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
-      if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", "Digital do colaborador · assinou"));
+      if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", `Colaborador <b>${short(release.employeeSignature.nome || release.name)}</b> · assinou por digital`));
       else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando"));
     }
     return `<div class="sig-chips">${chips.join("")}</div>`;
@@ -284,7 +284,19 @@
     }
   }
 
+  // "Criada 05/10/2026 · 10:44": quando a liberação foi enviada (o engenheiro abona pela ordem de chegada).
+  function createdLabel(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return "";
+    const day = date.toLocaleDateString("pt-BR");
+    const hour = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return `<small class="row-created" title="Criada em ${day} às ${hour}">Criada ${day} · ${hour}</small>`;
+  }
+  window.portalCreatedLabel = createdLabel;
+
   async function renderRecords(profile, prefetched) {
+    // Engenheiro: por padrão, pendentes de abono primeiro (a mais antiga no topo). Os outros perfis: mais recentes.
+    window.portalSortFilter.setDefault(elements.recordsSearch, profile === "engenheiro" ? "unbonused" : "recent");
     const session = window.portalAuthDemo?.getSession();
     const actions = window.portalReleaseActions;
     const allReleases = prefetched || await window.portalDemoStore?.getReleases() || [];
@@ -307,7 +319,7 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
@@ -343,7 +355,7 @@
     renderToolbar(visible.length, trashed.length);
     elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
