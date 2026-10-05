@@ -86,3 +86,18 @@
 .collective-toast.is-error { background: #8b2930; }
 .collective-toast[hidden] { display: none; }
 @keyframes collective-toast-in { from { opacity: 0; transform: translate(-50%, .6rem); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Janela "Assinaturas por digital" (DP): um participante por linha, com o botão Assinar. */
+.collective-bio-dialog { width: min(94vw, 520px); }
+.collective-bio-sub { margin: 0 0 .6rem; color: #617188; font-size: .85rem; }
+.collective-bio-notice { margin: 0 0 .6rem; padding: .6rem .75rem; border-radius: .5rem; color: #8b5515; background: #fff2d9; font-size: .82rem; }
+.collective-bio-notice[hidden] { display: none; }
+.collective-bio-list { display: grid; gap: .4rem; max-height: 55vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.collective-bio-list li { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .55rem .7rem; border: 1px solid #dfe7f0; border-radius: .5rem; }
+.collective-bio-who { display: grid; gap: .1rem; min-width: 0; }
+.collective-bio-who strong { color: #00142d; font-size: .88rem; overflow-wrap: anywhere; }
+.collective-bio-who small { color: #617188; font-size: .75rem; }
+.collective-bio-who .collective-bio-error { color: #8b2930; }
+.collective-bio-list button { flex: none; padding: .45rem .8rem; border-radius: .45rem; font-size: .8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.collective-bio-list button:disabled { opacity: .55; cursor: default; }
+.collective-bio-done { flex: none; color: #17613b; font-size: .8rem; font-weight: 700; white-space: nowrap; }

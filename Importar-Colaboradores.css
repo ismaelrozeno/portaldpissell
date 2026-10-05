@@ -24,3 +24,5 @@ body.import-page { background:var(--imp-bg); color:#16283d; }.import-page .site-
 .bio-install-grid ol { margin:0 0 .5rem; padding-left:1.1rem; font-size:.84rem; }
 .bio-install-grid small { color:#6b7280; }
 @media (max-width:900px) { .bio-install-grid { grid-template-columns:1fr; } .bio-install-buttons, .bio-install-buttons a { width:100%; } }
+
+.bio-install-note { margin: .25rem 0 0; font-size: .8rem; color: #6b7280; }

@@ -17,6 +17,10 @@
     async update(id, changes) {
       await collection().doc(id).update(changes);
     },
+    // Grava só a assinatura (digital) de um participante, sem mexer nas dos outros.
+    async signParticipant(id, matricula, signature) {
+      await collection().doc(id).update(new firebase.firestore.FieldPath("participantSignatures", String(matricula)), signature);
+    },
     // Quem vê o quê: o engenheiro, só o que foi enviado a ele (ou a "todos"); DP e administrador, tudo;
     // encarregado e demais solicitantes, só o que eles mesmos enviaram.
     byRole(sheets) {

@@ -39,6 +39,14 @@
       : `${STAGES[stage].label}${abono}`;
   };
 
+  // Assinatura por digital de cada participante (gravada pelo DP no leitor Hamster DX), por matrícula.
+  const signatureOf = (sheet, person) => {
+    const signature = person && sheet.participantSignatures?.[person.matricula];
+    return signature?.method === "biometria" ? signature : null;
+  };
+  const signedCount = (sheet) => (sheet.participants || []).filter((person) => signatureOf(sheet, person)).length;
+  const bioSeed = (signature) => signature.fingerprintHash || signature.matricula;
+
   // Valores já formatados da folha, usados pelo PDF (os mesmos que a tela mostra).
   function pdfFields(sheet) {
     const stage = stageOf(sheet);
@@ -60,7 +68,12 @@
       gateSigner: gate.name, gateTime: gate.time,
       hours: sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro",
       hoursTone: sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait",
-      footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time ? ` a partir das ${sheet.time} hs` : ""}`
+      footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time ? ` a partir das ${sheet.time} hs` : ""}`,
+      // Uma por linha da lista (null = sem digital, fica em branco para assinar à mão).
+      participantBio: (sheet.participants || []).map((person) => {
+        const signature = signatureOf(sheet, person);
+        return signature ? { seed: bioSeed(signature), when: formatDateTime(signature.signedAt) } : null;
+      })
     };
   }
 
@@ -69,7 +82,11 @@
     const rows = Math.max(MIN_ROWS, people.length);
     const body = Array.from({ length: rows }, (_, index) => {
       const person = people[index];
-      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td></td></tr>`;
+      const signature = signatureOf(sheet, person);
+      const bio = signature
+        ? `<span class="cs-bio">${window.portalFingerprint ? window.portalFingerprint.svg(bioSeed(signature), 22) : ""}<small>Assinado por digital<br>${esc(formatDateTime(signature.signedAt))}</small></span>`
+        : "";
+      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
     return `
       <header class="cs-head">
@@ -112,7 +129,7 @@
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("collective-release-pdf.js?v=20261001c");
+    if (!window.portalCollectivePdf) await loadScript("collective-release-pdf.js?v=20261005bio");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -159,7 +176,7 @@
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("Liberacao-Coletiva.css?v=20261001h", document.baseURI).href;
+    const css = new URL("Liberacao-Coletiva.css?v=20261005bio", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
@@ -214,5 +231,5 @@
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, STAGES });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, STAGES, signatureOf, signedCount });
 })();

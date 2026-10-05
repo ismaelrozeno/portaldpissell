@@ -24,6 +24,20 @@
       lines.forEach((l, i) => doc.text(l, align === "center" ? x + w / 2 : x + pad, top + i * lh, { align }));
     };
 
+    // Assinatura por digital na linha do participante: desenho da digital + "Assinado por digital" e a hora.
+    const drawBio = (bio, x, y, h) => {
+      const size = h - 1;
+      if (window.portalFingerprint) {
+        line(0.1, 17);
+        window.portalFingerprint.strokes(bio.seed).forEach((run) => {
+          for (let k = 1; k < run.length; k += 1) {
+            doc.line(x + 2 + run[k - 1][0] * size / 1.2, y + 0.5 + run[k - 1][1] * size / 1.2, x + 2 + run[k][0] * size / 1.2, y + 0.5 + run[k][1] * size / 1.2);
+          }
+        });
+      }
+      textIn(`Assinado por digital · ${bio.when}`, x + 3 + size / 1.2, y, 62 - size, h, { size: 6.5, color: GREY, maxLines: 1, pad: 0 });
+    };
+
     // ---- Cabeçalho: logo | título | motivo + data
     const hy = M;
     const hh = 30;
@@ -100,6 +114,7 @@
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
         else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 1 });
         else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
+        else if (c === 3 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH);
         x += w;
       });
       y += rowH;

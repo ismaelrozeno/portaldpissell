@@ -46,6 +46,10 @@
       : chip("wait", "DP: aguardando"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
     else if (stage === "gate") chips.push(chip("wait", "Portaria: aguardando saída"));
+    // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
+    const people = (sheet.participants || []).length;
+    const signedBio = sheetApi().signedCount(sheet);
+    if (people && (signedBio || profile === "dp")) chips.push(chip(signedBio === people ? "yes" : "wait", `Digitais: <b>${signedBio} de ${people}</b>`));
 
     if (stage === "foreman") {
       chips.length = 0;
@@ -58,6 +62,10 @@
     const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage)
       ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}`
       : "";
+    // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, enquanto a folha está em andamento.
+    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate"].includes(stage) && signedBio < people
+      ? btn("row-yes-btn", "bio", "Assinar com digital")
+      : "";
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
       ? btn("gate-confirm-btn", "confirm-exit", "Confirmar saída")
       : "";
@@ -69,8 +77,7 @@
     const view = btn("release-view-btn", "view", "Visualizar folha");
     const buttons = trashMode
       ? `${btn("row-yes-btn", "restore", "Restaurar")}${view}${btn("row-delete-btn", "purge", canHard() ? "Apagar do banco" : "Apagar de vez")}`
-      : `${gateButtons}${dpButtons}${engineerButtons}${refuseButton}${editButton}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
-    const people = (sheet.participants || []).length;
+      : `${gateButtons}${bioButton}${dpButtons}${engineerButtons}${refuseButton}${editButton}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
     return `<tr>
       <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small><div class="sig-chips">${chips.join("")}</div></td>
       <td data-label="Frente" class="col-frente">Coletiva</td>
@@ -333,6 +340,7 @@
     if (!sheet) return;
     const action = button.dataset.collective;
     if (action === "view") window.portalCollectiveSheet.show(sheet);
+    else if (action === "bio") window.portalCollectiveBiometric?.open(sheet, () => render(profile));
     else if (action === "approved" || action === "denied") {
       button.disabled = true;
       await decide(sheet, action);

@@ -49,7 +49,11 @@
 .cs-list .cs-id { width: 34px; padding: 4px; color: #666; font-family: Georgia, serif; font-size: 11px; text-align: center; }
 .cs-list .cs-role { width: 120px; color: #555; font-family: Georgia, serif; font-size: 11px; text-align: center; }
 .cs-list th:nth-child(4) { width: 36%; }
-.cs-foot { margin: 8px 0 0; color: #666; font-size: 10px; text-align: right; }
+.cs-list .cs-bio-cell { padding: 1px 6px; }
+.cs-bio { display: flex; align-items: center; gap: 6px; }
+.cs-bio .fingerprint-art { flex: none; }
+.cs-bio small { color: #555; font-size: 8.5px; line-height: 1.15; text-transform: uppercase; }
+.cs-foot {margin: 8px 0 0; color: #666; font-size: 10px; text-align: right; }
 @media (max-width: 520px) { .cs-overlay { padding: 0 .5rem .5rem; } .cs-actions button { flex: 1; padding: .8rem; } }
 @page { size: A4 portrait; margin: 10mm; }
 @media print {

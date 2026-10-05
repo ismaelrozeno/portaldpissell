@@ -126,7 +126,8 @@ service cloud.firestore {
     // só o DP e o administrador apagam de verdade.
     match /collectiveReleases/{sheetId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.createdByUid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.createdByUid == request.auth.uid &&
+        !request.resource.data.keys().hasAny(["participantSignatures"]);
       // O engenheiro só mexe nos campos da decisão do abono (assinatura dele).
       allow update: if request.auth != null && (isAdmin() || isDp() || resource.data.createdByUid == request.auth.uid ||
         (isEngineer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
@@ -138,7 +139,9 @@ service cloud.firestore {
             ["stage", "exitConfirmedBy", "exitConfirmedRole", "exitConfirmedAt"])) ||
         // Lixeira: qualquer perfil só põe/tira o PRÓPRIO id nas listas "hiddenFor" e "purgedFor".
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["hiddenFor", "purgedFor"]) &&
-          onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor")));
+          onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor"))) &&
+        // Digitais dos colaboradores (participantSignatures): só o DP e o administrador gravam, no leitor do DP.
+        (isAdmin() || isDp() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(["participantSignatures"]));
       allow delete: if isDp() || isAdmin();
     }
 
