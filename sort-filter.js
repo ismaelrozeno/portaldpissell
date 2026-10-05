@@ -41,7 +41,7 @@
     });
   }
 
-  // Ordem padrao do perfil (ex.: engenheiro = pendentes de abono primeiro). Nao troca o que a pessoa ja escolheu.
+  // Ordem padrao do perfil (ex.: engenheiro = pendentes de abono mais recentes). Nao troca o que a pessoa ja escolheu.
   function setDefault(search, mode) {
     if (!search) return;
     enhance(search);

@@ -295,8 +295,8 @@
   window.portalCreatedLabel = createdLabel;
 
   async function renderRecords(profile, prefetched) {
-    // Engenheiro: por padrão, pendentes de abono primeiro (a mais antiga no topo). Os outros perfis: mais recentes.
-    window.portalSortFilter.setDefault(elements.recordsSearch, profile === "engenheiro" ? "unbonused" : "recent");
+    // Engenheiro: por padrão, pendentes de abono primeiro (a mais recente no topo). Os outros perfis: mais recentes.
+    window.portalSortFilter.setDefault(elements.recordsSearch, profile === "engenheiro" ? "unbonusedRecent" : "recent");
     const session = window.portalAuthDemo?.getSession();
     const actions = window.portalReleaseActions;
     const allReleases = prefetched || await window.portalDemoStore?.getReleases() || [];

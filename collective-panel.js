@@ -115,7 +115,7 @@
   async function render(profileKey) {
     profile = profileKey;
     // Mesma ordem padrão das individuais: o engenheiro vê primeiro as pendentes de abono.
-    window.portalSortFilter?.setDefault(document.querySelector("#collective-search"), profileKey === "engenheiro" ? "unbonused" : "recent");
+    window.portalSortFilter?.setDefault(document.querySelector("#collective-search"), profileKey === "engenheiro" ? "unbonusedRecent" : "recent");
     const el = section();
     if (!el) return;
     if (!store()) {
