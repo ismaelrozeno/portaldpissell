@@ -9,7 +9,8 @@
     ["recent", "Mais recentes"],
     ["old", "Mais antigos"],
     ["pending", "Pendentes primeiro"],
-    ["unbonused", "Pendentes de abono primeiro"],
+    ["unbonused", "Pendentes de abono mais antigas"],
+    ["unbonusedRecent", "Pendentes de abono mais recentes"],
     ["bonus", "Abonados primeiro"],
     ["denied", "Não abonados primeiro"],
     ["name", "Nome (A–Z)"]
@@ -73,14 +74,17 @@
           return ra !== rb ? ra - rb : byRecent(a, b);
         });
         break;
-      case "unbonused": {
+      case "unbonused":
+      case "unbonusedRecent": {
         // Aguardando decisão de abono: sem abono definido e ainda ativa (nem recusada, nem encerrada).
-        // Entre as pendentes, a mais antiga primeiro (fila: quem espera ha mais tempo); o resto, mais recentes primeiro.
+        // Entre as pendentes: "mais antigas" = fila (quem espera ha mais tempo no topo); "mais recentes" = a ultima
+        // que chegou no topo. O resto vem depois, sempre mais recentes primeiro.
         const waiting = (r) => (!bonus(r) && !["foreman", "closed", "exited"].includes(stage(r))) ? 0 : 1;
+        const oldestFirst = mode === "unbonused";
         copy.sort((a, b) => {
           const ra = waiting(a), rb = waiting(b);
           if (ra !== rb) return ra - rb;
-          return ra === 0 ? createdAt(a).localeCompare(createdAt(b)) : byRecent(a, b);
+          return ra === 0 && oldestFirst ? createdAt(a).localeCompare(createdAt(b)) : byRecent(a, b);
         });
         break;
       }
