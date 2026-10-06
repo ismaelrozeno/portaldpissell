@@ -130,7 +130,7 @@
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=dba7570a");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=b4d3751b");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -232,5 +232,5 @@
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, STAGES, signatureOf, signedCount });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, STAGES, signatureOf, signedCount, pdfFields });
 })();

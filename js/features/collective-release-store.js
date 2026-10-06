@@ -9,6 +9,11 @@
       const snapshot = await collection().orderBy("createdAt", "desc").limit(100).get();
       return snapshot.docs.map(toPlain);
     },
+    // Todas, sem o limite das 100 mais recentes da tela (exportação do mês em Backup).
+    async getEverything() {
+      const snapshot = await collection().get();
+      return snapshot.docs.map(toPlain);
+    },
     async save(sheet) {
       const data = { ...sheet, createdAt: sheet.createdAt || new Date().toISOString() };
       const ref = await collection().add(data);

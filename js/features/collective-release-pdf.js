@@ -1,5 +1,7 @@
 // Desenha a folha "Liberação coletiva" (liberação coletiva) como PDF vetorial A4 retrato (jsPDF), igual à tela.
-// Uso: window.portalCollectivePdf.build(sheet, labels) -> Blob. Os textos já formatados vêm de collective-release-sheet.js.
+// Uso: window.portalCollectivePdf.build(sheet, labels) -> Blob (uma folha), ou buildMany([[sheet, labels], ...]) -> Blob
+// (várias folhas no mesmo PDF, cada uma começando numa página nova; usado na exportação do mês em Backup).
+// Os textos já formatados vêm de collective-release-sheet.js (pdfFields).
 (() => {
   const M = 10;          // margem (mm)
   const W = 190;         // largura útil (mm)
@@ -7,9 +9,11 @@
   const GREY = [85, 85, 85];
   const TONES = { yes: [22, 128, 60], no: [198, 40, 53], wait: [139, 85, 21] };
 
-  function build(sheet, f) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+  const newDoc = () => new window.jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+
+  // Desenha uma folha a partir da página atual do documento (que deve estar em branco).
+  function draw(doc, sheet, f) {
+    const firstPage = doc.getNumberOfPages();
     const line = (w = 0.25, color = 85) => { doc.setDrawColor(color); doc.setLineWidth(w); };
     const font = (style, size, color = [17, 17, 17], family = "helvetica") => { doc.setFont(family, style); doc.setFontSize(size); doc.setTextColor(...color); };
     const cell = (x, y, w, h, fill) => {
@@ -120,16 +124,32 @@
       y += rowH;
     }
 
-    // ---- Rodapé
-    const pages = doc.getNumberOfPages();
-    for (let p = 1; p <= pages; p += 1) {
+    // ---- Rodapé (numeração das páginas desta folha)
+    const lastPage = doc.getNumberOfPages();
+    const pages = lastPage - firstPage + 1;
+    for (let p = firstPage; p <= lastPage; p += 1) {
       doc.setPage(p);
       font("normal", 7, [120, 120, 120]);
       doc.text(f.footer, M, 292);
-      if (pages > 1) doc.text(`Página ${p} de ${pages}`, M + W, 292, { align: "right" });
+      if (pages > 1) doc.text(`Página ${p - firstPage + 1} de ${pages}`, M + W, 292, { align: "right" });
     }
+    doc.setPage(lastPage);
+  }
+
+  function build(sheet, f) {
+    const doc = newDoc();
+    draw(doc, sheet, f);
     return doc.output("blob");
   }
 
-  window.portalCollectivePdf = Object.freeze({ build });
+  function buildMany(items) {
+    const doc = newDoc();
+    items.forEach(([sheet, f], index) => {
+      if (index) doc.addPage();
+      draw(doc, sheet, f);
+    });
+    return doc.output("blob");
+  }
+
+  window.portalCollectivePdf = Object.freeze({ build, buildMany });
 })();

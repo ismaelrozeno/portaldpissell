@@ -27,7 +27,7 @@
         <section class="backup-card" aria-labelledby="export-title">
           <span class="backup-eyebrow">Proteção extra</span>
           <h2 id="export-title">Exportar backup dos dados</h2>
-          <p>Gera um arquivo <strong>.json</strong> com todas as liberações e os colaboradores cadastrados. Guarde em um lugar seguro (pen drive, e-mail, nuvem). Se alguma coisa for apagada por engano, este arquivo recupera.</p>
+          <p>Gera um arquivo <strong>.json</strong> com todas as liberações (individuais e coletivas) e os colaboradores cadastrados. Guarde em um lugar seguro (pen drive, e-mail, nuvem). Se alguma coisa for apagada por engano, este arquivo recupera.</p>
           <ul class="backup-list" id="export-scope"></ul>
           <button class="backup-button" id="export-backup" type="button">Baixar backup (.json)</button>
           <p class="backup-result" id="export-result" role="status" hidden></p>
@@ -55,12 +55,18 @@
         <section class="backup-card backup-card-wide" aria-labelledby="images-title">
           <span class="backup-eyebrow">Arquivo</span>
           <h2 id="images-title">Exportar as folhas de liberação (PDF ou imagem)</h2>
-          <p>Gera as folhas <strong>iguais à tela "Visualizar liberação"</strong>, com as assinaturas e o carimbo do RM, para arquivar o mês. Pensado para muitas liberações: tudo é separado por dia.</p>
+          <p>Gera as folhas <strong>iguais à tela "Visualizar liberação"</strong>, com as assinaturas e o carimbo do RM, para arquivar o mês. Pensado para muitas liberações: tudo é separado por dia. As liberações coletivas saem em PDFs à parte (uma folha por página).</p>
           <div class="backup-filters">
             <label for="images-from">De</label>
             <input id="images-from" type="date">
             <label for="images-to">Até</label>
             <input id="images-to" type="date">
+            <label for="images-type">Tipo</label>
+            <select id="images-type">
+              <option value="both">Individuais e coletivas</option>
+              <option value="individual">Só as individuais</option>
+              <option value="collective">Só as coletivas (só em PDF)</option>
+            </select>
             <label for="images-kind">Quais</label>
             <select id="images-kind">
               <option value="all">Todas as liberações</option>
@@ -133,7 +139,7 @@
   <script src="js/core/shared-components.js?v=97c5470c"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="js/core/firebase-release-store.js?v=fa1c037e"></script>
-  <script src="js/features/backup-store.js?v=a283dc90"></script>
+  <script src="js/features/backup-store.js?v=7ee271e5"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -141,8 +147,11 @@
   <script src="js/features/release-preview.js?v=da3072f4"></script>
   <script src="js/features/release-image.js?v=6751b6aa"></script>
   <script src="js/features/release-pdf.js?v=16f75ee8"></script>
-  <script src="js/pages/backup.js?v=9f00720a"></script>
-  <script src="js/features/backup-images.js?v=1758939b"></script>
+  <script src="js/features/collective-release-store.js?v=3303aac2"></script>
+  <script src="js/features/collective-release-sheet.js?v=024a6401"></script>
+  <script src="js/features/collective-release-pdf.js?v=b4d3751b"></script>
+  <script src="js/pages/backup.js?v=21a5a56d"></script>
+  <script src="js/features/backup-images.js?v=9ba034fa"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

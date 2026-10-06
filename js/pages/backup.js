@@ -15,9 +15,9 @@
   }
 
   // As regras do banco só deixam o administrador gravar colaboradores e matrículas permitidas (e listar estas últimas).
-  const exportKeys = isAdmin ? ["releases", "employees", "allowedRegistrations"] : ["releases", "employees"];
-  const importKeys = isAdmin ? ["releases", "employees", "allowedRegistrations"] : ["releases"];
-  const labels = { releases: "Liberações", employees: "Colaboradores", allowedRegistrations: "Matrículas permitidas" };
+  const exportKeys = isAdmin ? ["releases", "collectiveReleases", "employees", "allowedRegistrations"] : ["releases", "collectiveReleases", "employees"];
+  const importKeys = isAdmin ? ["releases", "collectiveReleases", "employees", "allowedRegistrations"] : ["releases", "collectiveReleases"];
+  const labels = { releases: "Liberações individuais", collectiveReleases: "Liberações coletivas", employees: "Colaboradores", allowedRegistrations: "Matrículas permitidas" };
 
   const $ = (selector) => document.querySelector(selector);
   const show = (element, text, isError) => {

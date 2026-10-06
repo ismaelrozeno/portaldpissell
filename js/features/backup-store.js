@@ -1,11 +1,11 @@
-// Leitura e restauração de backups do banco (liberações, colaboradores e matrículas permitidas).
+// Leitura e restauração de backups do banco (liberações individuais e coletivas, colaboradores e matrículas permitidas).
 // Só lê e grava; quem decide o que pode é a tela (Backup.html) e as regras do Firestore.
 (() => {
   const collectionName = (key) => window.portalDataModel?.collections?.[key] || key;
   const collection = (key) => window.portalFirebaseDb.collection(collectionName(key));
   const FORMAT = "issell-portal-backup";
   const VERSION = 1;
-  const KEYS = ["releases", "employees", "allowedRegistrations"];
+  const KEYS = ["releases", "collectiveReleases", "employees", "allowedRegistrations"];
 
   async function readCollection(key) {
     const snapshot = await collection(key).get();

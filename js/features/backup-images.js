@@ -97,12 +97,18 @@
     progress.hidden = false;
     result.hidden = true;
     try {
-      const all = await window.portalDemoStore.getReleases();
-      const chosen = all
-        .filter((release) => (!from || (dayOf(release) && dayOf(release) >= from)) && (!to || (dayOf(release) && dayOf(release) <= to)) && test(release))
-        .sort((a, b) => `${dayOf(a)} ${a.time || ""}`.localeCompare(`${dayOf(b)} ${b.time || ""}`));
-      if (!chosen.length) {
-        show(result, "Nenhuma liberação nesse período.", true);
+      // Individuais, coletivas ou as duas. As coletivas só saem em PDF (não há folha delas em imagem).
+      const type = $("#images-type").value;
+      const wantIndividual = type !== "collective";
+      const wantCollective = type !== "individual" && format === "pdf";
+      const inPeriod = (item) => (!from || (dayOf(item) && dayOf(item) >= from)) && (!to || (dayOf(item) && dayOf(item) <= to)) && test(item);
+      const byDayAndTime = (a, b) => `${dayOf(a)} ${a.time || ""}`.localeCompare(`${dayOf(b)} ${b.time || ""}`);
+      const chosen = wantIndividual ? (await window.portalDemoStore.getReleases()).filter(inPeriod).sort(byDayAndTime) : [];
+      const sheets = wantCollective ? (await window.portalCollectiveStore.getEverything()).filter(inPeriod).sort(byDayAndTime) : [];
+      if (!chosen.length && !sheets.length) {
+        show(result, type === "collective" && format !== "pdf"
+          ? "As liberações coletivas só podem ser exportadas em PDF. Escolha o formato PDF."
+          : "Nenhuma liberação nesse período.", true);
         return;
       }
       const employees = await window.portalEmployeeStore.getAll().catch(() => []);
@@ -117,7 +123,7 @@
         days.get(day).push(release);
       });
 
-      const total = chosen.length;
+      const total = chosen.length + sheets.length;
       progress.max = total;
       progress.value = 0;
       let done = 0;
@@ -134,6 +140,18 @@
       const roleOf = (release) => release.role || roles.get(release.registration) || "";
       const png = (release) => window.portalReleaseImage.toPng(release, roleOf(release));
       const perPdf = Number($("#images-per-pdf").value) || 200;
+      // Grava o PDF na pasta escolhida ou baixa o arquivo.
+      const savePdf = async (blob, name) => {
+        if (directory) {
+          const handle = await directory.getFileHandle(name, { create: true });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } else {
+          download(blob, name);
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      };
 
       for (const [day, list] of days) {
         if (cancelled) break;
@@ -146,16 +164,7 @@
             const pdfName = `liberacoes-obra-369_${day}${parts > 1 ? `_parte-${part + 1}` : ""}.pdf`;
             try {
               await pause();
-              const blob = buildPdf(slice, day, part + 1, parts, roleOf);
-              if (directory) {
-                const handle = await directory.getFileHandle(pdfName, { create: true });
-                const writable = await handle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-              } else {
-                download(blob, pdfName);
-                await new Promise((resolve) => setTimeout(resolve, 500));
-              }
+              await savePdf(buildPdf(slice, day, part + 1, parts, roleOf), pdfName);
               files += 1;
             } catch (error) {
               failed += slice.length;
@@ -205,11 +214,42 @@
           }
         }
       }
+      // Liberações coletivas: um PDF por dia, uma folha (lista de presença) por página, igual a "Visualizar folha".
+      const sheetDays = new Map();
+      sheets.forEach((sheet) => {
+        const day = dayOf(sheet) || "sem-data";
+        if (!sheetDays.has(day)) sheetDays.set(day, []);
+        sheetDays.get(day).push(sheet);
+      });
+      for (const [day, list] of sheetDays) {
+        if (cancelled) break;
+        const parts = Math.ceil(list.length / perPdf);
+        for (let part = 0; part < parts; part += 1) {
+          if (cancelled) break;
+          const slice = list.slice(part * perPdf, (part + 1) * perPdf);
+          const pdfName = `liberacoes-coletivas-obra-369_${day}${parts > 1 ? `_parte-${part + 1}` : ""}.pdf`;
+          try {
+            await pause();
+            const blob = window.portalCollectivePdf.buildMany(slice.map((sheet) => [sheet, window.portalCollectiveSheet.pdfFields(sheet)]));
+            await savePdf(blob, pdfName);
+            files += 1;
+          } catch (error) {
+            failed += slice.length;
+            console.error("Falha ao gerar o PDF das coletivas", pdfName, error);
+          }
+          done += slice.length;
+          progress.value = done;
+          show(result, `Gerando… ${done} de ${total} (coletivas ${day})`, false);
+        }
+      }
+
       const where = format === "pdf"
         ? (mode === "folder" ? `${files} PDF(s) salvo(s) na pasta escolhida` : `${files} PDF(s) baixado(s)`)
         : (mode === "folder" ? `na pasta escolhida (uma subpasta por dia, ${days.size} no total)` : `${files} arquivo(s) ZIP baixado(s)`);
       const lines = [
         cancelled ? `Cancelado. ${done} de ${total} folha(s) processada(s).` : `Concluído: ${total - failed} folha(s) ${format === "pdf" ? "em PDF" : "em imagem"}, ${where}.`,
+        sheets.length ? `Inclui ${sheets.length} liberação(ões) coletiva(s), em PDFs separados ("liberacoes-coletivas-…").` : "",
+        type === "both" && format !== "pdf" ? "As liberações coletivas só saem em PDF: escolha PDF para incluí-las." : "",
         failed ? `${failed} folha(s) deram erro e ficaram de fora.` : "",
         mode === "zip" && files > 1 ? "Se o navegador perguntar, permita baixar vários arquivos." : ""
       ].filter(Boolean);
