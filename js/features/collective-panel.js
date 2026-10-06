@@ -142,6 +142,14 @@
 
   let loadFailed = false;
   let lastListHtml = "";
+  // Paginação (mesma das individuais). Criada na primeira vez que a lista é desenhada.
+  let listPager = null;
+  const pager = () => listPager || (listPager = window.portalPagination?.create({
+    key: "coletivas",
+    after: section().querySelector(".table-responsive"),
+    search: document.querySelector("#collective-search"),
+    onChange: () => draw()
+  }));
   // id da folha -> ação ainda em gravação ("trash" | "restore" | "purge").
   const pending = new Map();
 
@@ -187,7 +195,8 @@
       name: (sheet) => sheet.motive || "",
       bonus: (sheet) => sheet.bonusStatus || ""
     });
-    const listHtml = shown.length ? shown.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    const pageItems = pager() ? pager().slice(shown) : shown;
+    const listHtml = shown.length ? pageItems.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
     // meio de um clique fazia o clique se perder.
     if (listHtml !== lastListHtml) {

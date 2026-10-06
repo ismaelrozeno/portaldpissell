@@ -294,6 +294,15 @@
   }
   window.portalCreatedLabel = createdLabel;
 
+  // Paginação da lista (10/25/50/100 por página). Fora da lixeira; na lixeira a lista é curta e mostra tudo.
+  let recordsPager = null;
+  const pager = () => recordsPager || (recordsPager = window.portalPagination.create({
+    key: "individuais",
+    after: elements.table.closest(".table-responsive"),
+    search: elements.recordsSearch,
+    onChange: () => renderRecords(activeProfileKey)
+  }));
+
   async function renderRecords(profile, prefetched) {
     // Engenheiro: por padrão, pendentes de abono primeiro (a mais recente no topo). Os outros perfis: mais recentes.
     window.portalSortFilter.setDefault(elements.recordsSearch, profile === "engenheiro" ? "unbonusedRecent" : "recent");
@@ -312,6 +321,7 @@
     const filtering = !!query || !window.portalDateFilter.matches(elements.recordsSearch, "");
 
     if (trashMode) {
+      pager().hide();
       const rows = window.portalSortFilter.sort(trashed.filter(matches), elements.recordsSearch);
       shownReleases = rows;
       renderToolbar(releases.length, trashed.length);
@@ -351,9 +361,11 @@
       name: (row) => row.release.name || "",
       bonus: (row) => row.release.bonusStatus || ""
     });
+    // "Apagar tudo" e os números da barra valem para a lista inteira filtrada, não só para a página.
     shownReleases = visible.map((row) => row.release);
     renderToolbar(visible.length, trashed.length);
-    elements.table.innerHTML = visible.length ? visible.map(({ release, stage }) => `
+    const pageRows = pager().slice(visible);
+    elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
         <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
