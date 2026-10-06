@@ -154,6 +154,62 @@
     ["Recusado em", 17, (r) => dateTime(r.refusedAt)]
   ];
 
+  // Aba "Coletivas": uma linha por colaborador da folha (dá para filtrar por pessoa e conferir o abono de cada um).
+  // Os dados da folha se repetem em cada linha; a coluna "Folha" junta quem estava na mesma liberação coletiva.
+  const collective = () => window.portalCollectiveSheet;
+  const movementOf = (sheet) => {
+    const list = sheet.movement?.length ? sheet.movement : ["saida"];
+    return list.length > 1 ? "Entrada e saída" : list[0] === "entrada" ? "Entrada" : "Saída";
+  };
+  const collectiveColumns = [
+    ["Folha", 9, (s, p, ctx) => ctx.sheetNumber.get(s.id)],
+    ["Data", 12, (s) => dateOnly(dayOf(s))],
+    ["Horário", 9, (s) => s.time || ""],
+    ["Colaborador", 34, (s, p) => p.nome || ""],
+    ["Matrícula", 11, (s, p) => p.matricula || ""],
+    ["Função", 24, (s, p, ctx) => p.funcao || ctx.roles.get(p.matricula) || ""],
+    ["Assinou por digital", 14, (s, p) => (collective().signatureOf(s, p) ? "Sim" : "Não")],
+    ["Digital em", 17, (s, p) => dateTime(collective().signatureOf(s, p)?.signedAt)],
+    ["Motivo (tarefa)", 42, (s) => s.motive || ""],
+    ["Movimentação", 15, (s) => movementOf(s)],
+    ["Colaboradores na folha", 12, (s) => (s.participants || []).length],
+    ["Tratamento das horas", 18, (s) => (s.bonusStatus === "approved" ? "Abonado" : s.bonusStatus === "denied" ? "Não abonado" : "Pendente")],
+    ["Encarregado", 26, (s) => s.foreman || ""],
+    ["Solicitante", 26, (s) => s.requester || ""],
+    ["Solicitado em", 17, (s) => dateTime(s.requestedAt || s.createdAt)],
+    ["Engenheiro", 26, (s) => s.engineer || ""],
+    ["Decisão do engenheiro em", 20, (s) => dateTime(s.engineerDecisionAt)],
+    ["Departamento Pessoal", 26, (s) => s.dpSigner || ""],
+    ["Decisão do DP em", 17, (s) => dateTime(s.dpDecisionAt)],
+    ["Portaria (saída)", 26, (s) => s.exitConfirmedBy || ""],
+    ["Saída confirmada em", 19, (s) => dateTime(s.exitConfirmedAt)],
+    ["Situação atual", 30, (s) => collective().STAGES[collective().stageOf(s)]?.label || ""],
+    ["Motivo da recusa", 34, (s) => s.refusalReason || ""],
+    ["Recusado por", 26, (s) => s.refusedBy || ""],
+    ["Recusado em", 17, (s) => dateTime(s.refusedAt)]
+  ];
+
+  // Mesmo visual nas duas abas: cabeçalho azul-escuro, linhas com quebra de texto e filtro em cada coluna.
+  function addTable(workbook, title, cols, rows, frozenColumns) {
+    const sheet = workbook.addWorksheet(title, { views: [{ state: "frozen", ySplit: 1, xSplit: frozenColumns }] });
+    sheet.columns = cols.map(([header, width]) => ({ header, width }));
+    rows.forEach((values) => sheet.addRow(values));
+    const header = sheet.getRow(1);
+    header.height = 30;
+    header.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00142D" } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+    sheet.eachRow((row, index) => {
+      if (index === 1) return;
+      row.alignment = { vertical: "top", wrapText: true };
+      row.eachCell((cell) => { cell.border = { bottom: { style: "hair", color: { argb: "FFBFC9D6" } } }; });
+    });
+    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
+    return sheet;
+  }
+
   $("#export-excel").addEventListener("click", async () => {
     const button = $("#export-excel");
     const result = $("#excel-result");
@@ -165,36 +221,26 @@
     try {
       const from = $("#excel-from").value;
       const to = $("#excel-to").value;
-      const all = await window.portalDemoStore.getReleases();
-      const chosen = all
-        .filter((release) => (!from || (dayOf(release) && dayOf(release) >= from)) && (!to || (dayOf(release) && dayOf(release) <= to)))
-        .sort((a, b) => `${dayOf(a)} ${a.time || ""}`.localeCompare(`${dayOf(b)} ${b.time || ""}`));
-      if (!chosen.length) {
+      const inPeriod = (item) => (!from || (dayOf(item) && dayOf(item) >= from)) && (!to || (dayOf(item) && dayOf(item) <= to));
+      const byDayAndTime = (a, b) => `${dayOf(a)} ${a.time || ""}`.localeCompare(`${dayOf(b)} ${b.time || ""}`);
+      const chosen = (await window.portalDemoStore.getReleases()).filter(inPeriod).sort(byDayAndTime);
+      const sheets = window.portalCollectiveStore ? (await window.portalCollectiveStore.getEverything()).filter(inPeriod).sort(byDayAndTime) : [];
+      if (!chosen.length && !sheets.length) {
         show(result, "Nenhuma liberação nesse período.", true);
         return;
       }
       const employees = await window.portalEmployeeStore.getAll().catch(() => []);
-      const ctx = { roles: new Map(employees.map((employee) => [employee.matricula, employee.funcao])) };
+      const ctx = {
+        roles: new Map(employees.map((employee) => [employee.matricula, employee.funcao])),
+        sheetNumber: new Map(sheets.map((sheet, index) => [sheet.id, index + 1]))
+      };
 
       const workbook = new ExcelJS.Workbook();
       workbook.creator = session?.name || "Portal DP";
       workbook.created = new Date();
-      const sheet = workbook.addWorksheet("Liberações", { views: [{ state: "frozen", ySplit: 1, xSplit: 3 }] });
-      sheet.columns = columns.map(([header, width]) => ({ header, width }));
-      chosen.forEach((release) => sheet.addRow(columns.map(([, , read]) => read(release, ctx))));
-      const header = sheet.getRow(1);
-      header.height = 30;
-      header.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00142D" } };
-        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-      });
-      sheet.eachRow((row, index) => {
-        if (index === 1) return;
-        row.alignment = { vertical: "top", wrapText: true };
-        row.eachCell((cell) => { cell.border = { bottom: { style: "hair", color: { argb: "FFBFC9D6" } } }; });
-      });
-      sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+      addTable(workbook, "Individuais", columns, chosen.map((release) => columns.map(([, , read]) => read(release, ctx))), 3);
+      const collectiveRows = sheets.flatMap((sheet) => (sheet.participants || []).map((person) => collectiveColumns.map(([, , read]) => read(sheet, person, ctx))));
+      addTable(workbook, "Coletivas", collectiveColumns, collectiveRows, 4);
 
       const count = (test) => chosen.filter(test).length;
       const summary = workbook.addWorksheet("Resumo");
@@ -205,7 +251,7 @@
         ["Gerado em", dateTime(new Date().toISOString())],
         ["Gerado por", session?.name || ""],
         ["", ""],
-        ["Total de liberações", chosen.length],
+        ["Liberações individuais", chosen.length],
         ["Abonadas", count((r) => r.bonusStatus === "approved")],
         ["Não abonadas", count((r) => r.bonusStatus === "denied")],
         ["Sem decisão de abono", count((r) => !r.bonusStatus)],
@@ -213,14 +259,22 @@
         ["Abonos ainda por lançar no RM", count((r) => r.bonusStatus === "approved" && !r.abonoLaunchedAt)],
         ["Saídas confirmadas na portaria", count((r) => flow.stageOf(r) === "exited")],
         ["Recusadas (com o encarregado)", count((r) => flow.stageOf(r) === "foreman")],
-        ["Negadas pelo DP", count((r) => flow.stageOf(r) === "closed")]
+        ["Negadas pelo DP", count((r) => flow.stageOf(r) === "closed")],
+        ["", ""],
+        ["Liberações coletivas (folhas)", sheets.length],
+        ["Colaboradores nas coletivas", collectiveRows.length],
+        ["Folhas abonadas", sheets.filter((s) => s.bonusStatus === "approved").length],
+        ["Folhas não abonadas", sheets.filter((s) => s.bonusStatus === "denied").length],
+        ["Folhas sem decisão de abono", sheets.filter((s) => !s.bonusStatus).length],
+        ["Colaboradores que assinaram por digital", sheets.reduce((sum, s) => sum + collective().signedCount(s), 0)]
       ].forEach((row) => summary.addRow(row));
       summary.getRow(1).font = { bold: true, size: 14 };
-      for (let index = 6; index <= 14; index += 1) summary.getRow(index).getCell(1).font = { bold: index === 6 };
+      summary.getRow(6).getCell(1).font = { bold: true };
+      summary.getRow(16).getCell(1).font = { bold: true };
 
       const buffer = await workbook.xlsx.writeBuffer();
       download(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `liberacoes-obra-369_${stamp()}.xlsx`);
-      show(result, `Excel gerado com ${chosen.length} liberação(ões).`);
+      show(result, `Excel gerado: ${chosen.length} liberação(ões) individual(is) e ${sheets.length} coletiva(s) (${collectiveRows.length} colaborador(es)).`);
     } catch (error) {
       console.error("Falha ao gerar o Excel.", error);
       show(result, "Não foi possível gerar o Excel. Tente de novo.", true);
