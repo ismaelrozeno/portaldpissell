@@ -612,7 +612,7 @@
       && (release.dpDecisionAt ? localDay(release.dpDecisionAt) : release.date) === today).length;
     // "Pendências de abono · aguardando engenheiro": liberações em andamento cujo abono o engenheiro ainda não decidiu.
     elements.bonus.textContent = profileKey === "portaria" ? profile.bonus : releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
-    // O número acima conta só as liberações individuais; o painel das coletivas soma as dele por cima (js/features/collective-panel.js?v=9b09c2ca).
+    // O número acima conta só as liberações individuais; o painel das coletivas soma as dele por cima (js/features/collective-panel.js).
     [elements.pending, elements.approved, elements.bonus].forEach((tile) => { tile.dataset.base = tile.textContent; });
     window.portalCollectivePanel?.refreshStats?.();
     renderForemanSummary(profileKey, employees);

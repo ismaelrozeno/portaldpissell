@@ -10,8 +10,9 @@ const crypto = require("crypto");
 const root = path.resolve(__dirname, "..");
 const check = process.argv.includes("--conferir");
 
-// Referência a um arquivo local de js/, css/ ou partials/, entre aspas ou parênteses, com ou sem ?v= antigo.
-const REF = /(["'`(])((?:js|css|partials)\/[A-Za-z0-9_./-]+\.(?:js|css|html))(?:\?v=[A-Za-z0-9_-]*)?(["'`)])/g;
+// Referência a um arquivo local de js/, css/ ou partials/ entre aspas (src, href, loadScript, fetch, new URL),
+// com ou sem ?v= antigo. Só aspas: caminho citado em comentário "(js/...)" não é carregamento e fica como está.
+const REF = /(["'`])((?:js|css|partials)\/[A-Za-z0-9_./-]+\.(?:js|css|html))(?:\?v=[A-Za-z0-9_-]*)?(["'`])/g;
 
 const skip = new Set([".git", "downloads", "tools", "node_modules", ".well-known", "icons", "images"]);
 const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {

@@ -173,13 +173,17 @@
     successMessage.hidden = true;
     updateParticularField();
 
+    // Horário de almoço (12:00 às 13:00) não vale: o campo fica inválido e a mensagem explica o porquê.
+    const lunchOk = window.portalLunchTime?.validate() ?? true;
     if (!employee.value || !movementInputs().length || !form.checkValidity()) {
       if (employee.value && movementInputs().length) form.reportValidity();
       errorMessage.textContent = !employee.value
         ? "Pesquise e selecione um colaborador antes de enviar a liberação."
         : !movementInputs().length
           ? "Marque entrada, saída ou as duas."
-          : "Confira os campos obrigatórios antes de enviar a liberação.";
+          : !lunchOk
+            ? window.portalLunchTime.MESSAGE
+            : "Confira os campos obrigatórios antes de enviar a liberação.";
       errorMessage.hidden = false;
       releaseButton();
       return;

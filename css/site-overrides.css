@@ -175,7 +175,7 @@ input[type="password"]::-ms-clear {
 .user-avatar { display: grid; flex: 0 0 auto; width: 2.5rem; height: 2.5rem; place-items: center; overflow: hidden; border-radius: 50%; font-size: .9rem; font-weight: 800; letter-spacing: .02em; }
 .user-avatar.has-image { background: #e8f1fa; }
 .user-avatar img { width: 86%; height: 86%; object-fit: contain; }
-/* Faixa de "sem conexão com o servidor" (js/core/firebase-release-store.js?v=fa1c037e) */
+/* Faixa de "sem conexão com o servidor" (js/core/firebase-release-store.js) */
 .connection-banner { position: fixed; left: 50%; bottom: 1rem; z-index: 2500; width: min(92vw, 560px); padding: .75rem 1rem; transform: translateX(-50%); border-radius: .7rem; color: #fff; background: #8b2930; box-shadow: 0 .6rem 1.6rem rgba(0, 20, 45, .3); font-size: .85rem; font-weight: 600; line-height: 1.35; text-align: center; }
 .connection-banner[hidden] { display: none; }
 /* Botão carregando (window.portalButtonLoading em shared-components.js) */
@@ -186,13 +186,13 @@ input[type="password"]::-ms-clear {
 @media (prefers-reduced-motion: reduce) { .button-spinner { animation-duration: 1.8s; } }
 .table-loading td { padding: 1.5rem 1rem; text-align: center; opacity: .75; }
 
-/* Filtro de data padrao ao lado da busca (js/core/date-filter.js?v=ecae31cc) */
+/* Filtro de data padrao ao lado da busca (js/core/date-filter.js) */
 .date-filter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 0; font-size: .82rem; }
 .date-filter-field { display: inline-flex; align-items: center; gap: .35rem; color: #5b6678; font-weight: 600; }
 .date-filter input[type="date"] { padding: .4rem .55rem; border: 1px solid #c9d3e0; border-radius: .45rem; font-size: .82rem; color: #16283d; background: #fff; }
 .date-filter-clear { padding: .4rem .7rem; border: 1px solid #c9d3e0; border-radius: .45rem; background: #fff; color: #1769aa; font-size: .8rem; font-weight: 700; cursor: pointer; }
 .date-filter-clear:hover { background: #f0f5fb; }
 
-/* Ordenacao padrao ao lado da busca (js/core/sort-filter.js?v=1b11d99e) */
+/* Ordenacao padrao ao lado da busca (js/core/sort-filter.js) */
 .sort-filter { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; color: #5b6678; font-weight: 600; }
 .sort-filter-select { padding: .4rem .55rem; border: 1px solid #c9d3e0; border-radius: .45rem; font-size: .82rem; color: #16283d; background: #fff; cursor: pointer; }

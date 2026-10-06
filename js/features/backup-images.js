@@ -45,7 +45,7 @@
   document.querySelectorAll('input[name="images-mode"], input[name="images-format"]').forEach((input) => input.addEventListener("change", syncMode));
   syncMode();
 
-  // PDF: duas folhas por página A4 (js/features/release-pdf.js?v=16f75ee8), com uma linha pontilhada de corte entre elas.
+  // PDF: duas folhas por página A4 (js/features/release-pdf.js), com uma linha pontilhada de corte entre elas.
   function buildPdf(list, day, part, parts, roleOf) {
     const label = `Obra 369 · Autorizações de saída · ${day.split("-").reverse().join("/")}${parts > 1 ? ` · parte ${part}/${parts}` : ""}`;
     return window.portalReleasePdf.build(list, roleOf, { label });

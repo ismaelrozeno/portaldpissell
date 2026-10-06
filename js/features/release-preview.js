@@ -53,7 +53,7 @@
   let unsubscribe = null;
   let launching = false;
 
-  // Janelas do próprio site (js/features/release-actions.js?v=af048183) quando disponíveis; senão, as nativas do navegador.
+  // Janelas do próprio site (js/features/release-actions.js) quando disponíveis; senão, as nativas do navegador.
   const confirmBox = (text) => window.portalReleaseActions?.confirmText ? window.portalReleaseActions.confirmText(text) : Promise.resolve(window.confirm(text));
   const notify = (title, message) => window.portalReleaseActions?.ask
     ? window.portalReleaseActions.ask({ title, message, okText: "OK", cancelText: null })
