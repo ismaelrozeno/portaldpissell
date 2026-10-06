@@ -1,0 +1,227 @@
+.recovery-page {
+  min-height: 100vh;
+  color: #fff;
+  background: #07111f;
+}
+
+.recovery-content {
+  min-height: calc(100vh - 110px);
+  padding: 140px 24px 80px;
+}
+
+.recovery-container {
+  position: relative;
+  width: min(100%, 620px);
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 4rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 2rem;
+  background: linear-gradient(135deg, rgba(44, 53, 67, .88), rgba(22, 29, 39, .97));
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, .22);
+}
+
+.recovery-container::before {
+  position: absolute;
+  top: -9rem;
+  left: -8rem;
+  width: 26rem;
+  height: 23rem;
+  border-radius: 50%;
+  background: rgba(245, 130, 10, .18);
+  filter: blur(2rem);
+  content: "";
+}
+
+.recovery-kicker,
+.recovery-card {
+  position: relative;
+  z-index: 1;
+}
+
+.recovery-kicker {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin: 0 0 1.25rem;
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.recovery-kicker::before {
+  width: 2.5rem;
+  height: 2px;
+  background: var(--issell-orange);
+  content: "";
+}
+
+.recovery-back-link {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  color: #c4ccd7;
+  font-size: .9rem;
+  text-decoration: none;
+}
+
+.recovery-back-link:hover,
+.recovery-back-link:focus-visible {
+  color: var(--issell-orange);
+}
+
+.recovery-card h1 {
+  margin: 0 0 .8rem;
+  color: #fff;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  letter-spacing: -.04em;
+  line-height: 1.05;
+}
+
+.recovery-intro {
+  margin: 0 0 2rem;
+  color: var(--issell-muted);
+  line-height: 1.6;
+}
+
+#recovery-form {
+  display: grid;
+  gap: .55rem;
+}
+
+.recovery-verification {
+  display: grid;
+  gap: .55rem;
+}
+
+#recovery-form label {
+  margin-top: .5rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+#recovery-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: .8rem .9rem;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: .45rem;
+  color: #fff;
+  background: rgba(0, 0, 0, .2);
+}
+
+#recovery-form input::placeholder {
+  color: #94a0ae;
+}
+
+#recovery-form input:focus {
+  border-color: var(--issell-orange);
+  outline: 2px solid rgba(245, 130, 10, .35);
+  outline-offset: 1px;
+}
+
+.recovery-password-field {
+  position: relative;
+}
+
+.recovery-password-field input {
+  padding-right: 3.5rem !important;
+}
+
+.recovery-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: .35rem;
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: .35rem;
+  color: #dbe3ed;
+  background: transparent;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.recovery-password-icon {
+  grid-area: 1 / 1;
+  width: 1.45rem;
+  height: 1.45rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.recovery-password-icon-hidden {
+  display: none;
+}
+
+.recovery-password-toggle.is-visible .recovery-password-icon-visible {
+  display: none;
+}
+
+.recovery-password-toggle.is-visible .recovery-password-icon-hidden {
+  display: block;
+}
+
+.recovery-password-toggle:hover,
+.recovery-password-toggle:focus-visible {
+  color: #fff;
+  background: rgba(245, 130, 10, .2);
+  outline: none;
+}
+
+.recovery-help {
+  display: none;
+  color: #ff9d9d;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+.recovery-help.is-visible {
+  display: block;
+}
+
+#recovery-form input.recovery-invalid {
+  border-color: #ff5c5c;
+  outline-color: rgba(255, 92, 92, .35);
+  background: rgba(120, 20, 25, .25);
+}
+
+.recovery-submit {
+  margin-top: 1rem;
+  padding: .8rem 1.1rem;
+  border: 0;
+  border-radius: .45rem;
+  color: #fff;
+  background: var(--issell-orange);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #b85d00;
+}
+
+.recovery-submit:hover,
+.recovery-submit:focus-visible {
+  background: #ff9b35;
+}
+
+.recovery-status {
+  margin: 1rem 0 0;
+  padding: .8rem .9rem;
+  border: 1px solid rgba(98, 216, 156, .5);
+  border-radius: .45rem;
+  color: #c9f5dc;
+  background: rgba(31, 105, 66, .25);
+  line-height: 1.5;
+}
+
+.recovery-note {
+  margin: 2rem 0 0;
+  color: #bfc8d3;
+  font-size: .9rem;
+  line-height: 1.5;
+}

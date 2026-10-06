@@ -1,5 +1,11 @@
 .playwright-mcp/
-biometria-agente/lib/
-biometria-agente/bin/
-biometria-agente/obj/
-biometria-agente/publicado/
+
+# Agente C# do leitor biométrico: saída de compilação
+tools/biometria-agente/lib/
+tools/biometria-agente/bin/
+tools/biometria-agente/obj/
+tools/biometria-agente/publicado/
+
+# Pacotes grandes do leitor que nenhuma página oferece para baixar (~100 MB)
+downloads/leitor-digital-driver.zip
+downloads/leitor-digital-programa.zip
