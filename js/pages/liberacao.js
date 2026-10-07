@@ -47,7 +47,7 @@
       button.type = "button";
       button.setAttribute("role", "option");
       button.className = `list-group-item list-group-item-action${item.matricula === employee.value ? " active" : ""}`;
-      button.textContent = `${item.nome} · Matrícula ${item.matricula}`;
+      button.textContent = `${item.nome} · Matrícula ${item.matricula}${item.encarregado ? ` · Equipe de ${item.encarregado}` : ""}`;
       button.addEventListener("click", () => selectEmployee(item));
       employeeResults.append(button);
     });
@@ -62,7 +62,7 @@
     if (kicker) kicker.textContent = `${roleLabel} · Obra 369`;
     if (employeeHint) {
       employeeHint.textContent = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)
-        ? "Sua equipe e colaboradores ainda sem encarregado vinculado serão exibidos."
+        ? "Pesquise qualquer colaborador pelo nome ou matrícula. A sua equipe aparece primeiro."
         : "Selecione o colaborador para registrar a liberação.";
     }
     if (signatureDescription) {
@@ -86,18 +86,17 @@
   async function renderEmployees() {
     const session = window.portalAuthDemo?.getSession();
     const allEmployeesRaw = await window.portalEmployeeStore?.getAll() || [];
-    let employees;
+    // A busca mostra todos os colaboradores: o encarregado pode liberar até quem é da equipe de outro encarregado.
+    // As equipes continuam valendo para a ordem: a própria equipe primeiro, depois quem está sem equipe, depois as outras.
+    const employees = [...allEmployeesRaw];
+    const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const teamOwners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""].map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
-      const myTeam = allEmployeesRaw.filter((item) => teamOwners.includes(item.encarregado?.trim().toLowerCase()));
-      const unassigned = allEmployeesRaw.filter((item) => !item.encarregado);
-      const seen = new Set(myTeam.map((item) => item.matricula));
-      employees = [...myTeam, ...unassigned.filter((item) => !seen.has(item.matricula))];
+      const teamOwners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
+      const rank = (item) => (teamOwners.includes(normalizeSearchText(item.encarregado).trim()) ? 0 : !item.encarregado ? 1 : 2);
+      employees.sort((a, b) => rank(a) - rank(b) || byName(a, b));
     } else {
-      // DP, engenheiro e administrador podem liberar qualquer colaborador cadastrado, sem restrição de encarregado ou status.
-      employees = allEmployeesRaw;
+      employees.sort(byName);
     }
-    employees.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
     allEmployees = employees;
     filterEmployees();
     const params = new URLSearchParams(window.location.search);

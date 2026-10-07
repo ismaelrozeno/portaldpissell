@@ -58,24 +58,27 @@
   }
   document.querySelector("#release-date").value = new Date().toISOString().slice(0, 10);
 
-  // Mesma regra da liberação individual: o encarregado vê a equipe dele + quem ainda não tem encarregado.
+  // Mesma regra da liberação individual: a busca mostra todos os colaboradores (o encarregado pode liberar até quem é
+  // da equipe de outro encarregado). A equipe continua valendo para a ordem e para o botão "adicionar toda a equipe".
   async function loadEmployees() {
     const raw = await window.portalEmployeeStore?.getAll() || [];
     rawEmployees = raw;
+    const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+    allEmployees = [...raw];
     if (isForeman) {
       const owners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""]
-        .map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
-      teamEmployees = raw.filter((item) => owners.includes(item.encarregado?.trim().toLowerCase()));
-      const seen = new Set(teamEmployees.map((item) => item.matricula));
-      allEmployees = [...teamEmployees, ...raw.filter((item) => !item.encarregado && !seen.has(item.matricula))];
-      document.querySelector("#employee-hint").textContent = "Sua equipe e colaboradores ainda sem encarregado vinculado serão exibidos.";
+        .map((name) => window.normalizeSearchText(name).trim()).filter(Boolean);
+      const isMine = (item) => owners.includes(window.normalizeSearchText(item.encarregado).trim());
+      teamEmployees = raw.filter(isMine);
+      const rank = (item) => (isMine(item) ? 0 : !item.encarregado ? 1 : 2);
+      allEmployees.sort((a, b) => rank(a) - rank(b) || byName(a, b));
+      document.querySelector("#employee-hint").textContent = "Pesquise qualquer colaborador pelo nome ou matrícula. A sua equipe aparece primeiro.";
     } else {
-      allEmployees = raw;
       teamEmployees = [];
+      allEmployees.sort(byName);
       document.querySelector("#add-all").hidden = true;
     }
-    allEmployees.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
-    teamEmployees.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
+    teamEmployees.sort(byName);
   }
 
   function renderChosen() {
@@ -101,7 +104,7 @@
       button.type = "button";
       button.setAttribute("role", "option");
       button.className = `list-group-item list-group-item-action${picked ? " active" : ""}`;
-      button.textContent = `${picked ? "✓ " : ""}${item.nome} · Matrícula ${item.matricula}`;
+      button.textContent = `${picked ? "✓ " : ""}${item.nome} · Matrícula ${item.matricula}${item.encarregado ? ` · Equipe de ${item.encarregado}` : ""}`;
       button.addEventListener("click", () => {
         if (picked) chosen.delete(item.matricula); else chosen.set(item.matricula, { matricula: item.matricula, nome: item.nome, funcao: item.funcao || "" });
         errorMessage.hidden = true;

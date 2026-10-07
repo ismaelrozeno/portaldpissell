@@ -198,8 +198,9 @@
   });
 
   // Encarregado não entra em equipe (nem na dele, nem na de outro encarregado).
-  // Só mão de obra direta entra em equipe (campo "maoDeObra" vem da importação dos arquivos do RM/REPORTS).
-  const isDirect = (employee) => employee.maoDeObra === "direta";
+  // Mão de obra direta e indireta (inclusive analistas) entram em equipe; encarregado indireto também tem equipe.
+  // O campo "maoDeObra" vem da importação dos arquivos do RM/REPORTS e aparece só como informação na lista.
+  const maoLabel = (employee) => (employee.maoDeObra === "direta" ? "Direta" : employee.maoDeObra === "indireta" ? "Indireta" : "");
   const isForemanPerson = (employee) => foremanNames().some((name) => same(name, employee.nome));
 
   function filteredEmployees() {
@@ -207,7 +208,6 @@
     const term = fold($("#team-search").value);
     const filter = $("#team-filter").value;
     return employees.filter((employee) => {
-      if (!isDirect(employee)) return false;
       const mine = same(employee.encarregado, team);
       const free = !employee.encarregado;
       if (filter === "team" && !mine) return false;
@@ -247,10 +247,10 @@
           : `<button class="team-add" type="button" data-add="${id}">${employee.encarregado ? "Mover para a equipe" : "Vincular"}</button>`;
       return `<div class="team-item${mine ? " is-mine" : ""}">
         ${canManage && !locked ? `<input type="checkbox" data-select="${id}" ${selected.has(employee.matricula) ? "checked" : ""} aria-label="Selecionar ${escapeHtml(employee.nome)}">` : "<span></span>"}
-        <div><strong>${escapeHtml(employee.nome)}</strong><small>Matrícula ${id} · ${escapeHtml(employee.funcao || "Função não informada")}</small><br>${tag}</div>
+        <div><strong>${escapeHtml(employee.nome)}</strong><small>Matrícula ${id} · ${escapeHtml(employee.funcao || "Função não informada")}${maoLabel(employee) ? ` · Mão de obra ${maoLabel(employee).toLowerCase()}` : ""}</small><br>${tag}</div>
         ${action}
       </div>`;
-    }).join("") : `<p class="teams-note">${employees.some(isDirect) ? "Nenhum colaborador encontrado." : "Nenhum colaborador de mão de obra direta encontrado. Reimporte os arquivos do RM/REPORTS em Importar colaboradores para o portal saber quem é mão de obra direta."}</p>`;
+    }).join("") : `<p class="teams-note">${employees.length ? "Nenhum colaborador encontrado." : "Nenhum colaborador cadastrado. Importe os arquivos do RM/REPORTS em Importar colaboradores."}</p>`;
   }
 
   function renderAll() {
@@ -264,15 +264,6 @@
   async function link(matriculas, foremanName) {
     const result = $("#manage-result");
     let targets = matriculas.map(byId).filter(Boolean);
-    if (foremanName) {
-      const indirect = targets.filter((employee) => !isDirect(employee));
-      if (indirect.length) {
-        targets = targets.filter(isDirect);
-        selected.clear();
-        if (!targets.length) return show(result, "Só mão de obra direta entra em equipe.", true), renderAll();
-        show(result, `${indirect.length} colaborador(es) de mão de obra indireta ignorado(s): só a direta entra em equipe.`, true);
-      }
-    }
     const bosses = foremanName ? targets.filter(isForemanPerson) : [];
     if (bosses.length) {
       targets = targets.filter((employee) => !bosses.includes(employee));
@@ -367,7 +358,7 @@
         funcao: employee.funcao || "",
         setor: employee.setor || "",
         status: employee.status || "",
-        mao: employee.maoDeObra === "direta" ? "Direta" : employee.maoDeObra === "indireta" ? "Indireta" : "Não informada",
+        mao: maoLabel(employee) || "Não informada",
         encarregado: employee.encarregado || "Sem equipe",
         estagiarios: employee.encarregado ? internsOf(employee.encarregado).join(", ") : ""
       }));

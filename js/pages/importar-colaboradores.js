@@ -15,7 +15,7 @@
   let parsedInvalidCount = 0;
   let parsedDuplicateCount = 0;
 
-  // "OBRA 369CO - MAO DE OBRA DIRETA" -> "direta"; "... INDIRETA" -> "indireta". Só a mão de obra direta entra em equipes.
+  // "OBRA 369CO - MAO DE OBRA DIRETA" -> "direta"; "... INDIRETA" -> "indireta". As duas entram em equipes.
   function maoDeObraFrom(text) {
     const value = normalizeHeader(text);
     if (value.includes("indireta")) return "indireta";
@@ -181,7 +181,7 @@
     const extraNotes = [];
     if (parsedDuplicateCount) extraNotes.push(`${parsedDuplicateCount} matrícula${parsedDuplicateCount === 1 ? "" : "s"} duplicada${parsedDuplicateCount === 1 ? "" : "s"} no arquivo (apenas a primeira ocorrência será importada)`);
     if (parsedInvalidCount) extraNotes.push(`${parsedInvalidCount} registro${parsedInvalidCount === 1 ? "" : "s"} sem matrícula ignorado${parsedInvalidCount === 1 ? "" : "s"}`);
-    const baseNote = "Ao confirmar, todos os colaboradores cadastrados serão substituídos pelos deste arquivo (quem não estiver aqui será removido; encarregados já vinculados são preservados). O arquivo não traz frente de trabalho nem encarregado para os novos colaboradores: o arquivo informa se a mão de obra é direta ou indireta (só a direta entra em equipes). Vincule depois pela lista de colaboradores cadastrados (Administração).";
+    const baseNote = "Ao confirmar, todos os colaboradores cadastrados serão substituídos pelos deste arquivo (quem não estiver aqui será removido; encarregados já vinculados são preservados). O arquivo não traz frente de trabalho nem encarregado para os novos colaboradores: o arquivo informa se a mão de obra é direta ou indireta (as duas entram em equipes). Vincule depois pela lista de colaboradores cadastrados (Administração).";
     showWarning(parsedRows.length
       ? [baseNote, ...extraNotes].join(" ")
       : (extension === "xml" ? "Nenhum registro <Detalhes> válido foi encontrado nesse XML." : "Nenhum registro válido foi encontrado nesse arquivo."));
