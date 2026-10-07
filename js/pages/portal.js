@@ -121,6 +121,11 @@
     pending: document.querySelector("#stat-pending"),
     approved: document.querySelector("#stat-approved"),
     bonus: document.querySelector("#stat-bonus"),
+    launched: document.querySelector("#stat-launched"),
+    launchedNote: document.querySelector("#stat-launched-note"),
+    launchedProgress: document.querySelector("#stat-launched-progress"),
+    launchedBar: document.querySelector("#stat-launched-bar"),
+    statCards: [...document.querySelectorAll(".portal-stats .stat-card")],
     activity: document.querySelector("#activity-list"),
     foremanSummary: document.querySelector("#foreman-summary"),
     foremanName: document.querySelector("#foreman-name"),
@@ -254,6 +259,34 @@
   let lastToolbarCounts = [0, 0];
   window.portalToolbarRefresh = () => renderToolbar(...lastToolbarCounts);
   let shownReleases = [];
+
+  // Cartões do resumo: a mesma regra conta o número e, ao clicar no cartão, filtra a tabela.
+  const statLabels = { pending: "Liberações pendentes", approved: "Autorizadas hoje", bonus: "Pendências de abono", launched: "Abonos lançados no RM" };
+  let statFilter = null;
+  const localDay = (value) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  function statRules(profileKey) {
+    const stageOf = window.portalReleaseFlow.stageOf;
+    const today = localDay(Date.now());
+    // "Pendências de abono · aguardando engenheiro": liberações em andamento cujo abono o engenheiro ainda não decidiu.
+    const awaitingBonus = (release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release));
+    const pendingStages = { dp: ["dp"], portaria: [] }[profileKey] || ["engineer", "foreman", "dp"];
+    return {
+      // Engenheiro: conta pelo abono ainda nao decidido, nao só pelo estágio — o DP pode
+      // autorizar a saída antes dele decidir, então a pendência dele continua existindo
+      // mesmo quando a liberação já passou para "dp"/"gate"/"exited".
+      pending: profileKey === "engenheiro" ? awaitingBonus : (release) => pendingStages.includes(stageOf(release)),
+      // "Autorizadas hoje": só as que o DP autorizou hoje (data local), não todas as já autorizadas.
+      approved: (release) => ["gate", "exited"].includes(stageOf(release))
+        && (release.dpDecisionAt ? localDay(release.dpDecisionAt) : release.date) === today,
+      bonus: awaitingBonus,
+      launched: (release) => !!release.abonoLaunchedAt,
+      toLaunch: (release) => release.bonusStatus === "approved" && !release.abonoLaunchedAt
+    };
+  }
+
   // Liberações da última vez que a tela foi desenhada: o clique age na hora com elas, sem esperar o servidor.
   let releaseById = new Map();
 
@@ -279,7 +312,8 @@
     } else {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="open-trash">🗑 Lixeira${trashCount ? ` (${trashCount})` : ""}</button>
-        <button class="toolbar-btn toolbar-danger" type="button" data-toolbar="trash-all" ${visibleCount ? "" : "disabled"}>Apagar tudo (mover para a lixeira)</button>`;
+        <button class="toolbar-btn toolbar-danger" type="button" data-toolbar="trash-all" ${visibleCount ? "" : "disabled"}>Apagar tudo (mover para a lixeira)</button>
+        ${statFilter ? `<button class="stat-filter-chip" type="button" data-toolbar="clear-stat" title="Mostrar todas as liberações">Filtro: ${statLabels[statFilter]} ✕</button>` : ""}`;
       notice.hidden = true;
     }
   }
@@ -355,6 +389,11 @@
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
+    // Cartão do resumo clicado: só as liberações que entram naquele número.
+    if (statFilter) {
+      const rule = statRules(profile)[statFilter];
+      rows = rows.filter((row) => rule(row.release));
+    }
     const visible = window.portalSortFilter.sort(rows.filter((row) => matches(row.release)), elements.recordsSearch, {
       createdAt: (row) => String(row.release.createdAt || row.release.date || ""),
       stage: (row) => row.stage,
@@ -373,8 +412,28 @@
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
-    `).join("") : `<tr><td colspan="5" class="empty-state">${filtering ? "Nenhum registro encontrado para os filtros." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
+    `).join("") : `<tr><td colspan="5" class="empty-state">${filtering || statFilter ? "Nenhum registro encontrado para os filtros." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
   }
+
+  // Clique nos cartões do resumo: "Equipe vinculada" abre a equipe; os outros filtram a tabela (clicar de novo tira o filtro).
+  document.querySelector(".portal-stats").addEventListener("click", async (event) => {
+    const card = event.target.closest(".stat-card");
+    if (!card || card.disabled || !activeProfileKey) return;
+    const key = card.dataset.stat;
+    if (key === "team") {
+      if (foremanRoleValues.includes(activeProfileKey)) document.querySelector("#foreman-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      else window.location.href = "Equipes.html";
+      return;
+    }
+    statFilter = statFilter === key ? null : key;
+    trashMode = false;
+    pager().reset();
+    // Na tela estreita, volta para a aba das individuais, onde o filtro aparece.
+    const individualTab = document.querySelector("#tab-individual");
+    if (statFilter && !document.querySelector("#portal-view-tabs")?.hidden && !individualTab?.classList.contains("is-active")) individualTab?.click();
+    await renderProfile(activeProfileKey);
+    if (statFilter) document.querySelector("#records-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   // Botões da barra (Lixeira, Apagar tudo, Restaurar tudo, Esvaziar lixeira).
   document.querySelector("#records-toolbar").addEventListener("click", async (event) => {
@@ -383,6 +442,11 @@
     const actions = window.portalReleaseActions;
     const refresh = () => renderProfile(activeProfileKey);
     const kind = button.dataset.toolbar;
+    if (kind === "clear-stat") {
+      statFilter = null;
+      pager().reset();
+      return refresh();
+    }
     if (kind === "open-trash" || kind === "back") {
       trashMode = kind === "open-trash";
       await renderRecords(activeProfileKey);
@@ -605,25 +669,24 @@
       : [];
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
-    // Engenheiro: conta pelo abono ainda nao decidido, nao só pelo estágio — o DP pode
-    // autorizar a saída antes dele decidir, então a pendência dele continua existindo
-    // mesmo quando a liberação já passou para "dp"/"gate"/"exited".
-    if (profileKey === "engenheiro") {
-      elements.pending.textContent = releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
-    } else {
-      const pendingStages = { dp: ["dp"], portaria: [], encarregado: ["engineer", "foreman", "dp"], estagiario_engenharia: ["engineer", "foreman", "dp"], analista: ["engineer", "foreman", "dp"], seguranca_trabalho: ["engineer", "foreman", "dp"] }[profileKey] || ["engineer", "foreman", "dp"];
-      elements.pending.textContent = releases.filter((release) => pendingStages.includes(stageOf(release))).length;
-    }
-    // "Autorizadas hoje": só as que o DP autorizou hoje (data local), não todas as já autorizadas.
-    const localDay = (value) => {
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    };
-    const today = localDay(Date.now());
-    elements.approved.textContent = releases.filter((release) => ["gate", "exited"].includes(stageOf(release))
-      && (release.dpDecisionAt ? localDay(release.dpDecisionAt) : release.date) === today).length;
-    // "Pendências de abono · aguardando engenheiro": liberações em andamento cujo abono o engenheiro ainda não decidiu.
-    elements.bonus.textContent = profileKey === "portaria" ? profile.bonus : releases.filter((release) => !release.bonusStatus && !["foreman", "closed"].includes(stageOf(release))).length;
+    const rules = statRules(profileKey);
+    elements.pending.textContent = releases.filter(rules.pending).length;
+    elements.approved.textContent = releases.filter(rules.approved).length;
+    elements.bonus.textContent = profileKey === "portaria" ? profile.bonus : releases.filter(rules.bonus).length;
+    // "Abonos lançados no RM": os que o DP já carimbou como lançados; embaixo, os abonados que ainda faltam lançar.
+    const launched = releases.filter(rules.launched).length;
+    const toLaunch = releases.filter(rules.toLaunch).length;
+    elements.launched.textContent = profileKey === "portaria" ? "—" : launched;
+    elements.launchedNote.textContent = profileKey === "portaria" ? "carimbados pelo DP" : `${toLaunch} por lançar no RM`;
+    // Barra: quanto dos abonos já foi lançado no RM (lançados ÷ lançados + por lançar).
+    elements.launchedProgress.hidden = profileKey === "portaria";
+    elements.launchedBar.style.width = `${launched + toLaunch ? Math.round((launched / (launched + toLaunch)) * 100) : 0}%`;
+    elements.launchedProgress.title = `${launched} de ${launched + toLaunch} abonos lançados no RM`;
+    elements.statCards.forEach((card) => {
+      const key = card.dataset.stat;
+      card.disabled = profileKey === "portaria" && ["team", "bonus", "launched"].includes(key);
+      card.classList.toggle("is-active", key === statFilter);
+    });
     // O número acima conta só as liberações individuais; o painel das coletivas soma as dele por cima (js/features/collective-panel.js).
     [elements.pending, elements.approved, elements.bonus].forEach((tile) => { tile.dataset.base = tile.textContent; });
     window.portalCollectivePanel?.refreshStats?.();
@@ -676,6 +739,7 @@
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
       trashMode = false;
+      statFilter = null;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
       renderProfile(event.target.value);
     });
