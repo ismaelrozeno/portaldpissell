@@ -7,7 +7,7 @@
   <title>Equipes | Obra 369</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=fc8c3903">
-  <link rel="stylesheet" href="css/pages/equipes.css?v=acfa1ede">
+  <link rel="stylesheet" href="css/pages/equipes.css?v=7f526f8a">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="teams-page">
@@ -32,15 +32,15 @@
           <h2 id="foremen-title">Encarregados</h2>
           <p class="teams-note" id="foremen-note"></p>
           <p class="teams-result" id="intern-result" role="status" hidden></p>
-          <div class="foreman-grid" id="foreman-grid"></div>
+          <div class="foreman-grid" id="foreman-grid"><p class="teams-loading" role="status"><span class="button-spinner" aria-hidden="true"></span>Carregando encarregados e equipes…</p></div>
         </section>
 
         <section class="teams-card" id="manage-card" aria-labelledby="manage-title">
           <span class="teams-eyebrow">Passo 2</span>
           <h2 id="manage-title">Colaboradores</h2>
           <p class="teams-note" id="manage-help"></p>
-          <div class="teams-summary" id="team-summary"></div>
-          <div id="manage-body">
+          <div class="teams-summary" id="team-summary"><p class="teams-loading"><span class="button-spinner" aria-hidden="true"></span>Carregando colaboradores…</p></div>
+          <div id="manage-body" hidden>
             <div class="teams-toolbar" id="teams-toolbar">
               <input id="team-search" type="search" placeholder="Pesquisar nome, matrícula ou função..." aria-label="Pesquisar colaboradores" autocomplete="off">
               <select id="team-filter" aria-label="Filtrar colaboradores">
@@ -72,10 +72,10 @@
   <script src="js/core/firebase-init.js?v=351c556d"></script>
   <script src="js/core/firebase-schema.js?v=c6f95036"></script>
   <script src="js/core/firebase-auth.js?v=2908c044"></script>
-  <script src="js/core/shared-components.js?v=97c5470c"></script>
+  <script src="js/core/shared-components.js?v=72344f17"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="js/pages/equipes.js?v=c5122e54"></script>
+  <script src="js/pages/equipes.js?v=c127a2b6"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

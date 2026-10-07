@@ -405,7 +405,16 @@
     : isLinked
       ? `Passo 1: vincule-se como ${myWord} a um encarregado. Passo 2: vincule colaboradores à equipe dele. Depois, exporte para o Excel.`
       : "Escolha um encarregado, vincule colaboradores à equipe dele e exporte as equipes para o Excel.";
-  await loadPeople();
+  try {
+    await loadPeople();
+  } catch (error) {
+    // Sem os colaboradores não há o que mostrar: troca o "Carregando…" por um aviso, em vez de girar para sempre.
+    console.error("Falha ao carregar os colaboradores.", error);
+    const message = '<p class="teams-loading teams-load-error" role="alert">Não foi possível carregar os colaboradores. Verifique a internet e recarregue a página.</p>';
+    $("#foreman-grid").innerHTML = message;
+    $("#team-summary").innerHTML = "";
+    return;
+  }
   if (isDp || isAdmin) openedForeman = (isDp && linkedForeman) || "";
   renderAll();
 

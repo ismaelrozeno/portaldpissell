@@ -97,9 +97,11 @@ window.portalAvatars = (() => {
     window.location.replace("Acesso.html#login");
     return;
   }
-  if (["Cadastrar-Colaborador.html", "Importar-Colaboradores.html", "Administrador-Portal.html"].includes(currentPage)
-    && currentSession?.role !== "Administrador Analista"
-    && currentSession?.roleValue !== "administrador-analista") {
+  const isAdminSession = currentSession?.role === "Administrador Analista" || currentSession?.roleValue === "administrador-analista";
+  // Qualquer perfil de DP (o DP e o analista com acesso de DP) também importa o relatório do RM.
+  const isDpSession = currentSession?.roleValue === "dp" || !!window.portalAuthDemo?.isDpDelegate?.();
+  const pageAllowed = currentPage === "Importar-Colaboradores.html" ? isAdminSession || isDpSession : isAdminSession;
+  if (["Cadastrar-Colaborador.html", "Importar-Colaboradores.html", "Administrador-Portal.html"].includes(currentPage) && !pageAllowed) {
     window.location.replace("Portal.html");
     return;
   }
