@@ -15,7 +15,8 @@
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
       shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
-    // Analista: por enquanto é o painel do estagiário de engenharia com outro nome.
+    // Analista: chefe de equipe como o encarregado, mais a importação do relatório do RM. Com acessos dados pelo
+    // administrador, também abre os painéis do DP, do engenheiro e da segurança do trabalho.
     analista: {
       title: "Painel do analista",
       description: "Acompanhe sua equipe e registre as liberações do dia.",
@@ -27,8 +28,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Importar relatório do RM", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "Importar-Colaboradores.html", "#activity-section"]
     },
     estagiario_engenharia: {
       title: "Painel do estagiário de engenharia",
@@ -149,8 +150,8 @@
   };
 
   const foremanRoleValues = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
-  // Perfis que trabalham na equipe do encarregado a quem estão vinculados.
-  const linkedRoleValues = ["estagiario_engenharia", "analista"];
+  // Perfis que trabalham na equipe do encarregado a quem estão vinculados. O analista não: ele é chefe da própria equipe.
+  const linkedRoleValues = ["estagiario_engenharia"];
 
   function renderForemanSummary(profileKey, employees) {
     const session = window.portalAuthDemo?.getSession();
@@ -167,7 +168,7 @@
       : session?.roleValue === "estagiario_engenharia"
         ? (session.linkedForeman ? `Estagiário de Engenharia · vinculado a ${session.linkedForeman}` : "Estagiário de Engenharia · escolha seu encarregado em Equipes e Excel")
         : session?.roleValue === "analista"
-          ? (session.linkedForeman ? `Analista · vinculado a ${session.linkedForeman}` : "Analista · escolha seu encarregado em Equipes e Excel")
+          ? "Analista · chefe de equipe"
         : session?.roleValue === "seguranca_trabalho"
           ? "Segurança do trabalho"
           : "selecione um cadastro de encarregado para visualizar";
@@ -707,9 +708,11 @@
 
   const session = window.portalAuthDemo?.getSession();
   const isAdministrator = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
-  // Analista com acesso de DP (dado pelo administrador): alterna só entre o painel de analista e o do DP.
-  const isDpDelegate = !!window.portalAuthDemo?.isDpDelegate?.();
-  const delegateProfiles = ["analista", "dp"];
+  // Analista com acessos dados pelo administrador (DP, engenheiro, segurança do trabalho): alterna entre o painel de
+  // analista e só os painéis a que ele tem acesso.
+  const analystAccess = window.portalAuthDemo?.analystAccess?.() || [];
+  const isDpDelegate = analystAccess.length > 0;
+  const delegateProfiles = ["analista", ...analystAccess];
   // O cadastro salva o perfil como "porteiro", mas o painel dele se chama "portaria".
   const profileKey = (session?.roleValue === "porteiro" ? "portaria" : session?.roleValue)
     || (session?.role?.toLowerCase().includes("engenheiro") ? "engenheiro"
@@ -729,10 +732,11 @@
   let initialProfile = profiles[profileKey] ? profileKey : "dp";
   if (isAdministrator || isDpDelegate) {
     if (isDpDelegate) {
-      // Só os dois painéis a que ele tem direito.
+      // Só os painéis a que ele tem direito.
       [...elements.adminProfile.options].forEach((option) => { if (!delegateProfiles.includes(option.value)) option.remove(); });
       const hint = elements.adminSwitcher.querySelector("small");
-      if (hint) hint.textContent = "Você tem acesso de DP: alterne entre o painel de Analista e o do Departamento Pessoal.";
+      const names = [...elements.adminProfile.options].filter((option) => option.value !== "analista").map((option) => option.textContent);
+      if (hint) hint.textContent = `Você tem acesso a: ${names.join(", ")}. Alterne entre esses painéis e o de Analista.`;
     }
     initialProfile = savedAdminProfile();
     elements.adminSwitcher.hidden = false;

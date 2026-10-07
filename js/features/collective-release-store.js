@@ -38,6 +38,8 @@
         if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === session.uid);
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(sheet.stage));
       }
+      // Analista com acesso de engenheiro, no painel do engenheiro: recebe todas as folhas (como o engenheiro Gestor).
+      if (role === "analista" && profileKey === "engenheiro" && window.portalAuthDemo?.isEngineerLike?.()) return sheets;
       if (role === "dp" || role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) return sheets;
       // Engenheiro Gestor recebe todas as folhas, mesmo as enviadas a outro engenheiro.
       if (role === "engenheiro" && window.portalAuthDemo?.isManager?.()) return sheets;

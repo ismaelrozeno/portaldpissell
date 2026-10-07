@@ -86,10 +86,11 @@
     return ["engineer", "dp", "gate"].includes(stage);
   }
 
-  // O engenheiro assina direto; o Administrador Analista precisa do código físico (uma vez por sessão do navegador).
+  // O engenheiro (e o analista com acesso de engenheiro) assina direto; o Administrador Analista precisa do código
+  // físico (uma vez por sessão do navegador).
   async function ensureEngineerSignature() {
     const role = session()?.roleValue;
-    if (role === "engenheiro") return true;
+    if (window.portalAuthDemo?.isEngineerLike?.()) return true;
     if (role !== "administrador-analista") return false;
     if (adminSignatureUnlocked) return true;
     const code = await ask({ title: "Assinar como engenheiro", message: "Código físico do Administrador Analista:", input: true, okText: "Liberar" });

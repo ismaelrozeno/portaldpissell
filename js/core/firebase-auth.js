@@ -20,6 +20,17 @@
     return String(identifier || "").trim().toLowerCase() === adminEmail;
   }
 
+  // Chefes de equipe: o encarregado e o analista (que funciona como encarregado). Os outros perfis se vinculam a um chefe.
+  const teamChiefRoles = ["encarregado", "analista"];
+  function teamDirectoryFrom(snapshot) {
+    const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
+    return {
+      foremen: people.filter((user) => teamChiefRoles.includes(user.roleValue)),
+      interns: people.filter((user) => !teamChiefRoles.includes(user.roleValue) && user.linkedForeman),
+      all: people
+    };
+  }
+
   function sessionFromProfile(user, profile) {
     return {
       uid: user.uid,
@@ -139,6 +150,14 @@
     isManager: () => currentSession?.roleValue === "engenheiro" && (currentSession.privileges || []).includes("gestor"),
     // Analista com acesso de DP: opera o portal do DP como o Administrador Analista faz.
     isDpDelegate: () => currentSession?.roleValue === "analista" && (currentSession.privileges || []).includes("dp"),
+    // Analista é o perfil "curinga": por padrão é um chefe de equipe (como o encarregado) e o administrador pode dar
+    // acesso a outros portais — "dp", "engenheiro" e "seguranca_trabalho". Devolve os acessos dados.
+    analystAccess: () => (currentSession?.roleValue === "analista"
+      ? (currentSession.privileges || []).filter((key) => ["dp", "engenheiro", "seguranca_trabalho"].includes(key))
+      : []),
+    // Assina como engenheiro: o engenheiro e o analista com acesso de engenheiro.
+    isEngineerLike: () => currentSession?.roleValue === "engenheiro"
+      || (currentSession?.roleValue === "analista" && (currentSession.privileges || []).includes("engenheiro")),
     // Administrador: define os privilégios de um usuário (lista de nomes, ex.: ["gestor"]).
     async setUserPrivileges(userId, privileges) {
       await usersRef().doc(userId).update({ privileges: [...new Set(privileges)], updatedAt: new Date().toISOString() });
@@ -245,12 +264,7 @@
     // as regras do banco deixam DP, encarregado e estagiário listar só esses dois perfis.
     async getTeamDirectory() {
       const snapshot = await usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]).get();
-      const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
-      return {
-        foremen: people.filter((user) => user.roleValue === "encarregado"),
-        interns: people.filter((user) => user.roleValue !== "encarregado" && user.linkedForeman),
-        all: people
-      };
+      return teamDirectoryFrom(snapshot);
     },
     // Administrador: define (ou tira, com "") o encarregado a quem um estagiário/engenheiro/DP está vinculado.
     async setUserLinkedForeman(userId, foremanName) {
@@ -259,12 +273,7 @@
     // Ao vivo: avisa quando alguém se vincula/desvincula ou um encarregado entra/sai.
     subscribeTeamDirectory(callback, onError) {
       return usersRef().where("roleValue", "in", ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]).onSnapshot((snapshot) => {
-        const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
-        callback({
-          foremen: people.filter((user) => user.roleValue === "encarregado"),
-          interns: people.filter((user) => user.roleValue !== "encarregado" && user.linkedForeman),
-          all: people
-        });
+        callback(teamDirectoryFrom(snapshot));
       }, (error) => {
         console.warn("Falha ao acompanhar os vínculos ao vivo.", error);
         if (onError) onError(error);

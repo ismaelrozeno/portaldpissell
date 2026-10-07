@@ -91,7 +91,7 @@
     const employees = [...allEmployeesRaw];
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const teamOwners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
+      const teamOwners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
       const rank = (item) => (teamOwners.includes(normalizeSearchText(item.encarregado).trim()) ? 0 : !item.encarregado ? 1 : 2);
       employees.sort((a, b) => rank(a) - rank(b) || byName(a, b));
     } else {
@@ -138,7 +138,9 @@
   async function loadEngineers() {
     try {
       const directory = await window.portalAuthDemo.getTeamDirectory();
-      const names = [...new Set(directory.all.filter((user) => user.roleValue === "engenheiro").map((user) => user.name))]
+      // Engenheiros e analistas com acesso de engenheiro.
+      const engineerLike = (user) => user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"));
+      const names = [...new Set(directory.all.filter(engineerLike).map((user) => user.name))]
         .sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
       targetEngineer.innerHTML = `<option value="">Todos os engenheiros</option>${names.map((name) => `<option value="${window.escapeHtml(name)}">${window.escapeHtml(name)}</option>`).join("")}`;
     } catch (error) {

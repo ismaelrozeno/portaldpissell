@@ -134,27 +134,36 @@
       : `<p class="text-muted mb-0">${query ? "Nenhum resultado para a busca." : "Nenhum cadastro de porteiro recebido."}</p>`;
   }
 
-  // Privilégios que o administrador pode dar, por perfil.
+  // Privilégios que o administrador pode dar, por perfil. O analista é o perfil "curinga": pode ganhar acesso a
+  // vários portais ao mesmo tempo e alterna entre eles no Meu portal.
   const PRIVILEGES = {
-    engenheiro: { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Recebe TODAS as liberações, individuais e coletivas." },
-    analista: { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Opera o portal do DP, continuando analista." }
+    engenheiro: [
+      { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Recebe TODAS as liberações, individuais e coletivas." }
+    ],
+    analista: [
+      { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Opera o portal do DP, continuando analista." },
+      { key: "engenheiro", label: "Acesso de engenheiro", grant: "Dar acesso de engenheiro", revoke: "Revogar acesso de engenheiro", note: "Abre o painel do engenheiro: decide abono e recusa liberações." },
+      { key: "seguranca_trabalho", label: "Acesso de segurança do trabalho", grant: "Dar acesso de segurança do trabalho", revoke: "Revogar acesso de segurança do trabalho", note: "Abre o painel da segurança do trabalho." }
+    ]
   };
   const privilegeMenu = (user) => {
-    const def = PRIVILEGES[user.roleValue];
-    const items = def
-      ? `<li><h6 class="dropdown-header">Privilégios</h6></li><li><button class="dropdown-item ${(user.privileges || []).includes(def.key) ? "text-danger fw-semibold" : ""}" type="button" data-privilege-user="${escapeHtml(user.id)}" data-privilege-key="${def.key}" data-privilege-grant="${(user.privileges || []).includes(def.key) ? "0" : "1"}">${(user.privileges || []).includes(def.key) ? def.revoke : def.grant}</button></li><li><span class="dropdown-item-text small text-muted">${def.note}</span></li>`
+    const defs = PRIVILEGES[user.roleValue] || [];
+    const has = (def) => (user.privileges || []).includes(def.key);
+    const items = defs.length
+      ? `<li><h6 class="dropdown-header">Privilégios</h6></li>${defs.map((def) => `<li><button class="dropdown-item ${has(def) ? "text-danger fw-semibold" : ""}" type="button" data-privilege-user="${escapeHtml(user.id)}" data-privilege-key="${def.key}" data-privilege-grant="${has(def) ? "0" : "1"}">${has(def) ? def.revoke : def.grant}</button><span class="dropdown-item-text small text-muted pt-0">${def.note}</span></li>`).join("")}`
       : '<li><span class="dropdown-item-text small text-muted">Este perfil não tem privilégios para dar.</span></li>';
-    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:15rem">${items}</ul></div>`;
+    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem">${items}</ul></div>`;
   };
   const privilegeBadge = (user) => {
-    const def = PRIVILEGES[user.roleValue];
-    return def && (user.privileges || []).includes(def.key) ? `<small class="d-block mt-1"><span class="badge text-bg-primary">${def.label}</span></small>` : "";
+    const given = (PRIVILEGES[user.roleValue] || []).filter((def) => (user.privileges || []).includes(def.key));
+    return given.length ? `<small class="d-block mt-1">${given.map((def) => `<span class="badge text-bg-primary me-1">${def.label}</span>`).join("")}</small>` : "";
   };
 
   async function renderRegisteredUsers() {
     const users = await window.portalAuthDemo.getAllUsers();
     const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
-    const helperForemen = users.filter((user) => user.roleValue === "encarregado" && user.status === "approved" && user.name);
+    // Chefes de equipe a quem estagiário/engenheiro/DP se vinculam: encarregado e analista.
+    const helperForemen = users.filter((user) => ["encarregado", "analista"].includes(user.roleValue) && user.status === "approved" && user.name);
     const roleWords = { estagiario_engenharia: "Estagiário", analista: "Analista", engenheiro: "Engenheiro", dp: "DP" };
     const helperSelect = (user) => `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="${roleWords[user.roleValue] || "Usuário"} vinculado a qual encarregado"><option value="">Sem vínculo com encarregado</option>${helperForemen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === user.linkedForeman ? " selected" : ""}>${roleWords[user.roleValue] || "Vinculado"} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>`;
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
@@ -166,7 +175,7 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${privilegeBadge(user)}${["estagiario_engenharia", "analista", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="d-flex align-items-center gap-2"><span class="badge ${statusClass}">${statusLabel}</span>${privilegeMenu(user)}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${privilegeBadge(user)}${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="d-flex align-items-center gap-2"><span class="badge ${statusClass}">${statusLabel}</span>${privilegeMenu(user)}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
@@ -176,7 +185,7 @@
     if (!item) return;
     const users = await window.portalAuthDemo.getAllUsers();
     const user = users.find((entry) => entry.id === item.dataset.privilegeUser);
-    const def = user && PRIVILEGES[user.roleValue];
+    const def = user && (PRIVILEGES[user.roleValue] || []).find((entry) => entry.key === item.dataset.privilegeKey);
     if (!def) return;
     const grant = item.dataset.privilegeGrant === "1";
     const current = Array.isArray(user.privileges) ? user.privileges : [];

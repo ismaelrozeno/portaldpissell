@@ -32,8 +32,9 @@
     try {
       const directory = await window.portalAuthDemo.getTeamDirectory();
       directory.all.forEach((user) => {
-        if (user.roleValue === "encarregado") foremen.set(fold(user.name), user.name);
-        if (user.roleValue === "engenheiro") engineers.set(fold(user.name), user.name);
+        // Chefes de equipe: encarregado e analista. Assinam como engenheiro: engenheiro e analista com esse acesso.
+        if (["encarregado", "analista"].includes(user.roleValue)) foremen.set(fold(user.name), user.name);
+        if (user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"))) engineers.set(fold(user.name), user.name);
       });
     } catch (error) {
       console.warn("Não foi possível listar encarregados e engenheiros.", error);
@@ -44,17 +45,18 @@
       if (item.nome && role.includes("engenheiro") && !engineers.has(fold(item.nome))) engineers.set(fold(item.nome), item.nome);
     });
     // O próprio usuário e o encarregado a quem está vinculado sempre aparecem na lista.
-    if (session?.roleValue === "encarregado" && session.name) foremen.set(fold(session.name), session.name);
-    if (session?.linkedForeman) foremen.set(fold(session.linkedForeman), session.linkedForeman);
+    const isChief = ["encarregado", "analista"].includes(session?.roleValue);
+    if (isChief && session.name) foremen.set(fold(session.name), session.name);
+    if (!isChief && session?.linkedForeman) foremen.set(fold(session.linkedForeman), session.linkedForeman);
     const fill = (select, map, placeholder, firstName = "") => {
       // O próprio usuário (encarregado ou engenheiro) vem em primeiro lugar na lista.
       const first = fold(firstName);
       const names = [...map.values()].sort((a, b) => (fold(b) === first) - (fold(a) === first) || a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
       select.innerHTML = `<option value="">${placeholder}</option>${names.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join("")}`;
     };
-    fill(foremanSelect, foremen, "Selecione o encarregado", session?.roleValue === "encarregado" ? session.name : session?.linkedForeman);
+    fill(foremanSelect, foremen, "Selecione o encarregado", isChief ? session.name : session?.linkedForeman);
     fill(engineerSelect, engineers, "Todos os engenheiros");
-    foremanSelect.value = session?.roleValue === "encarregado" ? session.name || "" : (session?.linkedForeman || "");
+    foremanSelect.value = isChief ? session.name || "" : (session?.linkedForeman || "");
   }
   document.querySelector("#release-date").value = new Date().toISOString().slice(0, 10);
 
@@ -66,7 +68,7 @@
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     allEmployees = [...raw];
     if (isForeman) {
-      const owners = [session.name, ["estagiario_engenharia", "analista"].includes(session.roleValue) ? session.linkedForeman : ""]
+      const owners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""]
         .map((name) => window.normalizeSearchText(name).trim()).filter(Boolean);
       const isMine = (item) => owners.includes(window.normalizeSearchText(item.encarregado).trim());
       teamEmployees = raw.filter(isMine);
