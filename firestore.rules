@@ -23,6 +23,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue in ["estagiario_engenharia", "analista"];
     }
 
+    // Analista (com ou sem acesso de DP): também importa o relatório do RM.
+    function isAnalyst() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "analista";
+    }
+
     function isEngineer() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -80,11 +87,11 @@ service cloud.firestore {
     match /employees/{employeeId} {
       allow get: if request.auth != null;
       allow list: if request.auth != null;
-      // Importar o relatório do RM (apaga a lista e grava a nova): administrador e qualquer perfil de DP.
-      allow create, delete: if isAdmin() || isDp();
-      // O administrador e o DP mudam qualquer coisa (a importação regrava os colaboradores); o estagiário e o
+      // Importar o relatório do RM (apaga a lista e grava a nova): administrador, qualquer perfil de DP e analista.
+      allow create, delete: if isAdmin() || isDp() || isAnalyst();
+      // Administrador, DP e analista mudam qualquer coisa (a importação regrava os colaboradores); o estagiário e o
       // engenheiro mudam SÓ o campo "encarregado", e só para/da equipe do encarregado a quem estão vinculados.
-      allow update: if isAdmin() || isDp() ||
+      allow update: if isAdmin() || isDp() || isAnalyst() ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["encarregado"]) &&
           ((isLinker() && internForeman() != "" &&
               (request.resource.data.encarregado == internForeman() || request.resource.data.encarregado == "") &&

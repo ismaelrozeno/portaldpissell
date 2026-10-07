@@ -15,7 +15,7 @@
       shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
       shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
-    // Analista: por enquanto é o painel do estagiário de engenharia com outro nome.
+    // Analista: o painel do estagiário de engenharia com outro nome, mais a importação do relatório do RM.
     analista: {
       title: "Painel do analista",
       description: "Acompanhe sua equipe e registre as liberações do dia.",
@@ -27,8 +27,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Importar relatório do RM", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "Importar-Colaboradores.html", "#activity-section"]
     },
     estagiario_engenharia: {
       title: "Painel do estagiário de engenharia",
