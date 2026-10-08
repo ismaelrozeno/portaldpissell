@@ -28,6 +28,8 @@
     const id = esc(sheet.id);
     const decided = sheet.bonusStatus;
     const stage = stageOf(sheet);
+    // Retroativa (data anterior ao dia em que foi criada): sem autorização de saída do DP e sem portaria.
+    const retroactive = sheetApi().isRetroactive(sheet);
     const stageInfo = sheetApi().STAGES[stage];
     const busyKind = pending.get(sheet.id);
     const busyText = { trash: "Movendo para a lixeira…", restore: "Restaurando…", purge: "Apagando…" };
@@ -43,7 +45,7 @@
       : chip("wait", `Engenheiro: aguardando${sheet.targetEngineer ? ` (${esc(sheet.targetEngineer)})` : ""}`));
     chips.push(sheet.dpSigner
       ? chip(stage === "closed" ? "no" : "yes", `DP <b>${esc(sheet.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`)
-      : chip("wait", "DP: aguardando"));
+      : retroactive ? chip("info", "Retroativa · sem autorização de saída nem portaria") : chip("wait", "DP: aguardando"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
     else if (stage === "gate") chips.push(chip("wait", "Portaria: aguardando saída"));
     // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
@@ -59,18 +61,18 @@
       ? `${btn("row-yes-btn", "approved", decided === "approved" ? "Abonado ✓" : "Abonado")}${btn("row-no-btn", "denied", decided === "denied" ? "Não abonado ✓" : "Não abonado")}`
       : "";
     // O DP pode autorizar ou negar mesmo com a folha ainda aguardando o engenheiro (como nas individuais).
-    const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage)
+    const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage) && !retroactive
       ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}`
       : "";
     // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, enquanto a folha está em andamento.
-    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate"].includes(stage) && signedBio < people
+    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "registered"].includes(stage) && signedBio < people
       ? btn("row-bio-btn", "bio", "Assinar com digital")
       : "";
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
       ? btn("gate-confirm-btn", "confirm-exit", "Confirmar saída")
       : "";
     // Recusar: só enquanto o engenheiro ainda não decidiu o abono (mesma regra das individuais).
-    const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
+    const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate", "registered"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
     // Folha recusada volta para quem solicitou ajustar e reenviar.
     const mine = sheet.createdByUid === session()?.uid || session()?.roleValue === "administrador-analista";
     const editButton = stage === "foreman" && mine ? `<a class="table-action" href="Liberacao-Coletiva.html?edit=${id}">Editar e reenviar</a>` : "";

@@ -209,6 +209,9 @@
     if (stage !== "foreman") {
       if (release.dpSigner) {
         chips.push(chip(stage === "closed" ? "no" : "yes", `DP <b>${short(release.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`));
+      } else if (window.portalReleaseFlow.isRetroactive(release)) {
+        // Data anterior ao dia em que foi criada: o colaborador já saiu, não há saída para autorizar nem confirmar.
+        chips.push(chip("info", "Retroativa · sem autorização de saída nem portaria", "A data da liberação é anterior ao dia em que ela foi criada. Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
       } else {
         chips.push(chip("wait", "DP: aguardando"));
       }
@@ -788,7 +791,7 @@
     window.portalCollectivePanel?.render(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
-      <li><span class="activity-dot ${["gate", "exited"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
+      <li><span class="activity-dot ${["gate", "exited", "registered"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
     `).join("") : "<li><div><strong>Nenhuma atividade local</strong><small>Cadastre colaboradores e registre liberações para começar.</small></div></li>";
   }
 

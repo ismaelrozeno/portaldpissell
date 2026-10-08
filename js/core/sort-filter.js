@@ -17,7 +17,7 @@
   ];
 
   // Fase pendente (precisa de acao) vem antes de autorizada, que vem antes de encerrada.
-  const PENDING_RANK = { engineer: 0, foreman: 0, dp: 0, gate: 1, exited: 2, closed: 2 };
+  const PENDING_RANK = { engineer: 0, foreman: 0, dp: 0, gate: 1, exited: 2, closed: 2, registered: 2 };
 
   function enhance(search) {
     if (search.dataset.sortReady) return;

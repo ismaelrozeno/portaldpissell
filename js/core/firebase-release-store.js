@@ -20,8 +20,18 @@
       dp: { label: "Aguardando DP", tone: "pending" },
       gate: { label: "Autorizada · aguardando saída", tone: "approved" },
       exited: { label: "Saída confirmada", tone: "approved" },
-      closed: { label: "Negada pelo DP", tone: "denied" }
+      closed: { label: "Negada pelo DP", tone: "denied" },
+      // Retroativa (data anterior ao dia em que foi criada): o colaborador já saiu, então não há saída para o DP
+      // autorizar nem para a portaria confirmar. Depois do engenheiro ela já fica registrada (o DP só lança o abono no RM).
+      registered: { label: "Retroativa · registrada", tone: "approved" }
     }),
+    // Data da liberação anterior ao dia em que ela foi criada (pelo relógio local de quem vê).
+    isRetroactive(record) {
+      const created = new Date(record?.createdAt || record?.requestedAt || "");
+      if (!record?.date || Number.isNaN(created.getTime())) return false;
+      const pad = (n) => String(n).padStart(2, "0");
+      return String(record.date).slice(0, 10) < `${created.getFullYear()}-${pad(created.getMonth() + 1)}-${pad(created.getDate())}`;
+    },
     refusalReasons: Object.freeze([
       "Ajustar horário",
       "Ajustar motivo da liberação"
@@ -33,10 +43,11 @@
       return names.length > 1 ? "Entrada e saída" : names[0];
     },
     // Liberações antigas não têm "stage": deriva da situação que já tinham.
+    // Retroativa que passou do engenheiro (ou que o DP já tinha autorizado) vira "registrada", inclusive as antigas.
     stageOf(release) {
-      if (release.stage) return release.stage;
-      if (release.status === "authorized") return release.exitConfirmedAt ? "exited" : "gate";
-      return release.status === "denied" ? "closed" : "dp";
+      const stage = release.stage
+        || (release.status === "authorized" ? (release.exitConfirmedAt ? "exited" : "gate") : release.status === "denied" ? "closed" : "dp");
+      return ["dp", "gate"].includes(stage) && window.portalReleaseFlow.isRetroactive(release) ? "registered" : stage;
     }
   });
 

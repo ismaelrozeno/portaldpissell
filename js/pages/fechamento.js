@@ -8,7 +8,8 @@
   const denied = document.querySelector("#closing-denied");
   const pending = document.querySelector("#closing-pending");
   const checklistPending = document.querySelector("#checklist-pending");
-  const pendingCount = releases.filter((release) => release.status === "pending").length;
+  // Retroativa registrada não está pendente: não passa pela autorização do DP.
+  const pendingCount = releases.filter((release) => release.status === "pending" && window.portalReleaseFlow.stageOf(release) !== "registered").length;
   const bonusCandidates = releases.filter((release) => release.bonusStatus || release.hoursType === "abonado" || release.hours === "Abonado");
   const bonusPendingCount = bonusCandidates.filter((release) => (release.bonusStatus || "pending") === "pending").length;
   total.textContent = releases.length;

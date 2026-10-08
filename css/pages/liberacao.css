@@ -73,3 +73,7 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 .release-field small.lunch-hint { display: none; padding: .45rem .6rem; border: 1px solid #f5cf9f; border-radius: .45rem; color: #8a4300; background: #fff3e2; line-height: 1.35; }
 .release-field.is-lunch input { border-color: #c62835; box-shadow: 0 0 0 .2rem rgba(198, 40, 53, .15); }
 .release-field.is-lunch small.lunch-hint { display: block; border-color: #f1c4c7; color: #8b2930; background: #fdeaea; }
+
+/* Aviso de data retroativa embaixo do campo Data (js/features/retro-date-hint.js). Só informa, não bloqueia. */
+.release-field small.retro-hint { display: block; padding: .45rem .6rem; border: 1px solid #bcd9f0; border-radius: .45rem; color: #0b4a7a; background: #e3f0fb; line-height: 1.35; }
+.release-field small.retro-hint[hidden] { display: none; }

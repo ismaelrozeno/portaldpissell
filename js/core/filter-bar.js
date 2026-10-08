@@ -35,7 +35,9 @@
         { value: "bonus", label: "Abono · aguardando engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
         // A coletiva não tem lançamento no RM: só as individuais entram nestas duas.
         { value: "toLaunch", label: "Abono · por lançar no RM", test: (record, stage, collective) => !collective && record.bonusStatus === "approved" && !record.abonoLaunchedAt },
-        { value: "launched", label: "Abono · lançado no RM", test: (record, stage, collective) => !collective && !!record.abonoLaunchedAt }
+        { value: "launched", label: "Abono · lançado no RM", test: (record, stage, collective) => !collective && !!record.abonoLaunchedAt },
+        // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
+        { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
       ],
       sorts: [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]]
     }

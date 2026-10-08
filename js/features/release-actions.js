@@ -83,7 +83,7 @@
   function engineerCanRefuse(release) {
     const stage = flow().stageOf(release);
     if (release.abonoLaunchedAt || release.bonusStatus) return false;
-    return ["engineer", "dp", "gate"].includes(stage);
+    return ["engineer", "dp", "gate", "registered"].includes(stage);
   }
 
   // O engenheiro (e o analista com acesso de engenheiro) assina direto; o Administrador Analista precisa do código
@@ -237,7 +237,8 @@
   // ---------- DP ----------
 
   // O DP pode autorizar/negar mesmo com a liberação ainda aguardando o engenheiro.
-  const dpCanDecide = (release) => ["dp", "engineer"].includes(flow().stageOf(release));
+  // Retroativa não tem saída para autorizar: o DP não decide (só lança o abono no RM).
+  const dpCanDecide = (release) => ["dp", "engineer"].includes(flow().stageOf(release)) && !flow().isRetroactive(release);
 
   async function dpDecide(release, authorize) {
     await store().updateRelease(release.id, {
@@ -251,7 +252,7 @@
 
   // Assinatura do colaborador com a digital (leitor Hamster DX), feita no DP. Como na coletiva, vale também depois de
   // autorizada (aguardando saída): o colaborador costuma assinar quando passa no DP para sair.
-  const canSignBiometric = (release) => ["engineer", "dp", "gate"].includes(flow().stageOf(release)) && release.employeeSignature?.method !== "biometria";
+  const canSignBiometric = (release) => ["engineer", "dp", "gate", "registered"].includes(flow().stageOf(release)) && release.employeeSignature?.method !== "biometria";
 
   async function signBiometric(release) {
     const reader = window.portalBiometricReader;
@@ -277,7 +278,7 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   // Abono aprovado pelo engenheiro que o DP ainda precisa lançar no RM.
   const needsLaunch = (release) => release.bonusStatus === "approved"
     && !release.abonoLaunchedAt
-    && ["dp", "gate", "exited"].includes(flow().stageOf(release));
+    && ["dp", "gate", "exited", "registered"].includes(flow().stageOf(release));
 
   // ---------- Portaria ----------
 

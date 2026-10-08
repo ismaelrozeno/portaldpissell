@@ -26,10 +26,23 @@
     dp: { label: "Aguardando DP", tone: "pending" },
     gate: { label: "Autorizada · aguardando saída", tone: "approved" },
     exited: { label: "Saída confirmada", tone: "approved" },
-    closed: { label: "Negada pelo DP", tone: "denied" }
+    closed: { label: "Negada pelo DP", tone: "denied" },
+    // Retroativa: mesma regra da individual (portalReleaseFlow em js/core/firebase-release-store.js).
+    registered: { label: "Retroativa · registrada", tone: "approved" }
+  };
+  // Mesma conta do portalReleaseFlow.isRetroactive (esta tela também abre sem ele, em Liberacao-Coletiva.html).
+  const isRetroactive = (sheet) => {
+    const created = new Date(sheet?.createdAt || "");
+    if (!sheet?.date || Number.isNaN(created.getTime())) return false;
+    const pad = (n) => String(n).padStart(2, "0");
+    return String(sheet.date).slice(0, 10) < `${created.getFullYear()}-${pad(created.getMonth() + 1)}-${pad(created.getDate())}`;
   };
   // Folhas antigas guardavam "decided" (engenheiro já decidiu) ou nada: viram "dp" e "engineer".
-  const stageOf = (sheet) => sheet.stage === "decided" ? "dp" : (STAGES[sheet.stage] ? sheet.stage : "engineer");
+  // Retroativa que passou do engenheiro (ou que o DP já tinha autorizado) vira "registrada", inclusive as antigas.
+  const stageOf = (sheet) => {
+    const stage = sheet.stage === "decided" ? "dp" : (STAGES[sheet.stage] ? sheet.stage : "engineer");
+    return ["dp", "gate"].includes(stage) && isRetroactive(sheet) ? "registered" : stage;
+  };
   const statusLabel = (sheet) => {
     const stage = stageOf(sheet);
     const abono = sheet.bonusStatus ? ` · ${sheet.bonusStatus === "approved" ? "Abonado" : "Não abonado"} por ${sheet.engineer || "engenheiro"}` : "";
@@ -63,9 +76,9 @@
       requesterTime: formatDateTime(sheet.createdAt),
       engineer: sheet.engineer || sheet.targetEngineer || "",
       engineerSigner: eng.name, engineerTime: eng.time,
-      dp: sheet.dpSigner || (stage === "closed" ? "Negou a saída" : ""),
+      dp: sheet.dpSigner || (stage === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""),
       dpSigner: dp.name, dpTime: dp.time,
-      gate: sheet.exitConfirmedBy || "",
+      gate: sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : ""),
       gateSigner: gate.name, gateTime: gate.time,
       hours: sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro",
       hoursTone: sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait",
@@ -101,8 +114,8 @@
       <table class="cs-sign">
         <tr><th>Encarregado</th><td>${esc(sheet.foreman || "")}</td><th>Assinatura</th><td class="cs-esign">${esc(sheet.requester || "")}<small>${esc(formatDateTime(sheet.createdAt))}</small></td></tr>
         <tr><th>Engenheiro</th><td>${esc(sheet.engineer || sheet.targetEngineer || "")}</td><th>Assinatura</th><td class="cs-esign">${sheet.bonusStatus && sheet.engineer ? `${esc(sheet.engineer)}<small>${esc(formatDateTime(sheet.engineerDecisionAt))}</small>` : ""}</td></tr>
-        <tr><th>DP</th><td>${esc(sheet.dpSigner || (stageOf(sheet) === "closed" ? "Negou a saída" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.dpSigner ? `${esc(sheet.dpSigner)}<small>${esc(formatDateTime(sheet.dpDecisionAt))}</small>` : ""}</td></tr>
-        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || "")}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
+        <tr><th>DP</th><td>${esc(sheet.dpSigner || (stageOf(sheet) === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.dpSigner ? `${esc(sheet.dpSigner)}<small>${esc(formatDateTime(sheet.dpDecisionAt))}</small>` : ""}</td></tr>
+        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
         <tr><th>Horas</th><td colspan="3" class="cs-bonus cs-bonus-${sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait"}">${sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro"}</td></tr>
       </table>
       <table class="cs-list">
@@ -232,5 +245,5 @@
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, STAGES, signatureOf, signedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, STAGES, signatureOf, signedCount, pdfFields });
 })();
