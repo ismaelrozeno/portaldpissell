@@ -223,3 +223,26 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .pager-btn.is-current { border-color:#00142d; color:#fff; background:#00142d; cursor:default; }
 .pager-btn:disabled:not(.is-current) { opacity:.45; cursor:default; }
 @media (max-width:600px) { .pager { flex-direction:column; align-items:stretch; } .pager-buttons { justify-content:center; } }
+
+/* ===== Barra de filtros por perfil (js/core/filter-bar.js): Situação · Período · Ordenar · Limpar filtros ===== */
+.filter-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin: .6rem 0 0; font-size: .82rem; }
+.filter-bar[hidden], .date-filter[hidden], .sort-filter[hidden], .filter-bar-clear[hidden] { display: none !important; }
+.filter-bar-field { display: inline-flex; align-items: center; gap: .35rem; color: #5b6678; font-weight: 600; }
+.filter-bar-select { max-width: 100%; padding: .4rem .55rem; border: 1px solid #c9d3e0; border-radius: .45rem; font-size: .82rem; color: #16283d; background: #fff; cursor: pointer; }
+.filter-bar-select:focus-visible { outline: 2px solid rgba(245, 130, 13, .55); outline-offset: 1px; }
+.filter-bar-range { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.filter-bar-clear { padding: .4rem .2rem; border: 0; background: none; color: #1769aa; font-size: .8rem; font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 575.98px) {
+  .filter-bar { display: grid; grid-template-columns: 1fr; gap: .45rem; }
+  .filter-bar-field { justify-content: space-between; }
+  .filter-bar-select { flex: 1; max-width: 70%; }
+}
+/* Calendário de intervalo (flatpickr) nas cores do portal */
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+.flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover { background: #f5820d; border-color: #f5820d; }
+.flatpickr-day.inRange { background: #fff1e0; border-color: #fff1e0; box-shadow: -5px 0 0 #fff1e0, 5px 0 0 #fff1e0; }
+
+/* Detalhe embaixo do número dos cartões (de onde vem o número: individuais/coletivas, mais antiga, saídas). */
+.portal-stats small.stat-detail { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid rgba(255, 255, 255, .12); color: #a9bbd0; font-size: .72rem; line-height: 1.45; }
+.portal-stats small.stat-detail:empty { display: none; }
+.stat-card-launch small.stat-detail { margin-bottom: .55rem; }

@@ -355,7 +355,10 @@
     const matchesText = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team}`).includes(query);
     const matchesDate = (release) => window.portalDateFilter.matches(elements.recordsSearch, window.portalDateFilter.dayOf(release));
     const matches = (release) => matchesText(release) && matchesDate(release);
-    const filtering = !!query || !window.portalDateFilter.matches(elements.recordsSearch, "");
+    // Barra de filtros do perfil (js/core/filter-bar.js): a Situação dela faz o papel do cartão clicado.
+    const filterBar = window.portalFilterBar?.active() ? window.portalFilterBar : null;
+    const filtering = !!query || !window.portalDateFilter.matches(elements.recordsSearch, "")
+      || (filterBar && filterBar.status(elements.recordsSearch) !== "all");
 
     if (trashMode) {
       pager().hide();
@@ -392,8 +395,10 @@
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
-    // Cartão do resumo clicado: só as liberações que entram naquele número.
-    if (statFilter) {
+    // Cartão do resumo clicado (ou Situação da barra): só as liberações que entram naquele número.
+    if (filterBar) {
+      rows = rows.filter((row) => filterBar.matchesStatus(elements.recordsSearch, row.release, row.stage));
+    } else if (statFilter) {
       const rule = statRules(profile)[statFilter];
       rows = rows.filter((row) => rule(row.release));
     }
@@ -426,6 +431,18 @@
     if (key === "team") {
       if (foremanRoleValues.includes(activeProfileKey)) document.querySelector("#foreman-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
       else window.location.href = "Equipes.html";
+      return;
+    }
+    // Perfil com barra de filtros: o cartão escolhe a Situação nas duas listas (individual e coletiva), cada uma na sua barra.
+    const filterBar = window.portalFilterBar;
+    if (filterBar?.active()) {
+      const next = filterBar.sharedStatus() === key ? "all" : key;
+      if (trashMode) {
+        trashMode = false;
+        await renderRecords(activeProfileKey);
+      }
+      filterBar.setStatusAll(next);
+      if (next !== "all") document.querySelector("#records-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     statFilter = statFilter === key ? null : key;
@@ -640,8 +657,79 @@
     return renderRunning;
   }
 
+  // ---------- Cartões do resumo ----------
+  // O número soma individuais + coletivas (mesmas regras) e, embaixo, mostra de onde ele vem: quantas de cada,
+  // quantas pessoas nas coletivas, há quanto tempo a mais antiga espera e quantas já saíram.
+  let individualStats = null;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const createdOf = (record) => record.createdAt || record.requestedAt || "";
+  function waitingLabel(list) {
+    const times = list.map((record) => new Date(createdOf(record)).getTime()).filter((time) => !Number.isNaN(time));
+    if (!times.length) return "";
+    const minutes = Math.max(0, Math.round((Date.now() - Math.min(...times)) / 60000));
+    const age = minutes < 60 ? plural(minutes, "minuto", "minutos")
+      : minutes < 1440 ? plural(Math.floor(minutes / 60), "hora", "horas")
+        : plural(Math.floor(minutes / 1440), "dia", "dias");
+    return `mais antiga esperando há ${age}`;
+  }
+  function splitLabel(individual, collective) {
+    const people = collective.reduce((sum, sheet) => sum + (sheet.participants?.length || 0), 0);
+    return `${plural(individual.length, "individual", "individuais")} · ${plural(collective.length, "coletiva", "coletivas")}${collective.length ? ` (${plural(people, "pessoa", "pessoas")})` : ""}`;
+  }
+  const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
+
+  // collective = { pending, approved, bonus, stageOf } das coletivas (js/features/collective-panel.js), ou null.
+  function writeStats(collective) {
+    if (!individualStats) return;
+    const { profileKey, pending, approved, bonus, launched, toLaunch } = individualStats;
+    const col = collective || { pending: [], approved: [], bonus: [], stageOf: () => "" };
+    const detail = (id, lines) => {
+      const el = document.querySelector(`#${id}`);
+      if (el) el.innerHTML = lines.filter(Boolean).map(escapeHtml).join("<br>");
+    };
+    const isPortaria = profileKey === "portaria";
+
+    elements.pending.textContent = pending.length + col.pending.length;
+    document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento (engenheiro ou DP)";
+    detail("stat-pending-detail", isPortaria ? [] : [splitLabel(pending, col.pending), waitingLabel([...pending, ...col.pending])]);
+
+    const exited = approved.filter((release) => window.portalReleaseFlow.stageOf(release) === "exited").length
+      + col.approved.filter((sheet) => col.stageOf(sheet) === "exited").length;
+    const approvedTotal = approved.length + col.approved.length;
+    elements.approved.textContent = approvedTotal;
+    document.querySelector("#stat-approved-note").textContent = "autorizadas pelo DP hoje";
+    detail("stat-approved-detail", [
+      approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited} aguardando portaria` : "",
+      splitLabel(approved, col.approved)
+    ]);
+
+    elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
+    detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
+
+    // "Abonos lançados no RM": os que o DP já carimbou como lançados (só individuais: a coletiva não tem lançamento no RM).
+    const abonados = launched.length + toLaunch.length;
+    const percent = abonados ? Math.round((launched.length / abonados) * 100) : 0;
+    elements.launched.textContent = isPortaria ? "—" : launched.length;
+    elements.launchedNote.textContent = isPortaria ? "carimbados pelo DP" : `${toLaunch.length} por lançar no RM`;
+    detail("stat-launched-detail", isPortaria ? [] : [`${launched.length} de ${abonados} abonados (${percent}%)`, "só liberações individuais"]);
+    elements.launchedProgress.hidden = isPortaria;
+    elements.launchedBar.style.width = `${percent}%`;
+    elements.launchedProgress.title = `${launched.length} de ${abonados} abonos lançados no RM`;
+  }
+  window.portalWriteStats = writeStats;
+
+  // Cartão aceso: o clicado (filtro antigo) ou, com a barra de filtros, a Situação que as duas listas têm em comum.
+  function highlightStatCard() {
+    const filterBar = window.portalFilterBar;
+    const current = filterBar?.active() ? filterBar.sharedStatus() : statFilter;
+    elements.statCards.forEach((card) => card.classList.toggle("is-active", card.dataset.stat === current));
+  }
+  document.addEventListener("portal-filter-status", highlightStatCard);
+
   async function renderProfileNow(profileKey) {
     activeProfileKey = profileKey;
+    // Filtros do perfil (cada perfil tem a sua configuração; sem configuração fica o filtro antigo).
+    window.portalFilterBar?.use(profileKey);
     const profile = profiles[profileKey];
     elements.title.textContent = profile.title;
     elements.description.textContent = profile.description;
@@ -673,26 +761,22 @@
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
     const rules = statRules(profileKey);
-    elements.pending.textContent = releases.filter(rules.pending).length;
-    elements.approved.textContent = releases.filter(rules.approved).length;
-    elements.bonus.textContent = profileKey === "portaria" ? profile.bonus : releases.filter(rules.bonus).length;
-    // "Abonos lançados no RM": os que o DP já carimbou como lançados; embaixo, os abonados que ainda faltam lançar.
-    const launched = releases.filter(rules.launched).length;
-    const toLaunch = releases.filter(rules.toLaunch).length;
-    elements.launched.textContent = profileKey === "portaria" ? "—" : launched;
-    elements.launchedNote.textContent = profileKey === "portaria" ? "carimbados pelo DP" : `${toLaunch} por lançar no RM`;
-    // Barra: quanto dos abonos já foi lançado no RM (lançados ÷ lançados + por lançar).
-    elements.launchedProgress.hidden = profileKey === "portaria";
-    elements.launchedBar.style.width = `${launched + toLaunch ? Math.round((launched / (launched + toLaunch)) * 100) : 0}%`;
-    elements.launchedProgress.title = `${launched} de ${launched + toLaunch} abonos lançados no RM`;
+    // Individuais de cada cartão; o painel das coletivas soma as dele por cima (writeStats, chamado por refreshStats).
+    individualStats = {
+      profileKey,
+      pending: releases.filter(rules.pending),
+      approved: releases.filter(rules.approved),
+      bonus: releases.filter(rules.bonus),
+      launched: releases.filter(rules.launched),
+      toLaunch: releases.filter(rules.toLaunch)
+    };
     elements.statCards.forEach((card) => {
       const key = card.dataset.stat;
       card.disabled = profileKey === "portaria" && ["team", "bonus", "launched"].includes(key);
-      card.classList.toggle("is-active", key === statFilter);
     });
-    // O número acima conta só as liberações individuais; o painel das coletivas soma as dele por cima (js/features/collective-panel.js).
-    [elements.pending, elements.approved, elements.bonus].forEach((tile) => { tile.dataset.base = tile.textContent; });
-    window.portalCollectivePanel?.refreshStats?.();
+    highlightStatCard();
+    if (window.portalCollectivePanel?.refreshStats) window.portalCollectivePanel.refreshStats();
+    else writeStats(null);
     renderForemanSummary(profileKey, employees);
     const shortcutTitle = profile.title.replace(/^Painel d[oa] /, "");
     elements.shortcutTitle.textContent = foremanRoleValues.includes(profileKey) ? "Operação" : shortcutTitle.charAt(0).toUpperCase() + shortcutTitle.slice(1);

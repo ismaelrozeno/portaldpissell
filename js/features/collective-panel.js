@@ -179,8 +179,12 @@
     const searchEl = document.querySelector("#collective-search");
     const query = window.normalizeSearchText(searchEl?.value || "");
     const base = trashMode ? trash : sheets;
+    // Situação da barra de filtros do perfil (js/core/filter-bar.js), separada da barra das individuais. Fora da lixeira.
+    const filterBar = !trashMode && window.portalFilterBar?.active() ? window.portalFilterBar : null;
+    const byStatus = !!filterBar && filterBar.status(searchEl) !== "all";
     // Busca por texto + filtro por data (De/Até ao lado da busca).
     const filtered = base.filter((sheet) => {
+      if (byStatus && !filterBar.matchesStatus(searchEl, sheet, stageOf(sheet), true)) return false;
       if (!window.portalDateFilter.matches(searchEl, window.portalDateFilter.dayOf(sheet))) return false;
       if (!query) return true;
       return window.normalizeSearchText([
@@ -196,7 +200,7 @@
       bonus: (sheet) => sheet.bonusStatus || ""
     });
     const pageItems = pager() ? pager().slice(shown) : shown;
-    const listHtml = shown.length ? pageItems.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    const listHtml = shown.length ? pageItems.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || byStatus || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
     // meio de um clique fazia o clique se perder.
     if (listHtml !== lastListHtml) {
@@ -209,9 +213,8 @@
   }
 
   // Cartões de resumo do Meu portal: as liberações coletivas entram na conta, com as mesmas regras das individuais.
+  // Aqui só separa as folhas de cada cartão; quem soma e escreve os cartões é o portal (window.portalWriteStats).
   function refreshStats() {
-    const tiles = { pending: document.querySelector("#stat-pending"), approved: document.querySelector("#stat-approved"), bonus: document.querySelector("#stat-bonus") };
-    if (!tiles.pending || !tiles.approved || !tiles.bonus) return;
     const me = session();
     const foremanRoles = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
     // Encarregado/estagiário/segurança contam só o que eles mesmos solicitaram.
@@ -222,17 +225,13 @@
       return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     };
     const today = day(Date.now());
-    const extra = { pending: 0, approved: 0, bonus: 0 };
-    if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet)).length;
-    else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp").length;
-    else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet))).length;
-    extra.approved = mine.filter((sheet) => ["gate", "exited"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today).length;
-    if (profile !== "portaria") extra.bonus = mine.filter((sheet) => !sheet.bonusStatus && open(sheet)).length;
-    Object.entries(tiles).forEach(([key, tile]) => {
-      const base = Number(tile.dataset.base);
-      if (tile.dataset.base === undefined || Number.isNaN(base)) return; // "—" (portaria) ou ainda não calculado
-      tile.textContent = base + extra[key];
-    });
+    const extra = { pending: [], approved: [], bonus: [], stageOf };
+    if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
+    else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp");
+    else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet)));
+    extra.approved = mine.filter((sheet) => ["gate", "exited"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today);
+    if (profile !== "portaria") extra.bonus = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
+    window.portalWriteStats?.(extra);
   }
 
   const failBox = (title, error) => actions().ask({ title, message: `Verifique a internet e tente de novo.${error?.code ? `\n(código: ${error.code})` : ""}`, okText: "OK", cancelText: null });

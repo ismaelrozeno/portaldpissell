@@ -5,11 +5,12 @@
   const toPlain = (doc) => ({ id: doc.id, ...doc.data() });
 
   window.portalCollectiveStore = Object.freeze({
+    // Todas, mais recentes primeiro (sem limite: os cartões do resumo precisam contar todas as folhas).
     async getAll() {
-      const snapshot = await collection().orderBy("createdAt", "desc").limit(100).get();
+      const snapshot = await collection().orderBy("createdAt", "desc").get();
       return snapshot.docs.map(toPlain);
     },
-    // Todas, sem o limite das 100 mais recentes da tela (exportação do mês em Backup).
+    // Todas, sem ordem (exportação do mês em Backup).
     async getEverything() {
       const snapshot = await collection().get();
       return snapshot.docs.map(toPlain);
