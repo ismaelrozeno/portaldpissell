@@ -22,7 +22,7 @@
   // Mesmo fluxo da liberação individual: engenheiro (abono) -> DP (autoriza a saída) -> portaria (confirma a saída).
   const STAGES = {
     engineer: { label: "Aguardando engenheiro", tone: "pending" },
-    foreman: { label: "Recusada pelo engenheiro", tone: "denied" },
+    foreman: { label: "Recusada · devolvida ao solicitante", tone: "denied" },
     dp: { label: "Aguardando DP", tone: "pending" },
     gate: { label: "Autorizada · aguardando saída", tone: "approved" },
     exited: { label: "Saída confirmada", tone: "approved" },
@@ -42,6 +42,15 @@
   const stageOf = (sheet) => {
     const stage = sheet.stage === "decided" ? "dp" : (STAGES[sheet.stage] ? sheet.stage : "engineer");
     return ["dp", "gate"].includes(stage) && isRetroactive(sheet) ? "registered" : stage;
+  };
+  // Concluída (caixa "Concluídas"): mesma regra da individual (portalReleaseFlow.isConcluded), com a digital de
+  // TODOS os participantes. A coletiva não tem lançamento no RM.
+  const isConcluded = (sheet) => {
+    const stage = stageOf(sheet);
+    if (stage === "closed") return true;
+    const people = sheet.participants || [];
+    return ["exited", "registered"].includes(stage) && !!sheet.bonusStatus
+      && people.length > 0 && people.every((person) => signatureOf(sheet, person));
   };
   const statusLabel = (sheet) => {
     const stage = stageOf(sheet);
@@ -245,5 +254,5 @@
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, STAGES, signatureOf, signedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isConcluded, STAGES, signatureOf, signedCount, pdfFields });
 })();

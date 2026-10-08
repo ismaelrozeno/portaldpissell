@@ -9,6 +9,11 @@
   let trash = [];
   // Uma só lixeira para tudo: o modo vem do painel principal (botão "Lixeira" da lista de liberações).
   const isTrashMode = () => !!window.portalIsTrashMode?.();
+  // Caixa "Concluídas", também comandada pelo painel principal.
+  const isDoneMode = () => !!window.portalIsDoneMode?.();
+  let doneCount = 0;
+  // Folhas da lista como está na tela (com filtros), para "Apagar tudo" agir só nelas.
+  let shownSheets = [];
   let trashMode = false;
   let profile = "";
   // Só no perfil do DP (ou no painel do DP, para o administrador) se apaga de verdade no banco; nos demais perfis
@@ -62,7 +67,7 @@
       : "";
     // O DP pode autorizar ou negar mesmo com a folha ainda aguardando o engenheiro (como nas individuais).
     const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage) && !retroactive
-      ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}`
+      ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}`
       : "";
     // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, enquanto a folha está em andamento.
     const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "registered"].includes(stage) && signedBio < people
@@ -84,7 +89,7 @@
       <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small>${window.portalCreatedLabel?.(sheet.createdAt) || ""}<div class="sig-chips">${chips.join("")}</div></td>
       <td data-label="Frente" class="col-frente">Coletiva</td>
       <td data-label="Horário" class="col-horario">${esc(sheet.time || "—")}</td>
-      <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(stageInfo.label)}</span></td>
+      <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(stageInfo.label)}</span>${!isDoneMode() && sheetApi().isConcluded(sheet) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
       <td class="text-end row-actions col-actions" data-label="Ação">${buttons}</td>
     </tr>`;
   }
@@ -180,10 +185,15 @@
     // Busca: colaborador da folha, motivo, solicitante, engenheiro/DP/portaria que assinou, data e situação.
     const searchEl = document.querySelector("#collective-search");
     const query = window.normalizeSearchText(searchEl?.value || "");
-    const base = trashMode ? trash : sheets;
     // Situação da barra de filtros do perfil (js/core/filter-bar.js), separada da barra das individuais. Fora da lixeira.
     const filterBar = !trashMode && window.portalFilterBar?.active() ? window.portalFilterBar : null;
     const byStatus = !!filterBar && filterBar.status(searchEl) !== "all";
+    // Caixa "Concluídas" (botão da barra única, como a lixeira): as concluídas saem da lista e só aparecem nela.
+    // Com uma Situação escolhida, a lista mostra tudo o que entra no número do cartão, inclusive as concluídas.
+    const doneMode = !trashMode && isDoneMode();
+    const concluded = sheetApi().isConcluded;
+    doneCount = sheets.filter(concluded).length;
+    const base = trashMode ? trash : doneMode ? sheets.filter(concluded) : byStatus ? sheets : sheets.filter((sheet) => !concluded(sheet));
     // Busca por texto + filtro por data (De/Até ao lado da busca).
     const filtered = base.filter((sheet) => {
       if (byStatus && !filterBar.matchesStatus(searchEl, sheet, stageOf(sheet), true)) return false;
@@ -201,8 +211,9 @@
       name: (sheet) => sheet.motive || "",
       bonus: (sheet) => sheet.bonusStatus || ""
     });
+    shownSheets = shown;
     const pageItems = pager() ? pager().slice(shown) : shown;
-    const listHtml = shown.length ? pageItems.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || byStatus || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
+    const listHtml = shown.length ? pageItems.map(row).join("") : `<tr><td colspan="5" class="empty-state">${(query || byStatus || !window.portalDateFilter.matches(searchEl, "")) ? "Nenhuma liberação coletiva encontrada para os filtros." : trashMode ? "A lixeira está vazia." : doneMode ? "Nenhuma liberação coletiva concluída ainda." : loadFailed ? "Não foi possível carregar as liberações coletivas. Verifique a internet e atualize a página." : "Nenhuma liberação coletiva."}</td></tr>`;
     // Só troca o conteúdo se mudou: a tela inicial redesenha sozinha quando chegam dados novos, e trocar os botões no
     // meio de um clique fazia o clique se perder.
     if (listHtml !== lastListHtml) {
@@ -288,7 +299,7 @@
 
   // Ações em lote vindas da barra única (Apagar tudo / Restaurar tudo / Esvaziar lixeira).
   async function bulk(kind, dpContext) {
-    const list = trashMode ? trash : sheets;
+    const list = trashMode ? trash : shownSheets;
     const me = store().myId();
     await Promise.all(list.map((sheet) => {
       if (kind === "trash-all") return store().addToList(sheet.id, "hiddenFor", me);
@@ -356,8 +367,10 @@
     else if (action === "approved" || action === "denied") {
       button.disabled = true;
       await decide(sheet, action);
-    } else if (action === "refuse") {
-      if (!await actions().ensureEngineerSignature()) return;
+    } else if (action === "refuse" || action === "dp-refuse") {
+      // Engenheiro ou DP recusam do mesmo jeito: a folha volta ao solicitante com os motivos, para ajustar e reenviar.
+      const byDp = action === "dp-refuse";
+      if (!byDp && !await actions().ensureEngineerSignature()) return;
       const who = session();
       actions().openRefuseDialog(sheet, () => render(profile), {
         target: `Liberação coletiva: ${sheet.motive} · solicitada por ${sheet.requester}`,
@@ -370,7 +383,8 @@
           dpSigner: null,
           dpRole: null,
           dpDecisionAt: null,
-          refusedBy: who?.name || "Engenheiro responsável",
+          refusedBy: who?.name || (byDp ? "Departamento Pessoal" : "Engenheiro responsável"),
+          refusedByRole: byDp ? "DP" : "Engenheiro",
           refusedAt: new Date().toISOString(),
           refusalReasons: reasons,
           refusalReason: reasons.join(" e ")
@@ -431,7 +445,7 @@ Confirme só se todos já saíram.`,
     bulk,
     injectTrashRows,
     // O que está na lista agora (para a barra única contar e agir junto com as individuais).
-    items: () => (isTrashMode() ? trash : sheets),
-    counts: () => ({ visible: sheets.length, trash: trash.length })
+    items: () => (isTrashMode() ? trash : shownSheets),
+    counts: () => ({ visible: shownSheets.length, trash: trash.length, done: doneCount })
   });
 })();

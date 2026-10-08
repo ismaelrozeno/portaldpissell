@@ -249,7 +249,7 @@
     }
     if (profile === "dp") {
       const sign = actions.canSignBiometric(release) ? btn("row-bio-btn", "sign-bio", "Assinar com digital") : "";
-      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "deny", "Negar")}` : "";
+      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}` : "";
       // O lançamento do abono no RM é feito só na folha de liberação ("Visualizar liberação").
       return `${sign}${decide}${view}${del}`;
     }
@@ -261,8 +261,11 @@
   // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
   let trashMode = false;
   window.portalIsTrashMode = () => trashMode;
+  // Caixa "Concluídas": as liberações com todas as assinaturas (portalReleaseFlow.isConcluded), fora das pendências.
+  let doneMode = false;
+  window.portalIsDoneMode = () => doneMode;
   // Últimos números da barra, para a barra recalcular quando as liberações coletivas terminarem de carregar.
-  let lastToolbarCounts = [0, 0];
+  let lastToolbarCounts = [0, 0, 0];
   window.portalToolbarRefresh = () => renderToolbar(...lastToolbarCounts);
   let shownReleases = [];
 
@@ -296,15 +299,25 @@
   // Liberações da última vez que a tela foi desenhada: o clique age na hora com elas, sem esperar o servidor.
   let releaseById = new Map();
 
-  function renderToolbar(individualVisible, individualTrash) {
-    lastToolbarCounts = [individualVisible, individualTrash];
+  function renderToolbar(individualVisible, individualTrash, individualDone = lastToolbarCounts[2]) {
+    lastToolbarCounts = [individualVisible, individualTrash, individualDone];
     // A barra é uma só: conta também as liberações coletivas.
-    const collective = window.portalCollectivePanel?.counts?.() || { visible: 0, trash: 0 };
+    const collective = window.portalCollectivePanel?.counts?.() || { visible: 0, trash: 0, done: 0 };
     const visibleCount = individualVisible + collective.visible;
     const trashCount = individualTrash + collective.trash;
+    const doneCount = individualDone + (collective.done || 0);
     const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
     const notice = document.querySelector("#trash-notice");
     const toolbar = document.querySelector("#records-toolbar");
+    if (doneMode) {
+      toolbar.innerHTML = `
+        <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às pendências</button>
+        <span class="toolbar-count">✅ ${doneCount} ${doneCount === 1 ? "concluída" : "concluídas"}</span>`;
+      notice.hidden = false;
+      notice.className = "trash-notice done-notice";
+      notice.innerHTML = "<strong>Concluídas:</strong> engenheiro, DP e portaria assinaram (na retroativa, só o engenheiro), o colaborador assinou com a digital e, se abonada, o abono já foi lançado no RM. Não há mais pendência nelas; continuam contando nos cartões e relatórios.";
+      return;
+    }
     if (trashMode) {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às liberações</button>
@@ -318,6 +331,7 @@
     } else {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="open-trash">🗑 Lixeira${trashCount ? ` (${trashCount})` : ""}</button>
+        <button class="toolbar-btn toolbar-done" type="button" data-toolbar="open-done" title="Liberações com todas as assinaturas, fora das pendências">✅ Concluídas${doneCount ? ` (${doneCount})` : ""}</button>
         <button class="toolbar-btn toolbar-danger" type="button" data-toolbar="trash-all" ${visibleCount ? "" : "disabled"}>Apagar tudo (mover para a lixeira)</button>
         ${statFilter ? `<button class="stat-filter-chip" type="button" data-toolbar="clear-stat" title="Mostrar todas as liberações">Filtro: ${statLabels[statFilter]} ✕</button>` : ""}`;
       notice.hidden = true;
@@ -398,6 +412,13 @@
     let rows = profileReleases.map((release) => ({ release, stage: flow.stageOf(release) }));
     // Portaria: só o que o DP autorizou.
     if (profile === "portaria") rows = rows.filter((row) => row.stage === "gate" || row.stage === "exited");
+    // Concluídas (todas as assinaturas e, se abonada, lançada no RM) saem da lista e vão para a caixa "Concluídas".
+    // Com um cartão/Situação escolhido, a lista mostra tudo o que entra no número do cartão, inclusive as concluídas.
+    const concluded = (row) => flow.isConcluded(row.release);
+    const doneCount = rows.filter(concluded).length;
+    const byStatus = filterBar ? filterBar.status(elements.recordsSearch) !== "all" : !!statFilter;
+    if (doneMode) rows = rows.filter(concluded);
+    else if (!byStatus) rows = rows.filter((row) => !concluded(row));
     // Cartão do resumo clicado (ou Situação da barra): só as liberações que entram naquele número.
     if (filterBar) {
       rows = rows.filter((row) => filterBar.matchesStatus(elements.recordsSearch, row.release, row.stage));
@@ -413,17 +434,17 @@
     });
     // "Apagar tudo" e os números da barra valem para a lista inteira filtrada, não só para a página.
     shownReleases = visible.map((row) => row.release);
-    renderToolbar(visible.length, trashed.length);
+    renderToolbar(visible.length, trashed.length, doneCount);
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
         <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
-        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}</td>
+        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
-    `).join("") : `<tr><td colspan="5" class="empty-state">${filtering || statFilter ? "Nenhum registro encontrado para os filtros." : "Nenhum registro encontrado para este perfil."}</td></tr>`;
+    `).join("") : `<tr><td colspan="5" class="empty-state">${filtering || statFilter ? "Nenhum registro encontrado para os filtros." : doneMode ? "Nenhuma liberação concluída ainda." : "Nenhuma pendência: tudo o que foi concluído está em ✅ Concluídas."}</td></tr>`;
   }
 
   // Clique nos cartões do resumo: "Equipe vinculada" abre a equipe; os outros filtram a tabela (clicar de novo tira o filtro).
@@ -440,8 +461,10 @@
     const filterBar = window.portalFilterBar;
     if (filterBar?.active()) {
       const next = filterBar.sharedStatus() === key ? "all" : key;
-      if (trashMode) {
+      // Sai da lixeira/concluídas: o cartão filtra a lista principal.
+      if (trashMode || doneMode) {
         trashMode = false;
+        doneMode = false;
         await renderRecords(activeProfileKey);
       }
       filterBar.setStatusAll(next);
@@ -450,6 +473,7 @@
     }
     statFilter = statFilter === key ? null : key;
     trashMode = false;
+    doneMode = false;
     pager().reset();
     // Na tela estreita, volta para a aba das individuais, onde o filtro aparece.
     const individualTab = document.querySelector("#tab-individual");
@@ -470,8 +494,10 @@
       pager().reset();
       return refresh();
     }
-    if (kind === "open-trash" || kind === "back") {
+    if (kind === "open-trash" || kind === "open-done" || kind === "back") {
       trashMode = kind === "open-trash";
+      doneMode = kind === "open-done";
+      pager().reset();
       await renderRecords(activeProfileKey);
       window.portalCollectivePanel?.render(activeProfileKey);
       return;
@@ -584,9 +610,14 @@
       } else if (action === "sign-bio") {
         if (!actions.canSignBiometric(release)) return refresh();
         run = () => actions.signBiometric(release);
-      } else if (action === "authorize" || action === "deny") {
+      } else if (action === "authorize") {
         if (!actions.dpCanDecide(release)) return refresh();
-        run = () => actions.dpDecide(release, action === "authorize");
+        run = () => actions.dpDecide(release, true);
+      } else if (action === "dp-refuse") {
+        // DP recusa como o engenheiro: devolve ao solicitante com os motivos, para ele ajustar e reenviar.
+        if (!actions.dpCanDecide(release)) return refresh();
+        actions.openRefuseDialog(release, refresh, { refuse: (reasons) => actions.dpRefuse(release, reasons) });
+        return;
       } else {
         // Engenheiro: abonar, não abonar ou recusar (exige a assinatura do engenheiro)
         if (action === "refuse" ? !actions.engineerCanRefuse(release) : !actions.engineerCanAct(release)) return refresh();
@@ -832,6 +863,7 @@
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
       trashMode = false;
+      doneMode = false;
       statFilter = null;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
       renderProfile(event.target.value);

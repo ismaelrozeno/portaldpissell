@@ -16,7 +16,7 @@
   window.portalReleaseFlow = Object.freeze({
     stages: Object.freeze({
       engineer: { label: "Aguardando engenheiro", tone: "pending" },
-      foreman: { label: "Recusada pelo engenheiro", tone: "denied" },
+      foreman: { label: "Recusada · devolvida ao solicitante", tone: "denied" },
       dp: { label: "Aguardando DP", tone: "pending" },
       gate: { label: "Autorizada · aguardando saída", tone: "approved" },
       exited: { label: "Saída confirmada", tone: "approved" },
@@ -43,6 +43,17 @@
       return names.length > 1 ? "Entrada e saída" : names[0];
     },
     // Liberações antigas não têm "stage": deriva da situação que já tinham.
+    // Concluída (vai para a caixa "Concluídas" e sai das pendências): todas as assinaturas — engenheiro decidiu o
+    // abono, DP autorizou e portaria confirmou a saída (na retroativa, só o engenheiro), digital do colaborador — e,
+    // se ABONADO, abono já lançado no RM. Negada pelo DP (fluxo antigo, antes de "Recusar") também é fim de fluxo.
+    isConcluded(release) {
+      const stage = window.portalReleaseFlow.stageOf(release);
+      if (stage === "closed") return true;
+      return ["exited", "registered"].includes(stage)
+        && !!release.bonusStatus
+        && release.employeeSignature?.method === "biometria"
+        && (release.bonusStatus !== "approved" || !!release.abonoLaunchedAt);
+    },
     // Retroativa que passou do engenheiro (ou que o DP já tinha autorizado) vira "registrada", inclusive as antigas.
     stageOf(release) {
       const stage = release.stage

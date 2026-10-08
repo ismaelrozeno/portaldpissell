@@ -246,3 +246,11 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .portal-stats small.stat-detail { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid rgba(255, 255, 255, .12); color: #a9bbd0; font-size: .72rem; line-height: 1.45; }
 .portal-stats small.stat-detail:empty { display: none; }
 .stat-card-launch small.stat-detail { margin-bottom: .55rem; }
+
+/* Caixa "Concluídas" (ao lado da Lixeira): liberações com todas as assinaturas, fora das pendências. */
+.toolbar-done { border-color:#b6e2c8; color:#17613b; background:#f1fbf5; }
+.toolbar-done:hover:not(:disabled) { background:#def5e8; }
+.toolbar-count { display:inline-flex; align-items:center; padding:.5rem .2rem; color:#17613b; font-size:.85rem; font-weight:800; }
+.done-notice { border-left-color:#1e9e5a; color:#1f4b33; background:#eefaf3; }
+.row-concluded { display:block; margin-top:.3rem; color:#17613b; font-size:.75rem; font-weight:800; }
+@media (max-width:760px) { .col-status .row-concluded { display:inline-block; margin:0 0 0 .35rem; font-size:.7rem; } }

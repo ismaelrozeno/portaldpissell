@@ -157,6 +157,16 @@
 
   // A recusa só devolve ao encarregado com o motivo; ele ajusta e reenvia.
   async function engineerRefuse(release, reasons) {
+    await refuseRelease(release, reasons, signerName("Engenheiro responsável"), "Engenheiro");
+  }
+
+  // O DP também recusa (em vez de negar): devolve ao solicitante com os motivos, como o engenheiro. No reenvio a
+  // liberação volta ao começo (engenheiro), porque o que foi ajustado pode mudar o abono.
+  async function dpRefuse(release, reasons) {
+    await refuseRelease(release, reasons, signerName("Departamento Pessoal"), "DP");
+  }
+
+  async function refuseRelease(release, reasons, by, byRole) {
     await store().updateRelease(release.id, {
       stage: "foreman",
       status: "pending",
@@ -167,7 +177,8 @@
       dpSigner: null,
       dpRole: null,
       dpDecisionAt: null,
-      refusedBy: signerName("Engenheiro responsável"),
+      refusedBy: by,
+      refusedByRole: byRole,
       refusedAt: new Date().toISOString(),
       refusalReasons: reasons,
       refusalReason: reasons.join(" e ")
@@ -418,6 +429,7 @@ Deseja continuar?`;
     openRefuseDialog,
     dpCanDecide,
     dpDecide,
+    dpRefuse,
     canSignBiometric,
     signBiometric,
     needsLaunch,
