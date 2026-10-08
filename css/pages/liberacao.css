@@ -69,7 +69,7 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 @keyframes release-done-pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .release-done-icon { animation: none; } }
 
-/* Aviso do horário de almoço embaixo do campo Horário (js/features/lunch-time.js): só aparece se o horário for 12:00–13:00. */
+/* Aviso do horário embaixo do campo Horário (js/features/lunch-time.js): só aparece no almoço (12:00–13:00) ou fora do expediente. */
 .release-field small.lunch-hint { display: none; padding: .45rem .6rem; border: 1px solid #f5cf9f; border-radius: .45rem; color: #8a4300; background: #fff3e2; line-height: 1.35; }
 .release-field.is-lunch input { border-color: #c62835; box-shadow: 0 0 0 .2rem rgba(198, 40, 53, .15); }
 .release-field.is-lunch small.lunch-hint { display: block; border-color: #f1c4c7; color: #8b2930; background: #fdeaea; }

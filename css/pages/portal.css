@@ -151,6 +151,8 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .sig-no { color:#8b2930; background:#fdeaea; border-color:#f1c4c7; }
 .sig-info { color:#0b4a7a; background:#e3f0fb; border-color:#bcd9f0; }
 .sig-wait { color:#617188; background:#f1f4f8; border-color:#dde4ec; font-weight:500; }
+.sig-off { color:#8a5a00; background:#fdf5e4; border-color:#f0dcae; font-weight:500; }
+.sig-chip[title] { cursor:help; }
 
 /* ===== Visual das liberações no celular: cartão enxuto ===== */
 .portal-table small.row-meta { display:none; }
@@ -185,8 +187,8 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
   .sig-chips { display:grid; grid-template-columns:1fr; gap:.15rem; margin-top:.55rem; padding:.5rem .6rem; border-radius:.55rem; background:#f6f8fb; }
   .sig-chip { position:relative; display:block; padding:0 0 0 .95rem; border:0; border-radius:0; background:transparent !important; font-size:.72rem; font-weight:500; line-height:1.4; }
   .sig-chip::before { content:""; position:absolute; left:0; top:.4em; width:.55rem; height:.55rem; border-radius:50%; background:#c2ccd8; }
-  .sig-yes::before { background:#1e9e5a; }.sig-no::before { background:#d33a46; }.sig-info::before { background:#1769aa; }
-  .sig-yes { color:#17613b; }.sig-no { color:#8b2930; }.sig-info { color:#0b4a7a; }.sig-wait { color:#7b8798; }
+  .sig-yes::before { background:#1e9e5a; }.sig-no::before { background:#d33a46; }.sig-info::before { background:#1769aa; }.sig-off::before { background:#d99a1e; }
+  .sig-yes { color:#17613b; }.sig-no { color:#8b2930; }.sig-info { color:#0b4a7a; }.sig-wait { color:#7b8798; }.sig-off { color:#8a5a00; }
   /* ações: decisão em destaque (grade de 2), secundárias em uma faixa menor embaixo */
   .portal-table td.row-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem; }
   .row-actions button, .row-actions .table-action { min-height:2.5rem; padding:.45rem .5rem; font-size:.78rem; }

@@ -181,11 +181,11 @@
     const movement = [...document.querySelectorAll('input[name="movement"]:checked')].map((input) => input.value);
     if (!chosen.size) return fail("Selecione pelo menos um colaborador.");
     if (!movement.length) return fail("Marque entrada, saída ou as duas.");
-    // Horário de almoço (12:00 às 13:00) não vale: o campo fica inválido e a mensagem explica o porquê.
+    // Horário de almoço (12:00 às 13:00) e fora do expediente não valem: o campo fica inválido e a mensagem explica o porquê.
     const lunchOk = window.portalLunchTime?.validate() ?? true;
     if (!form.checkValidity()) {
       form.reportValidity();
-      return fail(lunchOk ? "Confira os campos obrigatórios antes de enviar a liberação." : window.portalLunchTime.MESSAGE);
+      return fail(lunchOk ? "Confira os campos obrigatórios antes de enviar a liberação." : window.portalLunchTime.message());
     }
     if (!document.querySelector('input[name="bonus-request"]:checked')) return fail("Marque o pedido de abono (abonado ou não abonado).");
     if (!document.querySelector("#signature-confirm").checked) return fail("Confirme e assine a liberação para continuar.");

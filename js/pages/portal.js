@@ -190,7 +190,7 @@
   // Resumo visual das assinaturas já feitas (engenheiro, DP, portaria) para dar para ler a situação de relance.
   function signatureChips(release, stage) {
     const short = (name) => escapeHtml(String(name || "").trim());
-    const chip = (tone, html) => `<span class="sig-chip sig-${tone}">${html}</span>`;
+    const chip = (tone, html, hint) => `<span class="sig-chip sig-${tone}"${hint ? ` title="${escapeHtml(hint)}"` : ""}>${html}</span>`;
     const chips = [];
     if (stage === "foreman") {
       chips.push(chip("no", `Recusada por <b>${short(release.refusedBy)}</b>${release.refusalReason ? ` · ${escapeHtml(release.refusalReason)}` : ""}`));
@@ -219,7 +219,9 @@
       }
       // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
       if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", `Colaborador <b>${short(release.employeeSignature.nome || release.name)}</b> · assinou por digital`));
-      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando"));
+      // Depois da saída confirmada não dá mais para colher a digital: o aviso diz isso em vez de parecer pendente.
+      else if (activeProfileKey === "dp" && stage === "exited") chips.push(chip("off", "Digital do colaborador: não assinou · saída já confirmada", "A digital só pode ser colhida até a portaria confirmar a saída. Depois disso, a liberação fica fechada para assinatura."));
+      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando", "O colaborador assina com a digital no DP até a portaria confirmar a saída."));
     }
     return `<div class="sig-chips">${chips.join("")}</div>`;
   }
