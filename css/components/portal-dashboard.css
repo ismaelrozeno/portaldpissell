@@ -343,3 +343,6 @@ body.dash.app-page { background: var(--d-page); }
 body.dash.dash-trash[data-page="coletivas"] #records-section { display: block !important; }
 body.dash.dash-trash[data-page="coletivas"] #collective-section { display: none !important; }
 body.dash[data-page="coletivas"] #collective-section .records-toolbar { margin: .2rem 0 .8rem; }
+
+/* Aba escondida para o perfil (ex.: Atalhos na portaria): some também o espaço dela na barra de baixo */
+.dash-nav-list > li:has(> .dash-nav-item[hidden]) { display: none; }

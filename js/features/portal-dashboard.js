@@ -153,11 +153,15 @@
     ];
     const today = dayOf(Date.now());
     const count = (test) => all.filter(test);
+    // "Aguardando saída" vale só para as liberações do dia (a autorização é "no dia de hoje", como a lista da
+    // portaria com Período "Hoje"). Sem isso, as de dias anteriores que ninguém confirmou na portaria se acumulavam
+    // no número da aba (chegava a "99+" com só uma esperando de verdade).
+    const ofToday = (x) => window.portalDateFilter.dayOf(x.r) === today;
     const groups = {
       foreman: count((x) => x.stage === "foreman"),
       engineer: count((x) => !x.r.bonusStatus && live(x.stage)),
       dp: count((x) => x.stage === "dp"),
-      gate: count((x) => x.stage === "gate"),
+      gate: count((x) => x.stage === "gate" && ofToday(x)),
       exited: count((x) => x.stage === "exited" && dayOf(x.r.exitConfirmedAt) === today)
     };
     const role = roleKey(profileKey);
@@ -200,7 +204,7 @@
       add(count((x) => x.stage === "engineer" && !x.r.bonusStatus && x.r.dpReturnReason), "devolvidas pelo DP", "o DP pediu para rever o abono", "individuais", statusFor.engineer);
     } else if (role === "portaria") {
       add(groups.gate, "aguardando saída", "confirme quando o colaborador passar", "individuais", statusFor.gate);
-      add(count((x) => x.kind === "col" && x.stage === "gate" && (col?.exitedCount(x.r) || 0) > 0), "coletivas com saída pela metade", "ainda falta gente passar pela portaria", "coletivas", statusFor.gate);
+      add(count((x) => x.kind === "col" && x.stage === "gate" && ofToday(x) && (col?.exitedCount(x.r) || 0) > 0), "coletivas com saída pela metade", "ainda falta gente passar pela portaria", "coletivas", statusFor.gate);
     } else {
       add(groups.foreman, "recusadas para ajustar", "corrija e reenvie ao engenheiro", "individuais", statusFor.foreman);
       add(groups.engineer, "aguardando o engenheiro", "o abono ainda não foi decidido", "individuais", statusFor.engineer);
