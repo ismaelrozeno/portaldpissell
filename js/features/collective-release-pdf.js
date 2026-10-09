@@ -39,7 +39,10 @@
           }
         });
       }
-      textIn(`Assinado por digital · ${bio.when}`, x + 3 + size / 1.2, y, 62 - size, h, { size: 6.5, color: GREY, maxLines: 1, pad: 0 });
+      const tx = x + 3 + size / 1.2;
+      textIn(`ASSINADO POR DIGITAL\n${bio.when}`, tx, y, 24, h, { size: 5.5, color: GREY, maxLines: 2, pad: 0 });
+      // Nome do colaborador ao lado, como assinatura (igual à folha individual).
+      if (bio.name) textIn(bio.name, tx + 24, y, x + 86 - tx - 24, h, { size: 8.5, style: "italic", maxLines: 2, pad: 1 });
     };
 
     // ---- Cabeçalho: logo | título | motivo + data
@@ -92,7 +95,7 @@
     y += rh - 1 + 5;
 
     // ---- Participantes
-    const cols = [12, 78, 38, 62];
+    const cols = [12, 64, 28, 86];
     const heads = ["ID", "NOME", "Função", "Assinatura"];
     const header = () => {
       line(0.25);
@@ -116,7 +119,7 @@
         line(0.25);
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
-        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 1 });
+        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 2 });
         else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
         else if (c === 3 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH);
         x += w;
@@ -124,12 +127,13 @@
       y += rowH;
     }
 
-    // ---- Carimbo "lançado no RM" (primeira página, sobre as assinaturas), inclinado 14° como na tela
+    // ---- Carimbo "lançado no RM" (primeira página, sobre a linha "Horas"), inclinado 14° como na tela
     if (f.launched) {
       doc.setPage(firstPage);
       const angle = (-14 * Math.PI) / 180;
-      const cx = M + 158;
-      const cy = hy + hh + 34;
+      // Sobre a linha "Horas" (quase vazia), para não cobrir as assinaturas.
+      const cx = M + 135;
+      const cy = hy + hh + 49;
       const at = (dx, dy) => [cx + dx * Math.cos(angle) - dy * Math.sin(angle), cy + dx * Math.sin(angle) + dy * Math.cos(angle)];
       const red = [198, 40, 53];
       doc.setDrawColor(...red);

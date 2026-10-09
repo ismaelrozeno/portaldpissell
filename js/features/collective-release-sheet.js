@@ -100,7 +100,7 @@
       // Uma por linha da lista (null = sem digital, fica em branco para assinar à mão).
       participantBio: (sheet.participants || []).map((person) => {
         const signature = signatureOf(sheet, person);
-        return signature ? { seed: bioSeed(signature), when: formatDateTime(signature.signedAt) } : null;
+        return signature ? { seed: bioSeed(signature), when: formatDateTime(signature.signedAt), name: signature.nome || person.nome || "" } : null;
       })
     };
   }
@@ -112,7 +112,8 @@
       const person = people[index];
       const signature = signatureOf(sheet, person);
       const bio = signature
-        ? `<span class="cs-bio">${window.portalFingerprint ? window.portalFingerprint.svg(bioSeed(signature), 22) : ""}<small>Assinado por digital<br>${esc(formatDateTime(signature.signedAt))}</small></span>`
+        // Nome do colaborador ao lado, como assinatura (igual à folha individual).
+        ? `<span class="cs-bio">${window.portalFingerprint ? window.portalFingerprint.svg(bioSeed(signature), 22) : ""}<small>Assinado por digital<br>${esc(formatDateTime(signature.signedAt))}</small><i class="cs-bio-name">${esc(signature.nome || person.nome || "")}</i></span>`
         : "";
       return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
@@ -240,7 +241,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=9ca92651");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=4ec682fe");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -287,7 +288,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=bcfea68b", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=e38cfae4", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);

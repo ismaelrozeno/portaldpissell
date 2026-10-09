@@ -78,7 +78,7 @@
 .cs-actions button[hidden], .cs-launch-hint[hidden] { display: none; }
 .cs-launch-hint { margin: 0 0 .6rem; padding: .55rem .75rem; border: 1px solid #f5820a; border-radius: .5rem; color: #fff4e8; background: #4a3113; font-size: .82rem; font-weight: 600; }
 .cs-sheet { position: relative; }
-.cs-stamp { position: absolute; right: 48px; top: 196px; display: grid; justify-items: center; gap: .05rem; padding: .45rem 1.4rem .7rem; border: 4px double #c62835; border-radius: .5rem; color: #c62835; font-family: Impact, "Arial Black", Arial, sans-serif; letter-spacing: .14em; text-align: center; transform: rotate(-14deg); mix-blend-mode: multiply; opacity: .88; pointer-events: none; user-select: none; }
+.cs-stamp { position: absolute; right: 120px; top: 292px; display: grid; justify-items: center; gap: .05rem; padding: .45rem 1.4rem .7rem; border: 4px double #c62835; border-radius: .5rem; color: #c62835; font-family: Impact, "Arial Black", Arial, sans-serif; letter-spacing: .14em; text-align: center; transform: rotate(-14deg); mix-blend-mode: multiply; opacity: .88; pointer-events: none; user-select: none; }
 .cs-stamp strong { font-size: 2.1rem; line-height: 1; }
 .cs-stamp span { font-size: 1.25rem; line-height: 1; }
 .cs-stamp small { margin-top: .4rem; white-space: nowrap; line-height: 1.2; font: 700 .62rem Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
@@ -92,3 +92,10 @@
 @media (prefers-reduced-motion: reduce) { .cs-stamp.is-stamping { animation: none; } }
 @media (max-width: 520px) { .cs-actions { flex-wrap: wrap; } .cs-actions button { white-space: nowrap; } }
 @media print { .cs-launch-hint { display: none !important; } .cs-stamp { animation: none !important; } }
+
+/* Nome do colaborador ao lado da digital, em itálico numa linha (igual à folha individual).
+   A coluna Assinatura fica mais larga (Nome e Função cedem espaço) para o nome caber inteiro. */
+.cs-list .cs-role { width: 100px; }
+.cs-list th:nth-child(4) { width: 48%; }
+.cs-bio small { flex: none; }
+.cs-bio-name { flex: 1; min-width: 0; margin-left: 4px; color: #111; font-family: Arial, sans-serif; font-size: 12px; font-style: italic; line-height: 1.15; }
