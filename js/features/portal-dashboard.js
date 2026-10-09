@@ -130,11 +130,12 @@
 
   // ---------- Esteira do fluxo + Para você agora ----------
   // Situação usada pela barra de filtros de cada perfil (quando não existir, mostra a lista inteira).
+  // Cada estação da esteira abre a lista já filtrada nela (opções em js/core/filter-bar.js).
   const STATUS_FOR = {
-    dp: { engineer: "bonus", dp: "pending", toLaunch: "toLaunch" },
-    engenheiro: { engineer: "pending" },
+    dp: { foreman: "refused", engineer: "bonus", dp: "pending", gate: "gate", exited: "exitedToday", toLaunch: "toLaunch", bio: "bioPending" },
+    engenheiro: { foreman: "refused", engineer: "pending", dp: "waitDp", gate: "gate", exited: "exitedToday" },
     portaria: { gate: "gate", exited: "exitedToday" },
-    chief: { foreman: "refused", engineer: "bonus", exited: "exited" }
+    chief: { foreman: "refused", engineer: "bonus", dp: "waitDp", gate: "gate", exited: "exitedToday" }
   };
   const roleKey = (profileKey) => (CHIEFS.includes(profileKey) ? "chief" : profileKey);
   const MINE = { chief: "foreman", engenheiro: "engineer", dp: "dp", portaria: "gate" };
@@ -199,7 +200,7 @@
       // soma quem da lista ainda não assinou.
       const missingBio = (x) => (x.kind === "ind" ? (x.r.employeeSignature?.method !== "biometria" ? 1 : 0) : Math.max(0, x.people - (col?.signedCount(x.r) || 0)));
       const bioPeople = all.filter((x) => live(x.stage)).reduce((sum, x) => sum + missingBio(x), 0);
-      items.push({ n: bioPeople, title: bioPeople === 1 ? "colaborador com digital pendente" : "colaboradores com digital pendente", note: "ainda não assinaram com a digital", page: "individuais" });
+      items.push({ n: bioPeople, title: bioPeople === 1 ? "colaborador com digital pendente" : "colaboradores com digital pendente", note: "ainda não assinaram com a digital", page: "individuais", status: statusFor.bio });
       add(count((x) => x.r.bonusStatus === "approved" && !x.r.abonoLaunchedAt), "abonos por lançar no RM", "abonados pelo engenheiro, sem o carimbo do DP", "individuais", statusFor.toLaunch);
     } else if (role === "engenheiro") {
       add(groups.engineer, "aguardando seu abono", "marque abonado ou não abonado", "individuais", statusFor.engineer);
@@ -210,7 +211,7 @@
     } else {
       add(groups.foreman, "recusadas para ajustar", "corrija e reenvie ao engenheiro", "individuais", statusFor.foreman);
       add(groups.engineer, "aguardando o engenheiro", "o abono ainda não foi decidido", "individuais", statusFor.engineer);
-      add(groups.gate, "autorizadas, aguardando saída", "liberadas pelo DP", "individuais");
+      add(groups.gate, "autorizadas, aguardando saída", "liberadas pelo DP", "individuais", statusFor.gate);
     }
     const nowEl = $("#dash-now");
     if (nowEl) {
