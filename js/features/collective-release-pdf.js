@@ -124,6 +124,33 @@
       y += rowH;
     }
 
+    // ---- Carimbo "lançado no RM" (primeira página, sobre as assinaturas), inclinado 14° como na tela
+    if (f.launched) {
+      doc.setPage(firstPage);
+      const angle = (-14 * Math.PI) / 180;
+      const cx = M + 158;
+      const cy = hy + hh + 34;
+      const at = (dx, dy) => [cx + dx * Math.cos(angle) - dy * Math.sin(angle), cy + dx * Math.sin(angle) + dy * Math.cos(angle)];
+      const red = [198, 40, 53];
+      doc.setDrawColor(...red);
+      const box = (hx, hy2, lineWidth) => {
+        doc.setLineWidth(lineWidth);
+        const corners = [at(-hx, -hy2), at(hx, -hy2), at(hx, hy2), at(-hx, hy2)];
+        corners.forEach((point, i) => { const next = corners[(i + 1) % 4]; doc.line(point[0], point[1], next[0], next[1]); });
+      };
+      box(25, 11, 0.6);
+      box(24, 10, 0.2);
+      const centered = (value, dy, size) => {
+        font("bold", size, red);
+        const [px, py] = at(-doc.getTextWidth(String(value)) / 2, dy);
+        doc.text(String(value), px, py, { angle: 14 });
+      };
+      centered("LANÇADO", -0.5, 26);
+      centered("NO RM", 5.2, 15);
+      centered(String(f.stampDetail || "").toUpperCase(), 8.6, 6.5);
+      doc.setPage(doc.getNumberOfPages());
+    }
+
     // ---- Rodapé (numeração das páginas desta folha)
     const lastPage = doc.getNumberOfPages();
     const pages = lastPage - firstPage + 1;

@@ -51,6 +51,8 @@
     chips.push(sheet.dpSigner
       ? chip(stage === "closed" ? "no" : "yes", `DP <b>${esc(sheet.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`)
       : retroactive ? chip("info", "Retroativa · sem autorização de saída nem portaria") : chip("wait", "DP: aguardando"));
+    if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${esc(sheet.abonoLaunchedBy || "DP")}</b>`));
+    else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
     else if (stage === "gate") chips.push(chip("wait", "Portaria: aguardando saída"));
     // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
@@ -362,7 +364,7 @@
     const sheet = [...sheets, ...trash].find((item) => item.id === button.dataset.id);
     if (!sheet) return;
     const action = button.dataset.collective;
-    if (action === "view") window.portalCollectiveSheet.show(sheet);
+    if (action === "view") window.portalCollectiveSheet.show(sheet, { dpContext: profile === "dp", onChange: () => render(profile) });
     else if (action === "bio") window.portalCollectiveBiometric?.open(sheet, () => render(profile));
     else if (action === "approved" || action === "denied") {
       button.disabled = true;

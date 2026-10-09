@@ -44,13 +44,14 @@
     return ["dp", "gate"].includes(stage) && isRetroactive(sheet) ? "registered" : stage;
   };
   // Concluída (caixa "Concluídas"): mesma regra da individual (portalReleaseFlow.isConcluded), com a digital de
-  // TODOS os participantes. A coletiva não tem lançamento no RM.
+  // TODOS os participantes e, se ABONADO, abono já lançado no RM.
   const isConcluded = (sheet) => {
     const stage = stageOf(sheet);
     if (stage === "closed") return true;
     const people = sheet.participants || [];
     return ["exited", "registered"].includes(stage) && !!sheet.bonusStatus
-      && people.length > 0 && people.every((person) => signatureOf(sheet, person));
+      && people.length > 0 && people.every((person) => signatureOf(sheet, person))
+      && (sheet.bonusStatus !== "approved" || !!sheet.abonoLaunchedAt);
   };
   const statusLabel = (sheet) => {
     const stage = stageOf(sheet);
@@ -69,6 +70,8 @@
   const signedCount = (sheet) => (sheet.participants || []).filter((person) => signatureOf(sheet, person)).length;
   // Digital + hora da assinatura: cada assinatura tem um desenho próprio, como na liberação individual.
   const bioSeed = (signature) => `${signature.fingerprintHash || signature.matricula}|${signature.signedAt || ""}`;
+
+  const stampDetail = (sheet) => sheet.abonoLaunchedAt ? `${new Date(sheet.abonoLaunchedAt).toLocaleDateString("pt-BR")} · ${sheet.abonoLaunchedBy || "DP"}` : "";
 
   // Valores já formatados da folha, usados pelo PDF (os mesmos que a tela mostra).
   function pdfFields(sheet) {
@@ -91,6 +94,8 @@
       gateSigner: gate.name, gateTime: gate.time,
       hours: sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro",
       hoursTone: sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait",
+      launched: !!sheet.abonoLaunchedAt,
+      stampDetail: stampDetail(sheet),
       footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time ? ` a partir das ${sheet.time} hs` : ""}`,
       // Uma por linha da lista (null = sem digital, fica em branco para assinar à mão).
       participantBio: (sheet.participants || []).map((person) => {
@@ -134,11 +139,94 @@
         </thead>
         <tbody>${body}</tbody>
       </table>
-      <p class="cs-foot">Obra 369 · ${esc(movementLabel(sheet))}${sheet.time ? ` a partir das ${esc(sheet.time)} hs` : ""}</p>`;
+      <p class="cs-foot">Obra 369 · ${esc(movementLabel(sheet))}${sheet.time ? ` a partir das ${esc(sheet.time)} hs` : ""}</p>
+      ${sheet.abonoLaunchedAt ? `<div class="cs-stamp" aria-label="Abono lançado no RM"><strong>LANÇADO</strong><span>NO RM</span><small>${esc(stampDetail(sheet))}</small></div>` : ""}`;
   }
 
   let overlay = null;
   let current = null;
+  let launching = false;
+  let onChange = null;
+
+  // Lançamento do abono no RM: mesma regra da folha individual (js/features/release-preview.js).
+  // Só o DP lança (e desfaz), e só o que o engenheiro abonou. O administrador e o analista com acesso de DP
+  // só contam como DP quando estão no painel do DP (dpContext).
+  let dpContext = false;
+  const role = () => window.portalAuthDemo?.getSession()?.roleValue;
+  const dpLike = () => ["dp", "administrador-analista"].includes(role()) || !!window.portalAuthDemo?.isDpDelegate?.();
+  const isDp = () => role() === "dp" || (dpLike() && dpContext);
+  const canLaunch = (sheet) => isDp() && sheet.bonusStatus === "approved" && !sheet.abonoLaunchedAt
+    && ["dp", "gate", "exited", "registered"].includes(stageOf(sheet));
+  // Por que o "Lançar abono" não aparece (só para o DP e o administrador, para o botão nunca sumir sem explicação).
+  function launchHint(sheet) {
+    if (!dpLike() || sheet.abonoLaunchedAt || canLaunch(sheet)) return "";
+    if (sheet.bonusStatus === "denied") return "Engenheiro marcou NÃO ABONADO: não há abono para lançar no RM.";
+    if (!sheet.bonusStatus) return "O botão \"Lançar abono\" aparece depois que o engenheiro marcar ABONADO.";
+    if (!["dp", "gate", "exited", "registered"].includes(stageOf(sheet))) return "Esta liberação coletiva não está em etapa de lançamento no RM.";
+    if (!isDp()) return "Para lançar no RM, abra esta folha como Departamento Pessoal (em \"Acessar como\").";
+    return "";
+  }
+
+  const confirmBox = (text) => window.portalReleaseActions?.confirmText ? window.portalReleaseActions.confirmText(text) : Promise.resolve(window.confirm(text));
+  const notify = (title, message) => window.portalReleaseActions?.ask
+    ? window.portalReleaseActions.ask({ title, message, okText: "OK", cancelText: null })
+    : Promise.resolve(window.alert(`${title}. ${message}`));
+
+  async function saveLaunch(changes) {
+    launching = true;
+    try {
+      await window.portalCollectiveStore.update(current.id, changes);
+      current = { ...current, ...changes };
+      draw();
+      onChange?.(current);
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar o lançamento do abono.", error);
+      await notify("Não foi possível salvar", "Verifique a internet e tente de novo.");
+      return false;
+    } finally {
+      launching = false;
+    }
+  }
+
+  async function launch() {
+    if (!current || launching || !canLaunch(current)) return;
+    const session = window.portalAuthDemo?.getSession();
+    if (await saveLaunch({
+      abonoLaunchedAt: new Date().toISOString(),
+      abonoLaunchedBy: session?.name || "Departamento Pessoal",
+      abonoLaunchedRole: session?.role || "Departamento Pessoal"
+    })) overlay.querySelector(".cs-stamp")?.classList.add("is-stamping");
+  }
+
+  // Desfaz um lançamento feito por engano: tira o carimbo e guarda quem lançou/desfez no histórico.
+  async function undoLaunch() {
+    if (!current || launching || !current.abonoLaunchedAt || !isDp()) return;
+    if (!await confirmBox(`Desfazer o lançamento do abono?
+Liberação coletiva: ${current.motive}
+O carimbo será removido.`)) return;
+    const session = window.portalAuthDemo?.getSession();
+    await saveLaunch({
+      abonoLaunchedAt: null,
+      abonoLaunchedBy: null,
+      abonoLaunchedRole: null,
+      abonoLaunchHistory: [...(current.abonoLaunchHistory || []), {
+        launchedBy: current.abonoLaunchedBy,
+        launchedAt: current.abonoLaunchedAt,
+        undoneBy: session?.name || "Departamento Pessoal",
+        undoneAt: new Date().toISOString()
+      }]
+    });
+  }
+
+  function draw() {
+    overlay.querySelector("#cs-sheet").innerHTML = sheetHtml(current);
+    overlay.querySelector("#cs-launch").hidden = !canLaunch(current);
+    overlay.querySelector("#cs-undo-launch").hidden = !(isDp() && current.abonoLaunchedAt);
+    const hint = launchHint(current);
+    overlay.querySelector("#cs-launch-hint").textContent = hint;
+    overlay.querySelector("#cs-launch-hint").hidden = !hint;
+  }
 
   // Carrega, só quando precisa, o gerador de PDF (jsPDF + collective-release-pdf.js).
   function loadScript(src) {
@@ -152,7 +240,7 @@
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=b4d3751b");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=9ca92651");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -199,7 +287,7 @@
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=221d7020", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=bcfea68b", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
@@ -220,14 +308,19 @@
         <section class="cs-dialog" role="dialog" aria-modal="true" aria-label="Liberação coletiva">
           <div class="cs-actions">
             <button type="button" id="cs-close">Fechar</button>
+            <button type="button" id="cs-launch" class="cs-launch-btn" hidden>Lançar abono</button>
+            <button type="button" id="cs-undo-launch" class="cs-undo-btn" hidden>Desfazer lançamento</button>
             <button type="button" id="cs-print">Imprimir / salvar PDF</button>
           </div>
+          <p class="cs-launch-hint" id="cs-launch-hint" role="status" hidden></p>
           <article class="cs-sheet" id="cs-sheet"></article>
         </section>
       </div>`);
     overlay = document.querySelector("#collective-preview");
     overlay.querySelector("#cs-close").addEventListener("click", close);
     overlay.querySelector("#cs-print").addEventListener("click", printSheet);
+    overlay.querySelector("#cs-launch").addEventListener("click", launch);
+    overlay.querySelector("#cs-undo-launch").addEventListener("click", undoLaunch);
     overlay.addEventListener("click", (event) => {
       if (!event.target.closest(".cs-sheet, .cs-actions")) close();
     });
@@ -245,10 +338,13 @@
     overlay.querySelector(".cs-sheet").style.zoom = Math.min(1, (overlay.clientWidth - 16) / 794);
   }
 
-  function show(sheet) {
+  // options.dpContext: aberta no painel do DP; options.onChange: chamado depois de lançar/desfazer o abono.
+  function show(sheet, options = {}) {
     ensureOverlay();
     current = sheet;
-    overlay.querySelector("#cs-sheet").innerHTML = sheetHtml(sheet);
+    dpContext = !!options.dpContext;
+    onChange = options.onChange || null;
+    draw();
     overlay.hidden = false;
     fit();
     overlay.scrollTop = 0;
