@@ -13,38 +13,21 @@
         <span class="release-live" title="A folha acompanha a liberação em tempo real">● ao vivo</span>
       </div>
       <p class="release-launch-hint" id="launch-hint" role="status" hidden></p>
-      <article class="release-sheet release-sheet-v2">
-        <!-- Folha em quadros, com as MESMAS medidas do PDF (js/features/release-pdf.js, 794 x 559 px de projeto). -->
-        <header class="rs-head">
-          <strong class="rs-brand">DIRECIONAL</strong>
-          <div class="rs-title"><h2 id="release-preview-title">Autorização de saída de colaboradores</h2><span>da frente de serviço</span></div>
-          <div class="rs-cell rs-obra"><small>Obra</small><b>369</b></div>
-          <div class="rs-cell rs-date"><small>Data</small><b id="preview-date"></b></div>
+      <article class="release-sheet">
+        <header class="release-sheet-header">
+          <strong>DIRECIONAL</strong>
+          <div><h2 id="release-preview-title">AUTORIZAÇÃO DE SAÍDA DE COLABORADORES</h2><span>DA FRENTE DE SERVIÇO</span></div>
         </header>
-        <div class="rs-row rs-row-person">
-          <div class="rs-cell rs-name"><small>Colaborador</small><b id="preview-name"></b></div>
-          <div class="rs-cell rs-role"><small>Função</small><b id="preview-role"></b></div>
+        <div class="release-sheet-grid">
+          <span><b>OBRA:</b> 369</span><span><b>DATA:</b> <i id="preview-date"></i></span>
         </div>
-        <div class="rs-row rs-row-facts">
-          <div class="rs-cell"><small>Saída a partir das</small><b><span id="preview-time"></span> h</b></div>
-          <div class="rs-cell"><small>Movimentação</small><b id="preview-movement"></b></div>
-          <div class="rs-cell"><small>Motivo da saída</small><b id="preview-reason"></b></div>
-          <div class="rs-cell"><small id="preview-bonus-request-label">Pedido do encarregado</small><b id="preview-bonus-request"></b></div>
-        </div>
-        <div class="rs-row rs-row-note">
-          <div class="rs-cell rs-note"><small>Motivo / observação</small><p id="preview-observation"></p></div>
-          <div class="rs-cell rs-hours"><small>Tratamento das horas</small><strong id="preview-bonus"></strong></div>
-        </div>
-        <div class="rs-row rs-row-employee">
-          <div class="rs-cell"><small>Assinatura do colaborador</small><span id="preview-employee-signature"></span></div>
-        </div>
-        <footer class="rs-row rs-row-signs">
-          <div class="rs-cell rs-sign"><small>Solicitante (encarregado)</small><i class="signature-name" id="preview-requester"></i><em id="preview-requester-time"></em></div>
-          <div class="rs-cell rs-sign"><small>Engenheiro</small><i class="signature-name" id="preview-engineer"></i><em id="preview-engineer-time"></em></div>
-          <div class="rs-cell rs-sign"><small>Departamento Pessoal</small><i class="signature-name" id="preview-dp"></i><em id="preview-dp-time"></em></div>
-          <div class="rs-cell rs-sign"><small>Portaria</small><i class="signature-name" id="preview-gate"></i><em id="preview-gate-time"></em></div>
-        </footer>
-        <p class="rs-foot">Liberação registrada no Portal DP · Obra 369</p>
+        <div class="release-sheet-line"><b>O Sr.:</b> <span id="preview-name"></span><b>Função:</b> <span id="preview-role"></span></div>
+        <div class="release-sheet-line"><b>Está autorizado no dia de hoje a partir das:</b> <span id="preview-time"></span> hs</div>
+        <div class="release-sheet-checks"><b>Movimentação:</b> <span id="preview-movement"></span><b>Motivo da saída:</b> <span id="preview-reason"></span><b id="preview-bonus-request-label" hidden>Pedido:</b> <span id="preview-bonus-request"></span></div>
+        <div class="release-sheet-block"><b>Motivo / observação:</b><p id="preview-observation"></p></div>
+        <div class="release-sheet-hours"><b>Tratamento das horas:</b><strong id="preview-bonus"></strong></div>
+        <div class="release-sheet-signature">Assinatura do colaborador: <span id="preview-employee-signature"></span></div>
+        <footer><span><b>SOLICITANTE (ENCARREGADO)</b><br><i class="signature-name" id="preview-requester"></i><small id="preview-requester-time"></small></span><span><b>ENGENHEIRO</b><br><i class="signature-name" id="preview-engineer"></i><small id="preview-engineer-time"></small></span><span><b>DEPARTAMENTO PESSOAL</b><br><i class="signature-name" id="preview-dp"></i><small id="preview-dp-time"></small></span><span><b>PORTARIA</b><br><i class="signature-name" id="preview-gate"></i><small id="preview-gate-time"></small></span></footer>
         <div class="release-stamp" id="release-stamp" hidden aria-label="Abono lançado no RM">
           <strong>LANÇADO</strong><span>NO RM</span><small id="stamp-detail"></small>
         </div>
@@ -117,7 +100,7 @@
 
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=1a7b1e98");
+    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=16f75ee8");
   }
 
   // "Imprimir / salvar PDF": gera o mesmo PDF da exportação em lote (folha na metade de cima de uma A4) e abre
@@ -273,7 +256,8 @@
     // Pedido do encarregado (o que ele marcou no formulário) fica na mesma linha do motivo da saída —
     // ali onde antes aparecia "release.hours" cru, que duplicava (e às vezes contradizia) o resultado
     // já mostrado embaixo em "Tratamento das horas".
-    set("#preview-bonus-request", f.bonusRequest || "—");
+    overlay.querySelector("#preview-bonus-request-label").hidden = !f.bonusRequest;
+    set("#preview-bonus-request", f.bonusRequest);
     set("#preview-observation", f.observation);
     const bonus = overlay.querySelector("#preview-bonus");
     bonus.textContent = f.bonus;
@@ -283,7 +267,7 @@
       const bio = f.employeeBio;
       signatureBox.innerHTML = `<span class="bio-signature">${window.portalFingerprint.svg(bio.seed, 62)}<span class="bio-signature-text"><small>Assinado biometricamente por digital</small><small>${escapeHtml(bio.name)}</small><small>${escapeHtml(bio.when)}</small></span><i class="signature-name bio-signature-name">${escapeHtml(bio.name)}</i></span>`;
     } else {
-      signatureBox.innerHTML = f.employeeSignature ? escapeHtml(f.employeeSignature) : '<span class="rs-blank-line" aria-label="Assinar à mão"></span>';
+      signatureBox.textContent = f.employeeSignature || "______________________________________________";
     }
     set("#preview-requester", f.requester);
     set("#preview-requester-time", f.requesterTime);
