@@ -56,11 +56,15 @@ body.dash .dash-main { padding: 1rem 1rem calc(var(--d-tab-h) + 5.5rem + env(saf
 .dash-fab[aria-expanded="true"] svg { transform: rotate(45deg); }
 .dash-fab[hidden] { display: none; }
 .dash-fab:focus-visible { outline: 3px solid var(--d-ink); outline-offset: 3px; }
-.dash-fab-menu { position: fixed; right: 1rem; bottom: calc(var(--d-tab-h) + 5.2rem + env(safe-area-inset-bottom)); z-index: 1031; display: grid; gap: .5rem; min-width: 230px; padding: .5rem; border-radius: var(--d-radius); background: var(--d-surface); box-shadow: 0 16px 40px rgba(11, 27, 46, .28); }
+/* Menu do "+": cartão compacto alinhado ao botão, só com os títulos e um ícone */
+.dash-fab-menu { position: fixed; left: auto; right: 1rem; bottom: calc(var(--d-tab-h) + 5.2rem + env(safe-area-inset-bottom)); z-index: 1031; display: grid; gap: .25rem; width: max-content; max-width: calc(100vw - 2rem); padding: .4rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); background: var(--d-surface); box-shadow: 0 18px 44px rgba(11, 27, 46, .24); transform-origin: bottom right; animation: dash-fab-in .16s ease-out; }
 .dash-fab-menu[hidden] { display: none; }
-.dash-fab-menu a { display: flex; align-items: center; gap: .6rem; padding: .8rem .9rem; border-radius: var(--d-radius-sm); color: var(--d-ink); font-weight: 600; text-decoration: none; }
+.dash-fab-menu a { display: flex; align-items: center; gap: .75rem; width: 100%; padding: .7rem 1.1rem .7rem .7rem; border-radius: var(--d-radius); color: var(--d-ink); font: 600 1rem/1.2 "Barlow", system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
 .dash-fab-menu a:hover, .dash-fab-menu a:focus-visible { background: var(--d-accent-soft); outline: none; }
-.dash-fab-menu small { display: block; color: var(--d-muted); font-weight: 500; font-size: .78rem; }
+.dash-fab-ico { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--d-accent); background: var(--d-accent-soft); }
+.dash-fab-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes dash-fab-in { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dash-fab-menu { animation: none; } }
 
 /* ---------- Páginas: cada bloco diz em que página aparece (data-dash) ---------- */
 body.dash[data-page="overview"] [data-dash]:not([data-dash~="overview"]),

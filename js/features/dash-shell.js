@@ -59,8 +59,8 @@
   main.insertAdjacentHTML("beforeend", `
     <button class="dash-fab" type="button" aria-expanded="false" aria-label="Nova liberação" data-dash-create hidden>${svg("plus")}</button>
     <div class="dash-fab-menu" hidden>
-      <a href="Liberacao.html">Nova liberação individual<small>um colaborador</small></a>
-      <a href="Liberacao-Coletiva.html">Nova liberação coletiva<small>lista de presença de uma tarefa</small></a>
+      <a href="Liberacao.html"><span class="dash-fab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>Nova liberação individual</a>
+      <a href="Liberacao-Coletiva.html"><span class="dash-fab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 6a3 3 0 0 1 0 6"/><path d="M17 14.2a5.5 5.5 0 0 1 3.5 4.8"/></svg></span>Nova liberação coletiva</a>
     </div>`);
   const fab = main.querySelector(".dash-fab");
   const fabMenu = main.querySelector(".dash-fab-menu");
