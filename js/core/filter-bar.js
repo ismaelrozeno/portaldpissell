@@ -1,6 +1,6 @@
 // Barra de filtros por perfil, no padrão das listas do GitHub/Gmail: Situação · Período · Ordenar · Limpar filtros.
-// Cada perfil tem a sua configuração em PROFILES; perfil sem configuração continua com o filtro antigo
-// (De/Até + Ordenar, js/core/date-filter.js e sort-filter.js). Por enquanto só o DP tem a sua.
+// Cada perfil tem a sua configuração em PROFILES (todos os perfis do Meu portal); perfil sem configuração continua
+// com o filtro antigo (De/Até + Ordenar, js/core/date-filter.js e sort-filter.js).
 //
 // Cada lista (individual e coletiva) tem a SUA barra, com filtros separados. A "Situação" tem as mesmas opções dos
 // cartões do resumo (que somam as duas listas): clicar num cartão aplica a situação nas duas listas de uma vez, e o
@@ -25,7 +25,63 @@
   const brDay = (day) => day ? day.split("-").reverse().join("/") : "";
 
   // Mesmas regras dos cartões do resumo (statRules em js/pages/portal.js e refreshStats das coletivas).
+  // Os "value" que têm cartão (pending, approved, bonus, launched) precisam existir para o clique no cartão filtrar;
+  // aliases: cartão que, naquele perfil, é a mesma Situação de outro (no engenheiro, "bonus" = "pending").
+  // defaultSort: ordem com que a lista abre e para a qual o "Limpar filtros" volta.
+  const today = () => iso(new Date());
+  const RULES = {
+    approvedToday: (record, stage) => ["gate", "exited"].includes(stage)
+      && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === today(),
+    awaitingBonus: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage)
+  };
+  const BASIC_SORTS = [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]];
+  // Encarregado, analista, estagiário e segurança do trabalho: acompanham o que eles mesmos pediram.
+  const CHIEF = {
+    statuses: [
+      { value: "all", label: "Todas" },
+      { value: "pending", label: "Em andamento · engenheiro ou DP", test: (record, stage) => ["engineer", "foreman", "dp"].includes(stage) },
+      { value: "refused", label: "Recusadas · para ajustar e reenviar", test: (record, stage) => stage === "foreman" },
+      { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
+      { value: "bonus", label: "Abono · aguardando engenheiro", test: RULES.awaitingBonus },
+      { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
+      { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" },
+      { value: "exited", label: "Saída confirmada na portaria", test: (record, stage) => stage === "exited" },
+      { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
+      { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+    ],
+    sorts: BASIC_SORTS
+  };
+
   const PROFILES = {
+    encarregado: CHIEF,
+    analista: CHIEF,
+    estagiario_engenharia: CHIEF,
+    seguranca_trabalho: CHIEF,
+    engenheiro: {
+      statuses: [
+        { value: "all", label: "Todas" },
+        { value: "pending", label: "Aguardando seu abono", test: RULES.awaitingBonus },
+        { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
+        { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" },
+        { value: "refused", label: "Recusadas · devolvidas ao solicitante", test: (record, stage) => stage === "foreman" },
+        { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
+        { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
+        { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+      ],
+      aliases: { bonus: "pending" },
+      sorts: [["unbonusedRecent", "Pendentes de abono mais recentes"], ["unbonused", "Pendentes de abono mais antigas"], ["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]],
+      defaultSort: "unbonusedRecent"
+    },
+    portaria: {
+      statuses: [
+        { value: "all", label: "Todas" },
+        { value: "gate", label: "Aguardando saída", test: (record, stage) => stage === "gate" },
+        { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
+        { value: "exitedToday", label: "Saíram hoje", test: (record, stage) => stage === "exited" && localDay(record.exitConfirmedAt) === today() },
+        { value: "exited", label: "Saída confirmada", test: (record, stage) => stage === "exited" }
+      ],
+      sorts: BASIC_SORTS
+    },
     dp: {
       statuses: [
         { value: "all", label: "Todas" },
@@ -55,6 +111,8 @@
 
   let config = null;
   const bars = [];
+  const defaultSort = () => config?.defaultSort || "recent";
+  const isClean = (bar) => bar.status.value === "all" && bar.period.value === "any" && bar.sort.value === defaultSort() && !bar.search.value;
 
   const legacyRow = (search) => search.nextElementSibling?.classList.contains("date-filter") ? search.nextElementSibling : null;
 
@@ -68,7 +126,7 @@
       search._sortSelect.value = bar.sort.value;
       search._sortTouched = true;
     }
-    bar.clear.hidden = bar.status.value === "all" && bar.period.value === "any" && bar.sort.value === "recent" && !search.value;
+    bar.clear.hidden = isClean(bar);
   }
 
   // Redesenha a lista (a tela já escuta o "input" do campo de busca; a paginação volta para a página 1).
@@ -167,14 +225,14 @@
     bar.clear.addEventListener("click", () => {
       search.value = "";
       bar.status.value = "all";
-      bar.sort.value = "recent";
+      bar.sort.value = defaultSort();
       closeNative(bar);
       setPeriod(bar, "any");
       apply(bar);
       statusChanged();
     });
     // Digitar na busca também acende o "Limpar filtros".
-    search.addEventListener("input", () => { if (config) bar.clear.hidden = bar.status.value === "all" && bar.period.value === "any" && bar.sort.value === "recent" && !search.value; });
+    search.addEventListener("input", () => { if (config) bar.clear.hidden = isClean(bar); });
     search._filterBar = bar;
     bars.push(bar);
     return bar;
@@ -197,7 +255,7 @@
         bar.status.innerHTML = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
         bar.sort.innerHTML = config.sorts.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
         bar.status.value = "all";
-        bar.sort.value = "recent";
+        bar.sort.value = defaultSort();
         setPeriod(bar, "any");
         write(bar);
       } else {
@@ -223,6 +281,7 @@
   // Cartão do resumo: aplica a situação nas duas listas (ou tira, com "all").
   function setStatusAll(value) {
     if (!config) return;
+    value = config.aliases?.[value] || value;
     bars.forEach((bar) => {
       if (bar.el.hidden) return;
       bar.status.value = config.statuses.some((item) => item.value === value) ? value : "all";
@@ -238,5 +297,7 @@
     return values.length === 1 && values[0] !== "all" ? values[0] : null;
   }
 
-  window.portalFilterBar = Object.freeze({ use, active, status, matchesStatus, setStatusAll, sharedStatus });
+  const aliases = () => config?.aliases || {};
+
+  window.portalFilterBar = Object.freeze({ use, active, status, matchesStatus, setStatusAll, sharedStatus, aliases });
 })();

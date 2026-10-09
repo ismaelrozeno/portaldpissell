@@ -68,6 +68,9 @@
     return signature?.method === "biometria" ? signature : null;
   };
   const signedCount = (sheet) => (sheet.participants || []).filter((person) => signatureOf(sheet, person)).length;
+  // Saída de cada participante, marcada um por um na portaria (js/features/collective-exit.js).
+  const exitOf = (sheet, person) => (person && sheet.participantExits?.[person.matricula]) || null;
+  const exitedCount = (sheet) => (sheet.participants || []).filter((person) => exitOf(sheet, person)).length;
   // Digital + hora da assinatura: cada assinatura tem um desenho próprio, como na liberação individual.
   const bioSeed = (signature) => `${signature.fingerprintHash || signature.matricula}|${signature.signedAt || ""}`;
 
@@ -115,7 +118,9 @@
         // Nome do colaborador ao lado, como assinatura (igual à folha individual).
         ? `<span class="cs-bio">${window.portalFingerprint ? window.portalFingerprint.svg(bioSeed(signature), 22) : ""}<small>Assinado por digital<br>${esc(formatDateTime(signature.signedAt))}</small><i class="cs-bio-name">${esc(signature.nome || person.nome || "")}</i></span>`
         : "";
-      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
+      const exit = exitOf(sheet, person);
+      const exitTime = exit ? new Date(exit.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}${exit ? `<small class="cs-exit">saiu às ${esc(exitTime)}</small>` : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
     return `
       <header class="cs-head">
@@ -288,7 +293,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=e38cfae4", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=18c6d4d9", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
@@ -351,5 +356,5 @@ O carimbo será removido.`)) return;
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isConcluded, STAGES, signatureOf, signedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
 })();

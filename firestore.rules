@@ -145,10 +145,14 @@ service cloud.firestore {
         (isEngineer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
           ["engineer", "engineerRole", "engineerDecisionAt", "bonusStatus", "hours", "stage", "status", "engineerUndoneAt", "engineerUndoneBy",
            "dpSigner", "dpRole", "dpDecisionAt", "refusedBy", "refusedAt", "refusalReasons", "refusalReason"])) ||
-        // A portaria só confirma a saída (assina como portaria) de uma folha já autorizada pelo DP.
+        // A portaria marca a saída de cada colaborador (participantExits), um por um, numa folha autorizada pelo DP...
+        (isPorter() && resource.data.get("stage", "") == "gate" &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["participantExits"])) ||
+        // ...e só confirma a saída da folha (assina como portaria) depois que todos os colaboradores saíram.
         (isPorter() && resource.data.get("stage", "") == "gate" && request.resource.data.stage == "exited" &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-            ["stage", "exitConfirmedBy", "exitConfirmedRole", "exitConfirmedAt"])) ||
+            ["stage", "exitConfirmedBy", "exitConfirmedRole", "exitConfirmedAt"]) &&
+          resource.data.get("participantExits", {}).size() >= resource.data.get("participants", []).size()) ||
         // Lixeira: qualquer perfil só põe/tira o PRÓPRIO id nas listas "hiddenFor" e "purgedFor".
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["hiddenFor", "purgedFor"]) &&
           onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor"))) &&

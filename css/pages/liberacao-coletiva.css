@@ -99,3 +99,6 @@
 .cs-list th:nth-child(4) { width: 48%; }
 .cs-bio small { flex: none; }
 .cs-bio-name { flex: 1; min-width: 0; margin-left: 4px; color: #111; font-family: Arial, sans-serif; font-size: 12px; font-style: italic; line-height: 1.15; }
+
+/* Hora em que o colaborador passou pela portaria (saída marcada um por um) */
+.cs-list .cs-exit { display: block; color: #17613b; font-size: 9px; font-weight: 700; text-transform: uppercase; }

@@ -222,9 +222,7 @@
       }
       // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
       if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", `Colaborador <b>${short(release.employeeSignature.nome || release.name)}</b> · assinou por digital`));
-      // Depois da saída confirmada não dá mais para colher a digital: o aviso diz isso em vez de parecer pendente.
-      else if (activeProfileKey === "dp" && stage === "exited") chips.push(chip("off", "Digital do colaborador: não assinou · saída já confirmada", "A digital só pode ser colhida até a portaria confirmar a saída. Depois disso, a liberação fica fechada para assinatura."));
-      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando", "O colaborador assina com a digital no DP até a portaria confirmar a saída."));
+      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando", "O colaborador assina com a digital no DP, inclusive depois que a portaria confirmou a saída."));
     }
     return `<div class="sig-chips">${chips.join("")}</div>`;
   }
@@ -460,7 +458,7 @@
     // Perfil com barra de filtros: o cartão escolhe a Situação nas duas listas (individual e coletiva), cada uma na sua barra.
     const filterBar = window.portalFilterBar;
     if (filterBar?.active()) {
-      const next = filterBar.sharedStatus() === key ? "all" : key;
+      const next = filterBar.sharedStatus() === (filterBar.aliases()[key] || key) ? "all" : key;
       // Sai da lixeira/concluídas: o cartão filtra a lista principal.
       if (trashMode || doneMode) {
         trashMode = false;
@@ -758,7 +756,8 @@
   function highlightStatCard() {
     const filterBar = window.portalFilterBar;
     const current = filterBar?.active() ? filterBar.sharedStatus() : statFilter;
-    elements.statCards.forEach((card) => card.classList.toggle("is-active", card.dataset.stat === current));
+    const aliases = filterBar?.aliases?.() || {};
+    elements.statCards.forEach((card) => card.classList.toggle("is-active", !!current && (aliases[card.dataset.stat] || card.dataset.stat) === current));
   }
   document.addEventListener("portal-filter-status", highlightStatCard);
 

@@ -54,7 +54,12 @@
     if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${esc(sheet.abonoLaunchedBy || "DP")}</b>`));
     else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
-    else if (stage === "gate") chips.push(chip("wait", "Portaria: aguardando saída"));
+    else if (stage === "gate") {
+      // A portaria marca a saída de cada colaborador; a folha só fecha quando todos saírem.
+      const out = sheetApi().exitedCount(sheet);
+      const total = (sheet.participants || []).length;
+      chips.push(chip(out ? "info" : "wait", `Portaria: <b>${out} de ${total}</b> ${out === 1 ? "saiu" : "saíram"}`));
+    }
     // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
     const people = (sheet.participants || []).length;
     const signedBio = sheetApi().signedCount(sheet);
@@ -71,12 +76,12 @@
     const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage) && !retroactive
       ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}`
       : "";
-    // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, enquanto a folha está em andamento.
-    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "registered"].includes(stage) && signedBio < people
+    // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, inclusive depois da saída confirmada na portaria.
+    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "exited", "registered"].includes(stage) && signedBio < people
       ? btn("row-bio-btn", "bio", "Assinar com digital")
       : "";
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
-      ? btn("gate-confirm-btn", "confirm-exit", "Confirmar saída")
+      ? btn("gate-confirm-btn", "exits", "Confirmar saídas")
       : "";
     // Recusar: só enquanto o engenheiro ainda não decidiu o abono (mesma regra das individuais).
     const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate", "registered"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
@@ -314,17 +319,12 @@
     }));
   }
 
-  // DP autoriza/nega a saída e assina na folha; a portaria confirma a saída e assina (mesmos campos das individuais).
+  // DP autoriza/nega a saída e assina na folha (a saída na portaria é um por um, em js/features/collective-exit.js).
   async function dpOrGate(sheet, action) {
     const now = new Date().toISOString();
     const who = session();
-    let changes;
-    if (action === "confirm-exit") {
-      changes = { stage: "exited", exitConfirmedBy: who?.name || "Portaria", exitConfirmedRole: who?.role || "Porteiro", exitConfirmedAt: now };
-    } else {
-      const authorize = action === "authorize";
-      changes = { status: authorize ? "authorized" : "denied", stage: authorize ? "gate" : "closed", dpRole: who?.role || "Departamento Pessoal", dpSigner: who?.name || "Departamento Pessoal", dpDecisionAt: now };
-    }
+    const authorize = action === "authorize";
+    const changes = { status: authorize ? "authorized" : "denied", stage: authorize ? "gate" : "closed", dpRole: who?.role || "Departamento Pessoal", dpSigner: who?.name || "Departamento Pessoal", dpDecisionAt: now };
     try {
       await store().update(sheet.id, changes);
     } catch (error) {
@@ -369,6 +369,7 @@
     const action = button.dataset.collective;
     if (action === "view") window.portalCollectiveSheet.show(sheet, { dpContext: profile === "dp", onChange: () => render(profile) });
     else if (action === "bio") window.portalCollectiveBiometric?.open(sheet, () => render(profile));
+    else if (action === "exits") window.portalCollectiveExit?.open(sheet, () => render(profile));
     else if (action === "approved" || action === "denied") {
       button.disabled = true;
       await decide(sheet, action);
@@ -395,23 +396,7 @@
           refusalReason: reasons.join(" e ")
         })
       });
-    } else if (action === "authorize" || action === "deny" || action === "confirm-exit") {
-      // A portaria confirma a saída de TODOS os colaboradores da folha: pergunta antes e lista quem foi autorizado.
-      if (action === "confirm-exit") {
-        const people = sheet.participants || [];
-        const names = people.map((person, i) => `${i + 1}. ${person.nome}${person.funcao ? ` — ${person.funcao}` : ""}`).join("\n");
-        const ok = await actions().ask({
-          title: `Confirmar a saída de ${people.length} ${people.length === 1 ? "colaborador" : "colaboradores"}?`,
-          message: `${sheet.motive}
-Autorizados pelo DP:
-
-${names}
-
-Confirme só se todos já saíram.`,
-          okText: "Confirmar saída"
-        });
-        if (!ok) return;
-      }
+    } else if (action === "authorize" || action === "deny") {
       button.disabled = true;
       await dpOrGate(sheet, action);
     } else if (action === "trash" || action === "restore" || action === "purge") {

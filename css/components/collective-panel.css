@@ -101,3 +101,11 @@
 .collective-bio-list button { flex: none; padding: .45rem .8rem; border-radius: .45rem; font-size: .8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .collective-bio-list button:disabled { opacity: .55; cursor: default; }
 .collective-bio-done { flex: none; color: #17613b; font-size: .8rem; font-weight: 700; white-space: nowrap; }
+
+/* Saída dos colaboradores da coletiva, um por um, na portaria (js/features/collective-exit.js) */
+.collective-exit-help { margin: 0 0 .6rem; color: #31465e; font-size: .8rem; line-height: 1.4; }
+.collective-bio-list li.is-out { background: #f2fbf5; border-color: #cfe9d9; }
+.collective-exit-done { display: flex; flex: none; align-items: center; gap: .5rem; }
+.collective-bio-list .collective-exit-undo { padding: .3rem .55rem; border: 1px solid #d5dde7; color: #617188; background: #fff; font-size: .72rem; font-weight: 600; }
+.collective-exit-buttons { flex-wrap: wrap; }
+.collective-exit-buttons button:disabled { opacity: .55; cursor: default; }

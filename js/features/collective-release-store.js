@@ -27,6 +27,10 @@
     async signParticipant(id, matricula, signature) {
       await collection().doc(id).update(new firebase.firestore.FieldPath("participantSignatures", String(matricula)), signature);
     },
+    // Saída de um colaborador na portaria (value = { at, by, byRole }); null desfaz a marcação.
+    async markExit(id, matricula, value) {
+      await collection().doc(id).update(new firebase.firestore.FieldPath("participantExits", String(matricula)), value || firebase.firestore.FieldValue.delete());
+    },
     // Quem vê o quê: o engenheiro, só o que foi enviado a ele (ou a "todos"); DP e administrador, tudo;
     // encarregado e demais solicitantes, só o que eles mesmos enviaram.
     // profileKey: perfil aberto no Meu portal. O administrador troca de perfil e, como nas individuais, vê pelo perfil
