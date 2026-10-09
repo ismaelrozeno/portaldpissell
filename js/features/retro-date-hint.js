@@ -2,6 +2,7 @@
 // com data anterior a hoje, ou com entrada E saída marcadas (o colaborador não bateu o ponto), a movimentação já
 // aconteceu. Depois do engenheiro a liberação já fica registrada, sem autorização de saída do DP e sem portaria
 // (regra em portalReleaseFlow.isRetroactive / collective-release-sheet.js). Só avisa: o que foi marcado continua valendo.
+// Também deixa o Horário opcional quando entrada e saída estão marcadas.
 (() => {
   const pad = (n) => String(n).padStart(2, "0");
   const today = () => {
@@ -22,12 +23,17 @@
       return marked.includes("entrada") && marked.includes("saida");
     };
     const after = "Depois do engenheiro, a liberação fica registrada como <b>retroativa</b>, sem autorização de saída do DP e sem portaria.";
+    // Com entrada E saída marcadas, o Horário não é obrigatório (some o asterisco); com uma só, volta a ser.
+    const timeInput = document.querySelector("#release-time");
+    const timeStar = document.querySelector('label[for="release-time"] span[aria-hidden="true"]');
     const update = () => {
       const pastDate = !!input.value && input.value < today();
       hint.hidden = !pastDate && !both();
       hint.innerHTML = both()
         ? `<b>Entrada e saída marcadas:</b> o colaborador não bateu o ponto. ${after}`
         : `<b>Data retroativa:</b> o colaborador já saiu. ${after}`;
+      if (timeInput) timeInput.required = !both();
+      if (timeStar) timeStar.hidden = both();
     };
     ["input", "change"].forEach((type) => input.addEventListener(type, update));
     document.querySelectorAll('input[name="movement"]').forEach((box) => box.addEventListener("change", update));
