@@ -350,3 +350,9 @@ body.dash[data-page="coletivas"] #collective-section .records-toolbar { margin: 
 
 /* Aba escondida para o perfil (ex.: Atalhos na portaria): some também o espaço dela na barra de baixo */
 .dash-nav-list > li:has(> .dash-nav-item[hidden]) { display: none; }
+
+/* Nova liberação (individual e coletiva) com o menu do dashboard: a barra de abas continua embaixo no celular.
+   O botão "+" não aparece (a pessoa já está criando uma liberação) e o formulário mantém o visual dele. */
+body.dash.release-page { background: var(--d-page); }
+body.dash .release-content { min-height: 0; padding-top: 0; padding-bottom: 0; }
+body.dash.release-page .dash-fab, body.dash.release-page .dash-fab-menu { display: none !important; }
