@@ -195,7 +195,11 @@
     const add = (list, title, note, page, status) => items.push({ n: list.length, title, note, page, status });
     if (role === "dp") {
       add(groups.dp, "aguardando sua autorização", "o engenheiro já assinou o abono", "individuais", statusFor.dp);
-      add(count((x) => live(x.stage) && (x.kind === "ind" ? x.r.employeeSignature?.method !== "biometria" : (col?.signedCount(x.r) || 0) < x.people)), "com digital pendente", "o colaborador ainda não assinou com a digital", "individuais");
+      // Digital pendente conta PESSOAS, como o "Digitais pendentes" do BI Dados: cada individual é 1 e cada coletiva
+      // soma quem da lista ainda não assinou.
+      const missingBio = (x) => (x.kind === "ind" ? (x.r.employeeSignature?.method !== "biometria" ? 1 : 0) : Math.max(0, x.people - (col?.signedCount(x.r) || 0)));
+      const bioPeople = all.filter((x) => live(x.stage)).reduce((sum, x) => sum + missingBio(x), 0);
+      items.push({ n: bioPeople, title: bioPeople === 1 ? "colaborador com digital pendente" : "colaboradores com digital pendente", note: "ainda não assinaram com a digital", page: "individuais" });
       add(count((x) => x.r.bonusStatus === "approved" && !x.r.abonoLaunchedAt), "abonos por lançar no RM", "abonados pelo engenheiro, sem o carimbo do DP", "individuais", statusFor.toLaunch);
     } else if (role === "engenheiro") {
       add(groups.engineer, "aguardando seu abono", "marque abonado ou não abonado", "individuais", statusFor.engineer);
