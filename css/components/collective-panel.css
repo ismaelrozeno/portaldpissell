@@ -109,3 +109,9 @@
 .collective-bio-list .collective-exit-undo { padding: .3rem .55rem; border: 1px solid #d5dde7; color: #617188; background: #fff; font-size: .72rem; font-weight: 600; }
 .collective-exit-buttons { flex-wrap: wrap; }
 .collective-exit-buttons button:disabled { opacity: .55; cursor: default; }
+/* Celular: em quem já saiu, o "✓ Saiu" e o "Desfazer" descem para baixo do nome (o nome não fica espremido). */
+#collective-exit-list:focus { outline: none; }
+@media (max-width: 520px) {
+  .collective-bio-list li.is-out { flex-wrap: wrap; }
+  .collective-bio-list li.is-out .collective-exit-done { width: 100%; justify-content: space-between; }
+}
