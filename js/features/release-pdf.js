@@ -58,149 +58,145 @@
       rule(x, x + w, y + 4);
     };
 
-    // Moldura
-    doc.setDrawColor(184);
+    // ===== Folha v2 (quadros): MESMAS medidas da tela (css/components/release-preview.css, .release-sheet-v2) =====
+    const INK = [20, 33, 47];
+    const MUTED = [91, 104, 120];
+    const box = (x, y, w, h, fill) => {
+      doc.setDrawColor(154, 166, 180);
+      doc.setLineWidth(1 * k);
+      doc.setLineDashPattern([], 0);
+      if (fill) { doc.setFillColor(...fill); doc.rect(X(x), Y(y), w * k, h * k, "FD"); } else doc.rect(X(x), Y(y), w * k, h * k);
+    };
+    const label = (value, x, y, align) => { font("bold", 10.5, MUTED); text(value, x, y, align ? { align } : undefined); };
+    const value = (val, x, y, maxWidth, size = 15) => { font("bold", size, INK); text(fit(val, maxWidth), x, y); };
+
+    // Moldura clara da folha
+    doc.setDrawColor(200);
     doc.setLineWidth(0.2);
     doc.rect(x0, y0, widthMm, HEIGHT * k);
 
-    // Cabeçalho
-    font("bold", 22, [18, 98, 160]);
-    text("DIRECIONAL", left, 58);
-    font("normal", 16);
-    text("AUTORIZAÇÃO DE SAÍDA DE COLABORADORES", 470, 50, { align: "center" });
-    font("bold", 12);
-    text("DA FRENTE DE SERVIÇO", 470, 70, { align: "center" });
-    rule(left, right, 84);
-
-    // Obra e data
-    font("bold", 14);
-    text("OBRA:", left, 110);
-    font("normal", 14);
-    text("369", left + 48, 110);
-    font("italic", 14);
-    text(fields.date, right, 110, { align: "right" });
-    const dateWidth = width(fields.date);
-    font("bold", 14);
-    text("DATA:", right - dateWidth - 8, 110, { align: "right" });
-    rule(left, right, 124);
+    // Cabeçalho: marca, título e quadros de obra/data; linha azul forte embaixo
+    font("bold", 24, [18, 98, 160]);
+    text("DIRECIONAL", 24, 61);
+    font("bold", 16, [18, 53, 95]);
+    text("Autorização de saída de colaboradores", 415, 50, { align: "center" });
+    font("bold", 11, MUTED);
+    text("da frente de serviço", 415, 66, { align: "center" });
+    box(600, 26, 70, 54);
+    box(670, 26, 100, 54);
+    label("Obra", 610, 43);
+    value("369", 610, 64, 52);
+    label("Data", 680, 43);
+    value(fields.date, 680, 64, 82);
+    doc.setDrawColor(18, 53, 95);
+    doc.setLineWidth(2 * k);
+    doc.line(X(24), Y(86), X(770), Y(86));
 
     // Colaborador e função
-    font("bold", 14);
-    text("O Sr.:", left, 150);
-    filled(fields.name, left + 50, 150, 320, 14);
-    font("bold", 14);
-    text("Função:", 430, 150);
-    filled(fields.role, 490, 150, right - 490, 14);
-    rule(left, right, 168);
+    box(24, 96, 496, 52);
+    box(520, 96, 250, 52);
+    label("Colaborador", 34, 113);
+    value(fields.name, 34, 135, 476, 16);
+    label("Função", 530, 113);
+    value(fields.role, 530, 135, 230, 16);
 
-    // Horário
-    font("bold", 14);
-    text("Está autorizado no dia de hoje a partir das:", left, 194);
-    filled(fields.time, 370, 194, 130, 14);
-    font("normal", 14);
-    text("hs", right, 194, { align: "right" });
-    rule(left, right, 210);
-
-    // Movimentação e motivo (☒ / ☐ desenhados como caixas: a fonte padrão do PDF não tem esses símbolos)
-    font("bold", 13);
-    text("Movimentação:", left, 236);
-    font("normal", 13);
-    text(fields.movement, left + 104, 236);
-    font("bold", 13);
-    text("Motivo da saída:", 290, 236);
-    let cursor = 400;
+    // Horário, movimentação, motivo e pedido
+    [[24, 162], [186, 162], [348, 252], [600, 170]].forEach(([x, w]) => box(x, 148, w, 52));
+    label("Saída a partir das", 34, 165);
+    value(`${fields.time} h`, 34, 186, 142);
+    label("Movimentação", 196, 165);
+    value(fields.movement, 196, 186, 142);
+    label("Motivo da saída", 358, 165);
+    // ☒ / ☐ desenhados como caixas (a fonte padrão do PDF não tem esses símbolos)
+    let cursor = 358;
     for (const part of String(fields.reason).split(/(☒|☐)/)) {
       if (part === "☒" || part === "☐") {
-        const size = 10;
-        doc.setDrawColor(34);
-        doc.setLineWidth(0.2);
-        doc.setLineDashPattern([], 0);
-        doc.rect(X(cursor), Y(236 - size + 1), size * k, size * k);
+        const size = 11;
+        doc.setDrawColor(...INK);
+        doc.setLineWidth(1 * k);
+        doc.rect(X(cursor), Y(186 - size + 1), size * k, size * k);
         if (part === "☒") {
-          doc.line(X(cursor), Y(236 - size + 1), X(cursor + size), Y(237));
-          doc.line(X(cursor + size), Y(236 - size + 1), X(cursor), Y(237));
+          doc.line(X(cursor), Y(186 - size + 1), X(cursor + size), Y(187));
+          doc.line(X(cursor + size), Y(186 - size + 1), X(cursor), Y(187));
         }
-        cursor += size + 4;
-      } else if (part) {
-        font("normal", 13);
-        text(part.trim() ? part.replace(/^\s+/, "") : "", cursor, 236);
-        cursor += width(part.replace(/^\s+/, "")) + (part.trim() ? 6 : 8);
+        cursor += size + 5;
+      } else if (part.trim()) {
+        font("bold", 15, INK);
+        const piece = part.trim();
+        text(piece, cursor, 186);
+        cursor += width(piece) + 12;
       }
     }
-    // Pedido do encarregado (o que ele marcou no formulário) fica na mesma linha do motivo da saída —
-    // ali onde antes aparecia "release.hours" cru, que duplicava (e às vezes contradizia) o resultado
-    // já mostrado embaixo em "Tratamento das horas".
-    if (fields.bonusRequest) {
-      font("normal", 13);
-      const valueWidth = width(fields.bonusRequest);
-      text(fields.bonusRequest, right, 236, { align: "right" });
-      font("bold", 13);
-      text("Pedido:", right - valueWidth - 4, 236, { align: "right" });
-    }
+    label("Pedido do encarregado", 610, 165);
+    value(fields.bonusRequest || "—", 610, 186, 150);
 
-    // Observação
-    font("bold", 13);
-    text("Motivo / observação:", left, 266);
-    font("normal", 13);
-    wrap(fields.observation, right - left, 2).forEach((row, index) => text(row, left, 288 + index * 17));
-    rule(left, right, 318, true);
-    rule(left, right, 326);
-
-    // Tratamento das horas
-    font("bold", 13);
-    text("Tratamento das horas:", left, 348);
-    font("bold", 17, TONES[fields.bonusTone] || TONES.pending);
-    text(fields.bonus, left, 372);
-    rule(left, right, 386);
+    // Observação e tratamento das horas (quadro colorido)
+    const HOURS_FILL = { approved: [233, 247, 239], denied: [253, 236, 237], pending: [255, 247, 232] };
+    box(24, 200, 536, 78);
+    box(560, 200, 210, 78, HOURS_FILL[fields.bonusTone] || HOURS_FILL.pending);
+    label("Motivo / observação", 34, 217);
+    font("normal", 13.5, INK);
+    wrap(fields.observation, 516, 2).forEach((row, index) => text(row, 34, 238 + index * 18));
+    label("Tratamento das horas", 570, 217);
+    font("bold", fields.bonusTone === "pending" ? 18 : 22, TONES[fields.bonusTone] || TONES.pending);
+    text(fit(fields.bonus, 190), 570, 249);
 
     // Assinatura do colaborador
-    font("normal", 13);
-    text("Assinatura do colaborador:", left, 412);
+    box(24, 278, 746, 74);
+    label("Assinatura do colaborador", 34, 295);
     if (fields.employeeBio && window.portalFingerprint) {
       const bio = fields.employeeBio;
-      doc.setDrawColor(17);
+      doc.setDrawColor(...INK);
       doc.setLineWidth(0.12);
       window.portalFingerprint.strokes(bio.seed).forEach((run) => {
-        for (let i = 1; i < run.length; i += 1) doc.line(X(214 + run[i - 1][0] * 32), Y(389 + run[i - 1][1] * 32), X(214 + run[i][0] * 32), Y(389 + run[i][1] * 32));
+        for (let i = 1; i < run.length; i += 1) doc.line(X(34 + run[i - 1][0] * 38), Y(300 + run[i - 1][1] * 38), X(34 + run[i][0] * 38), Y(300 + run[i][1] * 38));
       });
-      font("normal", 8, [17, 17, 17]);
-      ["Assinado biometricamente por digital", bio.name.toUpperCase(), bio.when].forEach((row, i) => text(row, 252, 398 + i * 11));
-      font("italic", 14, [17, 17, 17]);
-      text(bio.name, 440, 416);
+      font("normal", 9, [59, 74, 92]);
+      ["ASSINADO BIOMETRICAMENTE POR DIGITAL", String(bio.name).toUpperCase(), bio.when].forEach((row, i) => text(row, 90, 314 + i * 11));
+      font("italic", 18, INK, "times");
+      text(fit(bio.name, 330), 730, 330, { align: "right" });
     } else if (fields.employeeSignature) {
       font("bold", 12, [23, 97, 59]);
-      text(fields.employeeSignature, 200, 411);
+      text(fields.employeeSignature, 34, 330);
     } else {
-      rule(200, 560, 414);
+      doc.setDrawColor(...INK);
+      doc.setLineWidth(1 * k);
+      doc.line(X(200), Y(340), X(560), Y(340));
     }
-    rule(left, right, 428);
 
-    // Assinaturas: nome em itálico (a fonte cursiva da imagem não existe no PDF)
+    // Assinaturas: solicitante, engenheiro, DP e portaria
     const columns = [
-      ["SOLICITANTE (ENCARREGADO)", fields.requester, fields.requesterTime],
-      ["ENGENHEIRO", fields.engineer, fields.engineerTime],
-      ["DEPARTAMENTO PESSOAL", fields.dp, fields.dpTime],
-      ["PORTARIA", fields.gate, fields.gateTime]
+      ["Solicitante (encarregado)", fields.requester, fields.requesterTime],
+      ["Engenheiro", fields.engineer, fields.engineerTime],
+      ["Departamento Pessoal", fields.dp, fields.dpTime],
+      ["Portaria", fields.gate, fields.gateTime]
     ];
-    const columnWidth = (right - left) / 4;
+    const columnWidth = 746 / 4;
     columns.forEach(([title, name, when], index) => {
-      const center = left + columnWidth * index + columnWidth / 2;
-      font("bold", 8.5);
-      text(title, center, 448, { align: "center" });
-      font("italic", 14, [17, 17, 17], "times");
-      const rows = wrap(name, columnWidth - 12, 2);
-      rows.forEach((row, i) => text(row, center, 472 + i * 16, { align: "center" }));
+      const x = 24 + columnWidth * index;
+      const center = x + columnWidth / 2;
+      box(x, 352, columnWidth, 118);
+      font("bold", 10, MUTED);
+      text(title, center, 369, { align: "center" });
+      font("italic", 16, INK, "times");
+      wrap(name, columnWidth - 20, 2).forEach((row, i) => text(row, center, 399 + i * 20, { align: "center" }));
+      doc.setDrawColor(154, 166, 180);
+      doc.setLineWidth(1 * k);
+      doc.line(X(center - columnWidth * 0.4), Y(427), X(center + columnWidth * 0.4), Y(427));
       if (when) {
-        font("normal", 9, [68, 68, 68]);
-        text(when, center, 472 + rows.length * 16 + 4, { align: "center" });
+        font("normal", 10, MUTED);
+        text(when, center, 443, { align: "center" });
       }
     });
+    font("normal", 10, [138, 149, 163]);
+    text("Liberação registrada no Portal DP · Obra 369", 24, 492);
 
     // Carimbo "lançado no RM", inclinado 14° como na tela
     if (fields.launched) {
       const angle = (-14 * Math.PI) / 180;
-      const cx = 640;
-      const cy = 358;
+      // Sobre o quadro do tratamento das horas (mesmo lugar da tela)
+      const cx = 668;
+      const cy = 236;
       const at = (dx, dy) => [X(cx + dx * Math.cos(angle) - dy * Math.sin(angle)), Y(cy + dx * Math.sin(angle) + dy * Math.cos(angle))];
       const red = [198, 40, 53];
       doc.setDrawColor(...red);

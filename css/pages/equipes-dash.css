@@ -1,0 +1,84 @@
+/* Equipes no visual do dashboard (Equipes.html com o menu de js/features/dash-shell.js).
+   Mais simples para o estagiário: dois passos de verdade no topo, "escolher à esquerda, montar à direita" no
+   computador, lista de encarregados compacta com busca, e o vínculo de estagiário/engenheiro recolhido. */
+body.dash.teams-page { --tm-blue: #1f5fbf; }
+body.dash.teams-page .teams-back { display: none; }
+body.dash.teams-page .teams-kicker { color: var(--d-muted); font-size: .85rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body.dash.teams-page .teams-heading { align-items: flex-start; margin-bottom: 1rem; }
+body.dash.teams-page .teams-heading h1 { margin: .15rem 0 .3rem; color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; }
+body.dash.teams-page .teams-heading p { color: var(--d-muted); max-width: 60ch; }
+body.dash.teams-page .teams-button { border-radius: var(--d-radius-sm); background: var(--d-ink); }
+body.dash.teams-page .teams-button:hover:not(:disabled) { background: #1b3352; }
+body.dash.teams-page #export-teams { color: var(--d-ink); background: var(--d-surface); border: 1px solid var(--d-line); }
+body.dash.teams-page #export-teams:hover { background: #f4f7fa; }
+
+/* Os dois passos */
+.teams-steps { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.teams-step { display: flex; align-items: center; gap: .6rem; padding: .7rem .8rem; border: 1px solid var(--d-line, #dde3ea); border-radius: 12px; color: var(--d-muted, #66768a); background: var(--d-surface, #fff); font-weight: 600; font-size: .95rem; }
+.teams-step b { display: grid; flex: none; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--d-muted, #66768a); background: #e8edf2; font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.05rem; }
+.teams-step.is-current { border-color: var(--d-accent, #ef7a0e); color: var(--d-ink, #0e1f33); box-shadow: 0 0 0 3px rgba(239, 122, 14, .15); }
+.teams-step.is-current b { color: #fff; background: var(--d-accent, #ef7a0e); }
+.teams-step.is-done b { color: #fff; background: var(--d-ok, #1e9e5a); }
+
+/* Cartões (painéis) */
+body.dash.teams-page .teams-card { padding: 1rem; border-radius: var(--d-radius-lg); box-shadow: none; }
+body.dash.teams-page .teams-eyebrow { display: none; }
+body.dash.teams-page .teams-card h2 { margin: 0 0 .25rem; color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.3rem; font-weight: 700; }
+body.dash.teams-page .teams-note { color: var(--d-muted); font-size: .88rem; }
+.foreman-search { display: block; width: 100%; margin: .6rem 0 .2rem; padding: .65rem .8rem; border: 1px solid var(--d-line, #dde3ea); border-radius: var(--d-radius-sm, 8px); background: #fff; font-size: .95rem; }
+.foreman-search:focus { outline: 2px solid rgba(239, 122, 14, .45); outline-offset: 1px; }
+
+/* Lista de encarregados compacta (uma linha por encarregado) */
+body.dash.teams-page .foreman-grid { grid-template-columns: 1fr; gap: .5rem; margin-top: .6rem; }
+body.dash.teams-page .foreman-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name count" "linked linked" "badges badges" "actions actions" "assign assign"; gap: .2rem .6rem; padding: .75rem .85rem; border: 1px solid var(--d-line); border-radius: var(--d-radius); }
+body.dash.teams-page .foreman-card h3 { grid-area: name; align-self: center; font-size: 1rem; font-weight: 700; color: var(--d-ink); }
+body.dash.teams-page .foreman-meta { grid-area: count; align-self: center; padding: .1rem .55rem; border-radius: 999px; background: #eef2f6; color: var(--d-ink-2); font-size: .8rem; white-space: nowrap; }
+body.dash.teams-page .foreman-meta strong { color: var(--d-ink); }
+body.dash.teams-page .foreman-linked { grid-area: linked; color: var(--d-muted); font-size: .82rem; }
+body.dash.teams-page .foreman-badges { grid-area: badges; }
+body.dash.teams-page .foreman-badges:empty { display: none; }
+body.dash.teams-page .foreman-actions { grid-area: actions; margin: 0; padding-top: .35rem; }
+body.dash.teams-page .foreman-actions:empty { display: none; }
+body.dash.teams-page .foreman-actions button { padding: .6rem .8rem; border-radius: var(--d-radius-sm); font-size: .88rem; }
+body.dash.teams-page .foreman-open { border: 0; color: #fff; background: var(--d-accent); }
+body.dash.teams-page .foreman-open:hover { background: #d96d08; }
+body.dash.teams-page .foreman-card .foreman-link { background: var(--d-ok); }
+body.dash.teams-page .foreman-card.is-selected { border-color: var(--d-accent); background: #fffaf4; box-shadow: 0 0 0 3px rgba(239, 122, 14, .15); }
+body.dash.teams-page .foreman-card.is-mine { border-color: #9fd3b5; background: #f3fbf6; }
+body.dash.teams-page .foreman-badge-view { background: var(--d-accent); }
+/* Vincular estagiário/engenheiro (DP e administrador): recolhido */
+body.dash.teams-page .foreman-assign { grid-area: assign; margin-top: .3rem; padding-top: .45rem; border-top: 1px dashed var(--d-line); }
+body.dash.teams-page .foreman-assign-title { display: flex; align-items: center; gap: .4rem; margin: 0; color: var(--d-ink-2); font-size: .82rem; font-weight: 600; letter-spacing: 0; text-transform: none; cursor: pointer; list-style: none; }
+body.dash.teams-page .foreman-assign-title::-webkit-details-marker { display: none; }
+body.dash.teams-page .foreman-assign-title::before { content: "+"; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #eef2f6; font-weight: 700; }
+body.dash.teams-page .foreman-assign[open] .foreman-assign-title::before { content: "–"; }
+body.dash.teams-page .foreman-assign[open] .foreman-assign-title { margin-bottom: .4rem; }
+
+/* Montar a equipe */
+body.dash.teams-page .teams-summary { margin: .3rem 0 .6rem; color: var(--d-ink-2); font-size: .9rem; }
+body.dash.teams-page .teams-toolbar input, body.dash.teams-page .teams-toolbar select { padding: .6rem .7rem; border-radius: var(--d-radius-sm); font-size: .92rem; }
+body.dash.teams-page .teams-bulk .teams-button { padding: .6rem .9rem; font-size: .88rem; }
+body.dash.teams-page .teams-bulk #bulk-add { background: var(--d-ok); }
+body.dash.teams-page .teams-list { max-height: none; gap: .45rem; }
+body.dash.teams-page .team-item { padding: .65rem .75rem; border-radius: var(--d-radius); }
+body.dash.teams-page .team-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--d-accent); }
+body.dash.teams-page .team-item strong { font-size: .95rem; }
+body.dash.teams-page .team-item small { font-size: .8rem; }
+body.dash.teams-page .team-item button { padding: .5rem .8rem; border-radius: var(--d-radius-sm); font-size: .82rem; }
+
+/* Computador: escolher à esquerda, montar à direita */
+@media (min-width: 1100px) {
+  body.dash.teams-page #teams-app { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  body.dash.teams-page #foremen-card { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; margin: 0; }
+  body.dash.teams-page #foremen-card .foreman-grid { overflow-y: auto; padding-right: .2rem; }
+  body.dash.teams-page #manage-card { margin: 0; }
+  body.dash.teams-page .teams-steps { max-width: 760px; }
+}
+@media (max-width: 600px) {
+  .teams-step { padding: .6rem .65rem; font-size: .85rem; }
+  .teams-step b { width: 26px; height: 26px; }
+  body.dash.teams-page .teams-heading .teams-button { width: 100%; }
+}
+/* "Tirar selecionados" legível (botão claro com texto vermelho) */
+body.dash.teams-page .teams-button.teams-button-light { color: #8b2930; background: #fff; border: 1px solid #e0a2a6; }
+body.dash.teams-page .teams-button.teams-button-light:hover:not(:disabled) { background: #fff5f5; }

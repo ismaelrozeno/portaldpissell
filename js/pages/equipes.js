@@ -93,14 +93,14 @@
       .filter((user) => ["estagiario_engenharia", "engenheiro"].includes(user.roleValue) && !same(user.linkedForeman, name))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     const safe = escapeHtml(name);
-    return `<div class="foreman-assign">
-      <div class="foreman-assign-title">Estagiário / engenheiro desta equipe</div>
+    return `<details class="foreman-assign">
+      <summary class="foreman-assign-title">Estagiário ou engenheiro desta equipe (${linkedHere.length})</summary>
       ${linkedHere.length ? linkedHere.map((user) => `<div class="foreman-assign-row"><span>${roleWord(user)}: <strong>${escapeHtml(user.name)}</strong></span><button type="button" class="foreman-unlink" data-unassign="${escapeHtml(user.id)}" aria-label="Tirar ${escapeHtml(user.name)}">Tirar</button></div>`).join("") : '<div class="foreman-assign-empty">Nenhum vinculado.</div>'}
       <div class="foreman-assign-add">
         <select data-assign-select="${safe}" aria-label="Estagiário ou engenheiro para vincular a ${safe}"><option value="">Vincular estagiário ou engenheiro…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${user.linkedForeman ? ` (hoje: ${escapeHtml(user.linkedForeman)})` : ""}</option>`).join("")}</select>
         <button type="button" class="foreman-link" data-assign="${safe}">Vincular</button>
       </div>
-    </div>`;
+    </details>`;
   }
 
   function renderForemen() {
@@ -108,6 +108,10 @@
     const mineName = isLinked || isDp ? linkedForeman : "";
     let names = foremanNames();
     if (isForeman) names = names.filter((name) => same(name, session.name));
+    // Quem está vinculado vê o encarregado dele primeiro; a busca filtra pelo nome.
+    if (mineName) names = [...names.filter((name) => same(name, mineName)), ...names.filter((name) => !same(name, mineName))];
+    const term = fold($("#foreman-search")?.value || "");
+    if (term) names = names.filter((name) => fold(name).includes(term));
     $("#foremen-note").textContent = isForeman
       ? "Esta é a sua equipe."
       : canLink
@@ -130,7 +134,7 @@
       return `<article class="foreman-card${isMine ? " is-mine" : ""}${isOpen ? " is-selected" : ""}">
         <h3>${safe}</h3>
         <div class="foreman-badges">${badges}</div>
-        <div class="foreman-meta"><strong>${count}</strong> colaborador(es) na equipe</div>
+        <div class="foreman-meta" title="${count} colaborador(es) na equipe"><strong>${count}</strong> na equipe</div>
         <div class="foreman-linked">${people.length ? escapeHtml(people.join(" · ")) : "Sem estagiário ou engenheiro vinculado"}</div>
         <div class="foreman-actions">${actions}</div>
         ${canAssign ? assignHtml(name) : ""}
@@ -257,7 +261,15 @@
   function renderAll() {
     renderForemen();
     renderList();
+    // Passo 1 (escolher) ou 2 (montar), aceso no topo
+    const step = currentForeman() ? "2" : "1";
+    document.querySelectorAll(".teams-step").forEach((item) => {
+      item.classList.toggle("is-current", item.dataset.step === step);
+      item.classList.toggle("is-done", item.dataset.step < step);
+    });
+    $("#teams-app")?.setAttribute("data-step", step);
   }
+  $("#foreman-search")?.addEventListener("input", () => renderForemen());
 
   // ---------- Vincular / tirar ----------
   const byId = (matricula) => employees.find((employee) => employee.matricula === matricula);

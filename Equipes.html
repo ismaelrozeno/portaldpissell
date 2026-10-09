@@ -8,9 +8,14 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=fc8c3903">
   <link rel="stylesheet" href="css/pages/equipes.css?v=7f526f8a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=e91f9e41">
+  <link rel="stylesheet" href="css/pages/equipes-dash.css?v=9bc1f52f">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
-<body class="teams-page">
+<body class="teams-page" data-dash-shell="equipes">
   <div data-site-header></div>
   <main class="teams-content">
     <div class="container-xl">
@@ -26,12 +31,19 @@
       <p class="teams-result" id="teams-export-result" role="status" hidden></p>
       <p class="teams-denied" id="teams-denied" role="alert" hidden>Esta tela é do DP, do administrador, do estagiário, do engenheiro e do encarregado.</p>
 
+      <ol class="teams-steps" id="teams-steps" aria-label="Como montar uma equipe">
+        <li class="teams-step" data-step="1"><b>1</b><span>Escolha o encarregado</span></li>
+        <li class="teams-step" data-step="2"><b>2</b><span>Monte a equipe</span></li>
+      </ol>
+
       <div id="teams-app">
         <section class="teams-card" id="foremen-card" aria-labelledby="foremen-title">
           <span class="teams-eyebrow">Passo 1</span>
           <h2 id="foremen-title">Encarregados</h2>
           <p class="teams-note" id="foremen-note"></p>
           <p class="teams-result" id="intern-result" role="status" hidden></p>
+          <label class="visually-hidden" for="foreman-search">Buscar encarregado</label>
+          <input class="foreman-search" id="foreman-search" type="search" placeholder="Buscar encarregado pelo nome..." autocomplete="off">
           <div class="foreman-grid" id="foreman-grid"><p class="teams-loading" role="status"><span class="button-spinner" aria-hidden="true"></span>Carregando encarregados e equipes…</p></div>
         </section>
 
@@ -73,9 +85,10 @@
   <script src="js/core/firebase-schema.js?v=c6f95036"></script>
   <script src="js/core/firebase-auth.js?v=4cba501c"></script>
   <script src="js/core/shared-components.js?v=0aa1c7e3"></script>
+  <script src="js/features/dash-shell.js?v=94b1b06f"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="js/pages/equipes.js?v=2fb3e6fe"></script>
+  <script src="js/pages/equipes.js?v=c00116b9"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

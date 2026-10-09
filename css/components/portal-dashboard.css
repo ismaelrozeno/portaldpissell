@@ -1,0 +1,345 @@
+/* =====================================================================
+   Meu portal em formato de dashboard (js/features/portal-dashboard.js)
+   Pensado primeiro para o celular (onde o site é mais usado):
+   celular  = barra de abas embaixo + botão "+" para nova liberação
+   computador = menu lateral fixo + páginas (Visão geral, Individuais, Coletivas, Indicadores, Equipe)
+   A peça de destaque é a "Esteira do fluxo": Encarregado → Engenheiro → DP → Portaria → Saíram hoje,
+   com a etapa de quem está logado acesa em laranja. O resto fica calmo.
+   Só vale com body.dash (Portal.html); as outras telas não mudam.
+   ===================================================================== */
+body.dash {
+  --d-page: #eef1f4;        /* cinza-concreto frio */
+  --d-surface: #ffffff;
+  --d-ink: #0e1f33;         /* azul-noite (texto) */
+  --d-ink-2: #3b4d63;
+  --d-muted: #66768a;
+  --d-line: #dde3ea;
+  --d-nav: #0b1b2e;         /* menu */
+  --d-accent: #ef7a0e;      /* laranja do logo DP: a única cor de destaque */
+  --d-accent-soft: #fff1e3;
+  --d-ok: #1e9e5a;
+  --d-wait: #b7791f;
+  --d-no: #c8414c;
+  --d-radius-lg: 18px;
+  --d-radius: 12px;
+  --d-radius-sm: 8px;
+  --d-tab-h: 64px;
+  background: var(--d-page);
+  color: var(--d-ink);
+  font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+body.dash .portal-content { padding: 0; min-height: 0; }
+body.dash h1, body.dash h2, body.dash h3, body.dash .dash-num { font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif; }
+
+/* ---------- Estrutura: menu + conteúdo ---------- */
+.dash-shell { display: block; }
+body.dash .dash-main { padding: 1rem 1rem calc(var(--d-tab-h) + 5.5rem + env(safe-area-inset-bottom)); max-width: 1320px; }
+
+/* Barra de abas (celular) */
+.dash-nav { position: fixed; inset: auto 0 0 0; z-index: 1030; display: flex; height: calc(var(--d-tab-h) + env(safe-area-inset-bottom)); padding: 0 .25rem env(safe-area-inset-bottom); background: var(--d-nav); box-shadow: 0 -6px 24px rgba(11, 27, 46, .25); }
+.dash-nav-brand, .dash-nav-actions, .dash-nav-foot { display: none; }
+.dash-nav-list { display: flex; flex: 1; margin: 0; padding: 0; list-style: none; }
+.dash-nav-list li { flex: 1; min-width: 0; }
+.dash-nav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; width: 100%; height: var(--d-tab-h); padding: 0 .1rem; border: 0; color: #9fb0c4; background: none; font: 600 .7rem/1.1 "Barlow", system-ui, sans-serif; cursor: pointer; }
+.dash-nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dash-nav-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-nav-item.is-active { color: #fff; }
+.dash-nav-item.is-active::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--d-accent); }
+.dash-nav-item:focus-visible { outline: 2px solid var(--d-accent); outline-offset: -4px; border-radius: 10px; }
+.dash-badge { position: absolute; top: 8px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; color: #fff; background: var(--d-accent); font: 700 .68rem/18px "Barlow", sans-serif; text-align: center; }
+.dash-badge[hidden] { display: none; }
+.dash-nav-item[hidden] { display: none; }
+
+/* Botão "+" (nova liberação) */
+.dash-fab { position: fixed; right: 1rem; bottom: calc(var(--d-tab-h) + 1rem + env(safe-area-inset-bottom)); z-index: 1031; display: grid; place-items: center; width: 58px; height: 58px; border: 0; border-radius: 50%; color: #fff; background: var(--d-accent); box-shadow: 0 10px 24px rgba(239, 122, 14, .4); cursor: pointer; transition: transform .2s; }
+.dash-fab svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; transition: transform .2s; }
+.dash-fab[aria-expanded="true"] svg { transform: rotate(45deg); }
+.dash-fab[hidden] { display: none; }
+.dash-fab:focus-visible { outline: 3px solid var(--d-ink); outline-offset: 3px; }
+.dash-fab-menu { position: fixed; right: 1rem; bottom: calc(var(--d-tab-h) + 5.2rem + env(safe-area-inset-bottom)); z-index: 1031; display: grid; gap: .5rem; min-width: 230px; padding: .5rem; border-radius: var(--d-radius); background: var(--d-surface); box-shadow: 0 16px 40px rgba(11, 27, 46, .28); }
+.dash-fab-menu[hidden] { display: none; }
+.dash-fab-menu a { display: flex; align-items: center; gap: .6rem; padding: .8rem .9rem; border-radius: var(--d-radius-sm); color: var(--d-ink); font-weight: 600; text-decoration: none; }
+.dash-fab-menu a:hover, .dash-fab-menu a:focus-visible { background: var(--d-accent-soft); outline: none; }
+.dash-fab-menu small { display: block; color: var(--d-muted); font-weight: 500; font-size: .78rem; }
+
+/* ---------- Páginas: cada bloco diz em que página aparece (data-dash) ---------- */
+body.dash[data-page="overview"] [data-dash]:not([data-dash~="overview"]),
+body.dash[data-page="individuais"] [data-dash]:not([data-dash~="individuais"]),
+body.dash[data-page="coletivas"] [data-dash]:not([data-dash~="coletivas"]),
+body.dash[data-page="indicadores"] [data-dash]:not([data-dash~="indicadores"]),
+body.dash[data-page="equipe"] [data-dash]:not([data-dash~="equipe"]) { display: none !important; }
+body.dash:not([data-page="indicadores"]) #portal-insights { display: none !important; }
+/* As abas estreitas antigas (individual/coletiva) dão lugar às páginas. */
+body.dash .portal-view-tabs { display: none !important; }
+body.dash .portal-grid.has-collective[data-view] #records-section,
+body.dash .portal-grid.has-collective[data-view] #collective-section:not([hidden]) { display: block; }
+
+/* ---------- Cabeçalho da página ---------- */
+body.dash .portal-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin: .4rem 0 1rem; }
+body.dash .portal-kicker { display: none; }
+body.dash .portal-heading h1 { margin: 0; color: var(--d-ink); font-size: clamp(1.55rem, 5.5vw, 2.4rem); font-weight: 700; line-height: 1.05; letter-spacing: -.01em; }
+body.dash .portal-heading p { margin: .3rem 0 0; color: var(--d-muted); font-size: .95rem; max-width: 62ch; }
+body.dash .portal-context { flex: none; min-width: 0; padding: .45rem .75rem; border: 1px solid var(--d-line); border-radius: 999px; background: var(--d-surface); text-align: left; }
+body.dash .portal-context span { display: none; }
+body.dash .portal-context strong { margin: 0; color: var(--d-ink); font-size: .85rem; white-space: nowrap; }
+body.dash .demo-switcher { margin-bottom: 1rem; padding: .7rem .9rem; border-radius: var(--d-radius); box-shadow: none; }
+body.dash .demo-label { color: var(--d-ink); font-size: .9rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+
+/* Rótulos pequenos dos cartões antigos: sem caixa-alta laranja */
+body.dash .card-eyebrow { color: var(--d-muted); font-size: .8rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+/* ---------- A Esteira do fluxo ---------- */
+.dash-flow { margin-bottom: 1rem; padding: 1rem; border-radius: var(--d-radius-lg); color: #e6edf5; background: var(--d-nav); }
+.dash-flow-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; margin-bottom: .6rem; }
+.dash-flow-head h2 { margin: 0; color: #fff; font-size: 1.15rem; font-weight: 700; }
+.dash-flow-head p { margin: 0; color: #9fb0c4; font-size: .82rem; }
+.dash-stations { position: relative; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+/* Celular: rota vertical (trilho à esquerda, estações empilhadas) */
+.dash-stations::before { content: ""; position: absolute; top: 22px; bottom: 22px; left: 17px; width: 3px; border-radius: 2px; background: repeating-linear-gradient(180deg, #2b4466 0 8px, transparent 8px 14px); }
+.dash-station { position: relative; }
+.dash-station-btn { position: relative; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: .1rem .7rem; width: 100%; padding: .55rem .5rem .55rem 0; border: 0; border-radius: var(--d-radius); color: inherit; background: none; text-align: left; cursor: pointer; }
+.dash-station-btn:hover { background: rgba(255, 255, 255, .04); }
+.dash-station-btn:focus-visible { outline: 2px solid var(--d-accent); outline-offset: 2px; }
+.dash-station-dot { z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border: 3px solid #2b4466; border-radius: 50%; background: var(--d-nav); color: #9fb0c4; }
+.dash-station-dot svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dash-station-name { color: #fff; font-weight: 600; font-size: 1rem; line-height: 1.15; }
+.dash-station-sub { grid-column: 2; color: #9fb0c4; font-size: .8rem; line-height: 1.2; }
+.dash-station .dash-num { grid-row: 1 / span 2; grid-column: 3; color: #fff; font-size: 2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.dash-station.is-zero .dash-num { color: #5d7391; }
+/* A etapa de quem está logado */
+.dash-station.is-mine .dash-station-btn { background: rgba(239, 122, 14, .12); box-shadow: inset 0 0 0 1px rgba(239, 122, 14, .55); }
+.dash-station.is-mine .dash-station-dot { border-color: var(--d-accent); color: #fff; background: var(--d-accent); }
+.dash-station.is-mine .dash-num { color: var(--d-accent); }
+.dash-mine-tag { display: inline-block; margin-left: .45rem; padding: .05rem .45rem; border-radius: 999px; color: #1b1205; background: var(--d-accent); font: 700 .7rem/1.5 "Barlow", sans-serif; vertical-align: 2px; }
+.dash-station.is-done .dash-station-dot { border-color: var(--d-ok); color: var(--d-ok); }
+
+/* ---------- Para você agora ---------- */
+.dash-now { margin-bottom: 1rem; }
+.dash-now h2 { margin: 0 0 .55rem; font-size: 1.15rem; font-weight: 700; color: var(--d-ink); }
+.dash-now-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.dash-now-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem; width: 100%; padding: .8rem .9rem; border: 1px solid var(--d-line); border-radius: var(--d-radius); color: var(--d-ink); background: var(--d-surface); text-align: left; cursor: pointer; }
+.dash-now-item:hover { border-color: #c5cfdb; }
+.dash-now-item:focus-visible { outline: 2px solid var(--d-accent); outline-offset: 2px; }
+.dash-now-item .dash-num { min-width: 2.2ch; color: var(--d-accent); font-size: 1.9rem; font-weight: 700; line-height: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.dash-now-item.is-calm .dash-num { color: var(--d-ink-2); }
+.dash-now-text strong { display: block; font-size: .98rem; font-weight: 600; line-height: 1.2; }
+.dash-now-text small { display: block; margin-top: .1rem; color: var(--d-muted); font-size: .8rem; }
+.dash-now-go { color: var(--d-muted); }
+.dash-now-go svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dash-now-empty { display: flex; align-items: center; gap: .7rem; padding: .9rem 1rem; border-radius: var(--d-radius); color: #17613b; background: #e8f6ee; font-weight: 600; }
+.dash-now-empty svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Cartões do dia (claros, números condensados) ---------- */
+body.dash .portal-stats { grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-bottom: 1rem; }
+body.dash .portal-stats .stat-card { padding: .85rem .9rem; border: 1px solid var(--d-line); border-radius: var(--d-radius); color: var(--d-ink); background: var(--d-surface); }
+body.dash .portal-stats .stat-card:last-child:nth-child(odd) { grid-column: span 2; }
+body.dash .portal-stats span, body.dash .portal-stats small { color: var(--d-ink-2); font-size: .8rem; }
+body.dash .portal-stats strong { margin: .2rem 0; color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.9rem; font-weight: 700; line-height: 1.05; }
+body.dash .portal-stats small.stat-detail { margin-top: .4rem; padding-top: .4rem; border-top: 1px solid var(--d-line); color: var(--d-muted); font-size: .74rem; }
+body.dash .portal-stats .stat-card.is-active { border-color: var(--d-accent); box-shadow: 0 0 0 3px rgba(239, 122, 14, .18); }
+body.dash .portal-stats .stat-card:disabled { opacity: .7; }
+body.dash .stat-progress { background: #e6ebf1; }
+body.dash .stat-progress b { background: var(--d-ok); }
+/* Cartões "Aguardando <engenheiro>" */
+body.dash .portal-stats.portal-stats-engineers { margin-top: 0; grid-template-columns: repeat(2, 1fr); }
+body.dash .portal-stats .stat-card-engineer { background: var(--d-surface); }
+body.dash .portal-stats .stat-card-engineer .stat-engineer-name { color: var(--d-ink); }
+body.dash .portal-stats.portal-stats-engineers .stat-card:last-child { grid-column: auto; }
+@media (max-width: 600px) {
+  body.dash .portal-stats .stat-card-launch { grid-template-columns: 1fr auto; }
+  body.dash .portal-stats .stat-card-launch strong { font-size: 1.9rem; }
+}
+
+/* ---------- Cartões e listas antigos, no tom novo ---------- */
+body.dash .portal-card, body.dash .foreman-summary { border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); box-shadow: none; }
+body.dash .portal-card { padding: 1rem; }
+body.dash .card-heading h2, body.dash .portal-card h2 { color: var(--d-ink); font-size: 1.3rem; font-weight: 700; }
+body.dash .portal-grid { gap: 1rem; }
+body.dash .portal-grid, body.dash .portal-grid.has-collective { grid-template-columns: minmax(0, 1fr); }
+body.dash .portal-button-primary { border-radius: var(--d-radius-sm); background: var(--d-accent); }
+body.dash .portal-card-alert { background: #fffaf3; border-color: #f4dcc0; }
+/* No celular os botões "Nova liberação" das listas ficam no "+" */
+body.dash .card-actions #primary-action, body.dash .card-actions #collective-action, body.dash .collective-head-actions { display: none; }
+body.dash .search-input { border-radius: var(--d-radius-sm); }
+
+/* Página Indicadores: a seção já aberta, sem o "Mostrar mais informações" */
+body.dash[data-page="indicadores"] .portal-insights > summary { pointer-events: none; margin-bottom: .6rem; padding: 0; border: 0; background: none; box-shadow: none; }
+body.dash[data-page="indicadores"] .portal-insights-toggle { display: none; }
+body.dash[data-page="indicadores"] .portal-insights-title { font-size: 1.3rem; font-family: "Barlow Semi Condensed", "Barlow", sans-serif; }
+body.dash .insight-card, body.dash .chart-card { border-radius: var(--d-radius-lg); box-shadow: none; }
+
+/* Página Equipe */
+body.dash .foreman-summary { margin-bottom: 1rem; border-left-width: 1px; }
+
+/* O rodapé do site não fica escondido atrás da barra de abas */
+body.dash .site-footer, body.dash footer { padding-bottom: calc(var(--d-tab-h) + 1rem); }
+
+/* ====================== Computador ====================== */
+@media (min-width: 992px) {
+  body.dash { --d-nav-w: 248px; }
+  .dash-shell { display: grid; grid-template-columns: var(--d-nav-w) minmax(0, 1fr); align-items: start; }
+  body.dash .dash-main { width: 100%; padding: 1.6rem 2rem 3rem; margin: 0; }
+  .dash-nav { position: sticky; top: 0; inset: auto; flex-direction: column; align-self: start; height: 100vh; padding: 1.2rem .9rem; box-shadow: none; overflow-y: auto; }
+  .dash-nav-brand { display: block; padding: .2rem .6rem 1.1rem; color: #fff; }
+  .dash-nav-brand strong { display: block; font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.35rem; font-weight: 700; line-height: 1; }
+  .dash-nav-brand small { display: block; margin-top: .25rem; color: #9fb0c4; font-size: .82rem; }
+  .dash-nav-list { flex: none; flex-direction: column; gap: .15rem; }
+  .dash-nav-item { flex-direction: row; justify-content: flex-start; gap: .75rem; height: 44px; padding: 0 .75rem; border-radius: 10px; font-size: .95rem; font-weight: 500; }
+  .dash-nav-item:hover { color: #fff; background: rgba(255, 255, 255, .05); }
+  .dash-nav-item.is-active { color: #fff; background: rgba(255, 255, 255, .08); }
+  .dash-nav-item.is-active::before { top: 10px; bottom: 10px; left: 0; right: auto; width: 3px; height: auto; border-radius: 0 3px 3px 0; }
+  .dash-badge { position: static; margin-left: auto; }
+  .dash-nav-actions { display: grid; gap: .5rem; margin-top: 1.3rem; padding-top: 1.1rem; border-top: 1px solid rgba(255, 255, 255, .08); }
+  .dash-nav-actions[hidden] { display: none; }
+  .dash-nav-actions a { display: block; padding: .7rem .8rem; border-radius: 10px; color: #fff; background: var(--d-accent); font-weight: 600; text-align: center; text-decoration: none; }
+  .dash-nav-actions a + a { color: #fff; background: rgba(255, 255, 255, .08); }
+  .dash-nav-actions a:hover { filter: brightness(1.08); }
+  .dash-nav-actions a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .dash-nav-foot { display: block; margin-top: auto; padding: 1rem .6rem 0; color: #7f93ab; font-size: .78rem; line-height: 1.4; }
+  .dash-fab, .dash-fab-menu { display: none !important; }
+  body.dash .site-footer, body.dash footer { padding-bottom: 1rem; }
+
+  /* Esteira na horizontal: estações lado a lado sobre o trilho */
+  .dash-flow { padding: 1.25rem 1.4rem 1.1rem; }
+  .dash-stations { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .6rem; }
+  .dash-stations::before { top: 36px; bottom: auto; left: 8%; right: 8%; width: auto; height: 3px; background: repeating-linear-gradient(90deg, #2b4466 0 10px, transparent 10px 16px); }
+  .dash-station-btn { grid-template-columns: 1fr; justify-items: start; gap: .35rem; height: 100%; padding: .9rem .9rem 1rem; }
+  .dash-station-dot { margin-bottom: .2rem; }
+  .dash-station-sub { grid-column: 1; }
+  .dash-station .dash-num { grid-row: auto; grid-column: 1; order: 2; font-size: 2.9rem; }
+  .dash-station-name { order: 3; }
+  .dash-station-sub { order: 4; }
+
+  .dash-now-list { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  body.dash .portal-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; }
+  body.dash .portal-stats .stat-card:last-child:nth-child(odd) { grid-column: auto; }
+  body.dash .portal-stats.portal-stats-engineers { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  body.dash .card-actions #primary-action, body.dash .card-actions #collective-action, body.dash .collective-head-actions { display: none; }
+  body.dash[data-page="overview"] .portal-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  body.dash[data-page="equipe"] .portal-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .dash-fab, .dash-fab svg { transition: none; } }
+
+/* ---------- Ajustes depois de ver no celular com dados reais ---------- */
+.dash-nav-item, .dash-nav-item:hover, .dash-nav-item:focus { text-decoration: none; }
+/* "Acessar como" (administrador) compacto: rótulo e seletor na mesma linha */
+body.dash .demo-switcher { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .55rem .6rem .55rem .9rem; }
+body.dash .demo-switcher small { display: none; }
+body.dash .demo-switcher select { min-width: 0; width: auto; max-width: 62%; padding: .5rem .6rem; border-radius: var(--d-radius-sm); font-size: .92rem; }
+/* Cabeçalho: obra ao lado do título, não numa linha sozinha */
+body.dash .portal-heading { align-items: flex-start; }
+body.dash .portal-heading > div:first-child { min-width: 0; }
+@media (max-width: 991.98px) {
+  body.dash .portal-heading p { font-size: .88rem; }
+  .dash-flow { padding: .85rem .8rem; }
+  .dash-station-btn { padding: .38rem .5rem .38rem 0; }
+  .dash-station-name { font-size: .95rem; }
+  .dash-station-sub { font-size: .76rem; }
+  .dash-station .dash-num { font-size: 1.7rem; }
+  .dash-station-dot { width: 32px; height: 32px; }
+  .dash-stations::before { left: 15px; }
+  .dash-station-btn { grid-template-columns: 34px 1fr auto; }
+}
+
+/* ---------- Topo enxuto no celular (a regra antiga empilhava tudo) ---------- */
+@media (max-width: 991.98px) {
+  body.dash .portal-heading { flex-direction: row; align-items: flex-start; gap: .6rem; margin: .2rem 0 .8rem; }
+  body.dash .portal-heading h1 { font-size: 1.5rem; }
+  body.dash .portal-context { margin-top: .25rem; padding: .3rem .6rem; }
+  body.dash .portal-context strong { font-size: .78rem; }
+  body.dash .demo-switcher { flex-direction: row; align-items: center; text-align: left; }
+  body.dash .demo-switcher > div { flex: 1; min-width: 0; }
+  body.dash .demo-switcher select { width: 58%; }
+  /* Fora da visão geral, o título da página já está no menu: some a descrição e o link */
+  body.dash:not([data-page="overview"]) .portal-heading p,
+  body.dash:not([data-page="overview"]) #dp-bio-link { display: none; }
+  body.dash #dp-bio-link { font-size: .85rem; }
+}
+
+/* ---------- Barra da lista (Lixeira / Concluídas / Apagar tudo) em botões pequenos lado a lado ---------- */
+body.dash .records-toolbar { display: flex; flex-wrap: nowrap; gap: .45rem; overflow-x: auto; padding-bottom: .2rem; scrollbar-width: none; }
+body.dash .records-toolbar::-webkit-scrollbar { display: none; }
+body.dash .records-toolbar > * { flex: none; width: auto; }
+body.dash .records-toolbar button { width: auto; padding: .45rem .75rem; border-radius: 999px; font-size: .82rem; white-space: nowrap; }
+
+/* Computador: a coluna do menu vai escura até o rodapé (antes acabava na altura da tela e sobrava uma faixa cinza)
+   e a página ocupa pelo menos a altura da tela. */
+@media (min-width: 992px) {
+  .dash-shell { min-height: calc(100vh - 92px); background: linear-gradient(90deg, var(--d-nav) 0 var(--d-nav-w), transparent var(--d-nav-w)); }
+  .dash-nav { height: calc(100vh - 0px); max-height: 100vh; }
+}
+/* Sem a faixa cinza entre o conteúdo e o rodapé */
+body.dash .portal-content { margin-bottom: 0; }
+body.dash .site-footer { margin-top: 0 !important; }
+
+/* PowerPoint do mês, no topo do BI Dados (só DP) */
+.dash-export { display: grid; gap: .75rem; margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); background: var(--d-surface); }
+.dash-export[hidden] { display: none; }
+.dash-export h2 { margin: 0; color: var(--d-ink); font-size: 1.15rem; font-weight: 700; }
+.dash-export p { margin: .15rem 0 0; color: var(--d-muted); font-size: .88rem; }
+.dash-export-form { display: flex; flex-wrap: wrap; gap: .5rem; }
+.dash-export-form select { flex: 1 1 160px; min-width: 0; padding: .6rem .7rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-sm); background: #fff; color: var(--d-ink); }
+.dash-export-btn { flex: 1 1 160px; padding: .65rem 1rem; border: 0; border-radius: var(--d-radius-sm); color: #fff; background: var(--d-accent); font-weight: 600; cursor: pointer; }
+.dash-export-btn:disabled { opacity: .65; cursor: default; }
+.dash-export-btn:focus-visible { outline: 2px solid var(--d-ink); outline-offset: 2px; }
+.dash-export-result { grid-column: 1 / -1; margin: 0; color: #17613b; font-size: .85rem; }
+.dash-export-result.is-error { color: var(--d-no); }
+@media (min-width: 992px) {
+  .dash-export { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 1rem 1.25rem; }
+  .dash-export-form { flex-wrap: nowrap; }
+  .dash-export-form select, .dash-export-btn { flex: none; }
+}
+
+/* Aplicativo e Administração no menu lateral (computador); no celular ficam no menu do topo */
+.dash-nav-more { display: none; }
+@media (min-width: 992px) {
+  .dash-nav-more { display: flex; flex-direction: column; gap: .15rem; margin: .9rem 0 0; padding: .9rem 0 0; border-top: 1px solid rgba(255, 255, 255, .08); list-style: none; }
+  .dash-nav-more li[hidden] { display: none; }
+}
+
+/* Botão "Voltar" nas páginas internas (na visão geral não aparece) */
+.dash-back { display: inline-flex; align-items: center; gap: .25rem; margin: 0 0 .45rem -.35rem; padding: .3rem .6rem .3rem .35rem; border: 0; border-radius: 999px; color: var(--d-ink-2); background: transparent; font: 600 .9rem/1.2 "Barlow", system-ui, sans-serif; cursor: pointer; }
+.dash-back svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.dash-back:hover { color: var(--d-ink); background: #e2e7ed; }
+.dash-back:focus-visible { outline: 2px solid var(--d-accent); outline-offset: 2px; }
+body.dash[data-page="overview"] .dash-back { display: none; }
+body:not(.dash) .dash-back { display: none; }
+
+/* "Equipes" no menu: só no menu lateral (no celular a barra de baixo já tem 5 abas; chega-se por Atalhos) */
+.dash-nav-list .dash-nav-desktop { display: none; }
+@media (min-width: 992px) { .dash-nav-list .dash-nav-desktop:not([hidden]) { display: list-item; } }
+/* Outras páginas com o menu (dash-shell.js): o conteúdo delas fica como está, só ganha o espaço ao lado do menu */
+body.dash .dash-main-page > .container-xl { max-width: none; padding-left: 0; padding-right: 0; }
+body.dash.teams-page { background: var(--d-page); }
+
+/* Botões da lista: quebram para a linha de baixo em vez de ficarem cortados na borda */
+body.dash .records-toolbar { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+/* Páginas com o menu (Equipes): o menu começa colado no topo, sem a faixa cinza do espaçamento antigo */
+body.dash .teams-content { padding-top: 0; }
+body.dash .dash-main-page { padding-top: 1.4rem; }
+
+/* Respiro entre os filtros (Situação / Período / Ordenar) e a lista de liberações */
+body.dash .filter-bar { margin-bottom: 1.1rem; }
+body.dash .filter-bar[hidden] + .table-responsive, body.dash .search-input + .table-responsive { margin-top: .9rem; }
+/* Administração com o menu do dashboard (mesmo tratamento da página Equipes) */
+body.dash .import-content { padding-top: 0; }
+body.dash.import-page { background: var(--d-page); }
+/* Aplicativo com o menu do dashboard */
+body.dash .app-content { padding-top: 0; }
+body.dash.app-page { background: var(--d-page); }
+
+/* Celular: "Visão geral" no meio da barra de abas (Individuais, Coletivas, Visão geral, BI Dados, Atalhos).
+   No computador o menu lateral segue a ordem normal (Visão geral primeiro). */
+@media (max-width: 991.98px) {
+  .dash-nav-list > li:nth-child(1) { order: 3; }
+  .dash-nav-list > li:nth-child(2) { order: 1; }
+  .dash-nav-list > li:nth-child(3) { order: 2; }
+  .dash-nav-list > li:nth-child(4) { order: 4; }
+  .dash-nav-list > li:nth-child(5) { order: 5; }
+  .dash-nav-list > li:nth-child(n+6) { order: 6; }
+}
+
+/* Coletivas: com a Lixeira aberta, a tabela da lixeira (que junta individuais e coletivas apagadas) aparece aqui também */
+body.dash.dash-trash[data-page="coletivas"] #records-section { display: block !important; }
+body.dash.dash-trash[data-page="coletivas"] #collective-section { display: none !important; }
+body.dash[data-page="coletivas"] #collective-section .records-toolbar { margin: .2rem 0 .8rem; }

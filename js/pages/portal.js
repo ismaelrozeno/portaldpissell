@@ -188,6 +188,10 @@
   }
 
   // Resumo visual das assinaturas já feitas (engenheiro, DP, portaria) para dar para ler a situação de relance.
+  // Engenheiro responsável na linha da liberação (no lugar do antigo "Equipe local"): quem assinou o abono; antes
+  // disso, o engenheiro para quem foi enviada ou "todos os engenheiros".
+  const engineerLabel = (release) => String(release.engineer || release.targetEngineer || "").trim() || "todos os engenheiros";
+
   function signatureChips(release, stage) {
     const short = (name) => escapeHtml(String(name || "").trim());
     const chip = (tone, html, hint) => `<span class="sig-chip sig-${tone}"${hint ? ` title="${escapeHtml(hint)}"` : ""}>${html}</span>`;
@@ -373,7 +377,7 @@
     const flow = window.portalReleaseFlow;
     const query = window.normalizeSearchText(elements.recordsSearch?.value || "");
     // Busca por texto + filtro por data (De/Até ao lado da busca).
-    const matchesText = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team}`).includes(query);
+    const matchesText = (release) => !query || window.normalizeSearchText(`${release.name} ${release.team} ${release.engineer || ""} ${release.targetEngineer || ""}`).includes(query);
     const matchesDate = (release) => window.portalDateFilter.matches(elements.recordsSearch, window.portalDateFilter.dayOf(release));
     const matches = (release) => matchesText(release) && matchesDate(release);
     // Barra de filtros do perfil (js/core/filter-bar.js): a Situação dela faz o papel do cartão clicado.
@@ -390,8 +394,8 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
-        <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
         <td class="text-end row-actions col-actions" data-label="Ação">
@@ -442,8 +446,8 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">${escapeHtml(release.team)} · ${escapeHtml(release.time)}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
-        <td data-label="Frente" class="col-frente">${escapeHtml(release.team)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
@@ -823,6 +827,8 @@
 
     // "Indicadores do mês" (js/features/portal-insights.js), com as mesmas listas que o perfil vê.
     window.portalInsights?.render({ profileKey, releases: individualStats.all || [], sheets: col.all || [] });
+    // Dashboard (js/features/portal-dashboard.js): esteira do fluxo, "Para você agora" e números do menu.
+    window.portalDashboard?.update({ profileKey, releases: individualStats.all || [], sheets: col.all || [] });
   }
   window.portalWriteStats = writeStats;
 

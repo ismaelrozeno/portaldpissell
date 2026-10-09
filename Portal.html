@@ -12,16 +12,47 @@
   <link rel="stylesheet" href="css/pages/liberacao-coletiva.css?v=18c6d4d9">
   <link rel="stylesheet" href="css/components/collective-panel.css?v=a2dc236f">
   <link rel="stylesheet" href="css/components/portal-insights.css?v=e60af5e3">
-  <link rel="stylesheet" href="css/components/release-preview.css?v=44b8242f">
+  <link rel="stylesheet" href="css/components/release-preview.css?v=8af095bb">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=e91f9e41">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
-<body class="portal-page">
+<body class="portal-page dash" data-page="overview">
   <div data-site-header></div>
   <main class="portal-content">
-    <div class="container-xl">
+    <div class="dash-shell">
+      <nav class="dash-nav" id="dash-nav" aria-label="Seções do portal">
+        <div class="dash-nav-brand"><strong>Portal DP</strong><small>Obra 369 · liberações</small></div>
+        <ul class="dash-nav-list">
+          <li><a class="dash-nav-item is-active" href="#" data-dash-page="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/></svg><span>Visão geral</span></a></li>
+          <li><a class="dash-nav-item" href="#individuais" data-dash-page="individuais"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Individuais</span><b class="dash-badge" hidden></b></a></li>
+          <li><a class="dash-nav-item" href="#coletivas" data-dash-page="coletivas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 6a3 3 0 0 1 0 6"/><path d="M17 14.2a5.5 5.5 0 0 1 3.5 4.8"/></svg><span>Coletivas</span><b class="dash-badge" hidden></b></a></li>
+          <li><a class="dash-nav-item" href="#indicadores" data-dash-page="indicadores"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></svg><span>BI Dados</span></a></li>
+          <li><a class="dash-nav-item" href="#equipe" data-dash-page="equipe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg><span>Atalhos</span></a></li>
+          <li class="dash-nav-desktop" id="dash-nav-equipes"><a class="dash-nav-item" href="Equipes.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3.5 18a4.5 4.5 0 0 1 9 0"/><path d="M11.5 18a4.5 4.5 0 0 1 9 0"/></svg><span>Equipes</span></a></li>
+        </ul>
+        <ul class="dash-nav-more" aria-label="Outras áreas do site">
+          <li><a class="dash-nav-item" href="App.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/></svg><span>Aplicativo</span></a></li>
+          <li id="dash-nav-admin" hidden><a class="dash-nav-item" href="Administrador-Portal.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Administração</span></a></li>
+        </ul>
+        <div class="dash-nav-actions" id="dash-nav-actions">
+          <a href="Liberacao.html">Nova liberação individual</a>
+          <a href="Liberacao-Coletiva.html">Nova liberação coletiva</a>
+        </div>
+        <p class="dash-nav-foot">Fluxo: encarregado, engenheiro, DP e portaria.</p>
+      </nav>
+      <button class="dash-fab" id="dash-fab" type="button" aria-expanded="false" aria-controls="dash-fab-menu" aria-label="Nova liberação"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div class="dash-fab-menu" id="dash-fab-menu" hidden>
+        <a href="Liberacao.html">Nova liberação individual<small>um colaborador</small></a>
+        <a href="Liberacao-Coletiva.html">Nova liberação coletiva<small>lista de presença de uma tarefa</small></a>
+      </div>
+    <div class="container-xl dash-main">
       <section class="portal-heading">
         <div>
           <p class="portal-kicker">Portal operacional</p>
+          <button class="dash-back" id="dash-back" type="button" aria-label="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Voltar</span></button>
           <h1 id="portal-title">Painel do encarregado</h1>
           <p id="portal-description">Acompanhe sua equipe e registre as liberações do dia.</p>
           <a class="portal-subtle-link" id="dp-bio-link" href="Biometria.html" hidden>Digitais dos colaboradores e leitor biométrico →</a>
@@ -49,7 +80,18 @@
         </select>
       </section>
 
-      <section class="foreman-summary" id="foreman-summary" hidden aria-labelledby="foreman-summary-title">
+
+      <section class="dash-flow" id="dash-flow" data-dash="overview" aria-labelledby="dash-flow-title" hidden>
+        <div class="dash-flow-head"><h2 id="dash-flow-title">Esteira do fluxo</h2><p id="dash-flow-note"></p></div>
+        <ol class="dash-stations" id="dash-stations"></ol>
+      </section>
+
+      <section class="dash-now" id="dash-now" data-dash="overview" aria-labelledby="dash-now-title">
+        <h2 id="dash-now-title">Para você agora</h2>
+        <ul class="dash-now-list" id="dash-now-list"><li class="dash-now-empty">Carregando…</li></ul>
+      </section>
+
+      <section class="foreman-summary" id="foreman-summary" data-dash="equipe" hidden aria-labelledby="foreman-summary-title">
         <div>
           <span class="card-eyebrow">Meu cadastro</span>
           <h2 id="foreman-summary-title">Olá, <span id="foreman-name">Encarregado</span></h2>
@@ -62,7 +104,7 @@
         </div>
       </section>
 
-      <section class="portal-stats" aria-label="Resumo do dia">
+      <section class="portal-stats" aria-label="Resumo do dia" data-dash="overview">
         <button class="stat-card" type="button" data-stat="team"><span>Equipe vinculada</span><strong id="stat-team">0</strong><small>colaboradores</small></button>
         <button class="stat-card" type="button" data-stat="pending"><span>Liberações pendentes</span><strong id="stat-pending">0</strong><small id="stat-pending-note">aguardando análise</small><small class="stat-detail" id="stat-pending-detail"></small></button>
         <button class="stat-card" type="button" data-stat="approved"><span>Autorizadas hoje</span><strong id="stat-approved">0</strong><small id="stat-approved-note">autorizadas pelo DP hoje</small><small class="stat-detail" id="stat-approved-detail"></small></button>
@@ -70,7 +112,20 @@
         <button class="stat-card stat-card-launch" type="button" data-stat="launched"><span>Abonos lançados</span><strong id="stat-launched">0</strong><small id="stat-launched-note">carimbados pelo DP</small><small class="stat-detail" id="stat-launched-detail"></small><i class="stat-progress" id="stat-launched-progress" aria-hidden="true"><b id="stat-launched-bar"></b></i></button>
       </section>
 
-      <section class="portal-stats portal-stats-engineers" id="engineer-stats" aria-label="Pendências de abono por engenheiro" hidden></section>
+      <section class="dash-export" id="dash-export" data-dash="indicadores" aria-labelledby="dash-export-title" hidden>
+        <div class="dash-export-text">
+          <h2 id="dash-export-title">Apresentação do mês</h2>
+          <p>Baixe um PowerPoint pronto com os números e gráficos do mês (12 slides, gráficos editáveis).</p>
+        </div>
+        <div class="dash-export-form">
+          <label class="visually-hidden" for="pptx-month">Mês da apresentação</label>
+          <select id="pptx-month"></select>
+          <button class="dash-export-btn" id="export-pptx" type="button">Baixar PowerPoint</button>
+        </div>
+        <p class="dash-export-result" id="pptx-result" role="status" hidden></p>
+      </section>
+
+      <section class="portal-stats portal-stats-engineers" id="engineer-stats" data-dash="overview individuais coletivas" aria-label="Pendências de abono por engenheiro" hidden></section>
 
       <div class="portal-view-tabs is-narrow-only" id="portal-view-tabs" role="tablist" aria-label="Tipo de liberação" hidden>
         <button class="portal-view-tab is-active" id="tab-individual" type="button" role="tab" aria-selected="true" data-view="individual">Liberações individuais</button>
@@ -78,7 +133,7 @@
       </div>
 
       <section class="portal-grid" id="portal-grid" data-collective-host="portal" data-view="individual">
-        <article class="portal-card portal-card-wide" id="records-section">
+        <article class="portal-card portal-card-wide" id="records-section" data-dash="individuais">
           <div class="card-heading">
             <div>
               <span class="card-eyebrow" id="table-eyebrow">Minha equipe</span>
@@ -93,17 +148,17 @@
           <div class="records-toolbar" id="records-toolbar"></div>
           <div class="trash-notice" id="trash-notice" hidden></div>
           <label class="visually-hidden" for="records-search">Pesquisar por colaborador ou frente</label>
-          <input class="search-input" id="records-search" type="search" data-date-filter data-sort-filter data-filter-bar placeholder="Buscar por colaborador ou frente..." autocomplete="off">
+          <input class="search-input" id="records-search" type="search" data-date-filter data-sort-filter data-filter-bar placeholder="Buscar por colaborador ou engenheiro..." autocomplete="off">
           <div class="table-responsive">
             <table class="portal-table">
-              <thead><tr><th>Colaborador</th><th>Frente</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
+              <thead><tr><th>Colaborador</th><th>Engenheiro</th><th>Horário</th><th>Status</th><th class="text-end">Ação</th></tr></thead>
               <tbody id="records-table"><tr class="table-loading"><td colspan="5"><span class="button-spinner" aria-hidden="true"></span>Carregando registros…</td></tr></tbody>
             </table>
           </div>
           <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
         </article>
 
-        <article class="portal-card portal-card-wide" id="collective-section" hidden>
+        <article class="portal-card portal-card-wide" id="collective-section" data-dash="coletivas" hidden>
           <div class="card-heading">
             <div>
               <span class="card-eyebrow" id="collective-eyebrow">Assinaturas pendentes</span>
@@ -121,7 +176,7 @@
           </div>
         </article>
 
-        <div class="portal-side">
+        <div class="portal-side" data-dash="equipe">
           <aside class="portal-card portal-card-alert" id="guidance-section">
             <span class="card-eyebrow">Avisos importantes</span>
             <h2>Fluxo de saída</h2>
@@ -136,12 +191,13 @@
           </article>
         </div>
 
-        <article class="portal-card" id="activity-section">
+        <article class="portal-card" id="activity-section" data-dash="overview">
           <span class="card-eyebrow">Última atividade</span>
           <h2>Histórico recente</h2>
           <ul class="activity-list" id="activity-list"></ul>
         </article>
       </section>
+    </div>
     </div>
   </main>
   <div data-site-footer></div>
@@ -166,7 +222,7 @@
   <script src="js/features/release-actions.js?v=495aa7f9"></script>
   <script src="js/features/biometric-reader.js?v=4af31862"></script>
   <script src="js/features/fingerprint-art.js?v=58448265"></script>
-  <script src="js/features/release-preview.js?v=10a29dba"></script>
+  <script src="js/features/release-preview.js?v=8aa640de"></script>
   <script src="js/features/collective-release-store.js?v=033da5ab"></script>
   <script src="js/features/collective-release-sheet.js?v=903ae2fb"></script>
   <script src="js/features/collective-biometric.js?v=3b49b515"></script>
@@ -174,7 +230,9 @@
   <script src="js/features/collective-panel.js?v=34be5591"></script>
   <script src="js/features/portal-insights.js?v=0229d63a"></script>
   <script src="js/features/portal-insights-charts.js?v=9fdec0fa"></script>
-  <script src="js/pages/portal.js?v=3eb7e9fd"></script>
+  <script src="js/pages/portal.js?v=b920bd37"></script>
+  <script src="js/features/portal-dashboard.js?v=40b2e18c"></script>
+  <script src="js/features/report-pptx.js?v=ec532a07"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
