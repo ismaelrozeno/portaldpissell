@@ -8,11 +8,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=fc8c3903">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-  <link rel="stylesheet" href="css/pages/portal.css?v=d45a3d9c">
+  <link rel="stylesheet" href="css/pages/portal.css?v=2351dbd3">
   <link rel="stylesheet" href="css/pages/liberacao-coletiva.css?v=18c6d4d9">
   <link rel="stylesheet" href="css/components/collective-panel.css?v=a2dc236f">
   <link rel="stylesheet" href="css/components/portal-insights.css?v=e60af5e3">
-  <link rel="stylesheet" href="css/components/release-preview.css?v=efb0fd69">
+  <link rel="stylesheet" href="css/components/release-preview.css?v=44b8242f">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="portal-page">
@@ -69,6 +69,8 @@
         <button class="stat-card" type="button" data-stat="bonus"><span>Pendências de abono</span><strong id="stat-bonus">0</strong><small>aguardando engenheiro</small><small class="stat-detail" id="stat-bonus-detail"></small></button>
         <button class="stat-card stat-card-launch" type="button" data-stat="launched"><span>Abonos lançados</span><strong id="stat-launched">0</strong><small id="stat-launched-note">carimbados pelo DP</small><small class="stat-detail" id="stat-launched-detail"></small><i class="stat-progress" id="stat-launched-progress" aria-hidden="true"><b id="stat-launched-bar"></b></i></button>
       </section>
+
+      <section class="portal-stats portal-stats-engineers" id="engineer-stats" aria-label="Pendências de abono por engenheiro" hidden></section>
 
       <div class="portal-view-tabs is-narrow-only" id="portal-view-tabs" role="tablist" aria-label="Tipo de liberação" hidden>
         <button class="portal-view-tab is-active" id="tab-individual" type="button" role="tab" aria-selected="true" data-view="individual">Liberações individuais</button>
@@ -150,7 +152,7 @@
 <!-- Calendário de intervalo da barra de filtros (flatpickr) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/pt.min.js"></script>
-<script src="js/core/filter-bar.js?v=1b9355bb"></script>
+<script src="js/core/filter-bar.js?v=92b3240c"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -161,7 +163,7 @@
   <script src="js/core/shared-components.js?v=0aa1c7e3"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="js/core/firebase-release-store.js?v=bded763a"></script>
-  <script src="js/features/release-actions.js?v=6d21b85d"></script>
+  <script src="js/features/release-actions.js?v=495aa7f9"></script>
   <script src="js/features/biometric-reader.js?v=4af31862"></script>
   <script src="js/features/fingerprint-art.js?v=58448265"></script>
   <script src="js/features/release-preview.js?v=10a29dba"></script>
@@ -169,10 +171,10 @@
   <script src="js/features/collective-release-sheet.js?v=903ae2fb"></script>
   <script src="js/features/collective-biometric.js?v=3b49b515"></script>
   <script src="js/features/collective-exit.js?v=e976927a"></script>
-  <script src="js/features/collective-panel.js?v=1ea01b0d"></script>
-  <script src="js/features/portal-insights.js?v=537a1ee1"></script>
+  <script src="js/features/collective-panel.js?v=34be5591"></script>
+  <script src="js/features/portal-insights.js?v=0229d63a"></script>
   <script src="js/features/portal-insights-charts.js?v=9fdec0fa"></script>
-  <script src="js/pages/portal.js?v=0a6f8791"></script>
+  <script src="js/pages/portal.js?v=3eb7e9fd"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

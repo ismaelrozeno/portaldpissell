@@ -253,7 +253,7 @@
   let section = null;
   function ensureSection() {
     if (section) return section;
-    const stats = document.querySelector(".portal-stats");
+    const stats = document.querySelector("#engineer-stats") || document.querySelector(".portal-stats");
     if (!stats) return null;
     stats.insertAdjacentHTML("afterend", `
       <details class="portal-insights" id="portal-insights" hidden>

@@ -200,10 +200,16 @@
       if (release.bonusRequest) {
         chips.push(chip("info", `Pedido do encarregado: <b>${release.bonusRequest === "abonado" ? "Abonado" : "Não abonado"}</b>`));
       }
+      // Devolvida pelo DP: o engenheiro vê o motivo e o que tinha marcado, até decidir de novo.
+      if (stage === "engineer" && !release.bonusStatus && release.dpReturnReason) {
+        const prev = release.dpReturnPrevBonus === "approved" ? " · estava abonado" : release.dpReturnPrevBonus === "denied" ? " · estava não abonado" : "";
+        chips.push(chip("no", `Devolvida pelo DP <b>${short(release.dpReturnBy)}</b>: ${escapeHtml(release.dpReturnReason)}${prev}`));
+      }
       if (release.engineer && release.bonusStatus) {
         chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Eng. <b>${short(release.engineer)}</b> · ${release.bonusStatus === "approved" ? "assinou como abonado" : "assinou como não abonado"}`));
       } else {
-        chips.push(chip("wait", "Engenheiro: aguardando"));
+        // Mostra para qual engenheiro foi enviada (como na coletiva); sem destino, foi para todos.
+        chips.push(chip("wait", `Engenheiro: aguardando${release.targetEngineer ? ` (${short(release.targetEngineer)})` : ""}`));
       }
     }
     if (stage !== "foreman") {
@@ -213,7 +219,7 @@
         // Data anterior ao dia em que foi criada: o colaborador já saiu, não há saída para autorizar nem confirmar.
         chips.push(chip("info", "Retroativa · sem autorização de saída nem portaria", "A data da liberação é anterior ao dia em que ela foi criada, ou entrada e saída foram marcadas juntas (o colaborador não bateu o ponto). Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
       } else {
-        chips.push(chip("wait", "DP: aguardando"));
+        chips.push(chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
       }
       if (release.exitConfirmedBy) {
         chips.push(chip("info", `Portaria <b>${short(release.exitConfirmedBy)}</b> · assinou`));
@@ -446,6 +452,21 @@
   }
 
   // Clique nos cartões do resumo: "Equipe vinculada" abre a equipe; os outros filtram a tabela (clicar de novo tira o filtro).
+  // Cartão "Aguardando <engenheiro>": escolhe a mesma opção na Situação das duas listas (clicar de novo tira).
+  document.querySelector("#engineer-stats")?.addEventListener("click", async (event) => {
+    const card = event.target.closest("[data-engineer-filter]");
+    const filterBar = window.portalFilterBar;
+    if (!card || !filterBar?.active()) return;
+    const value = card.dataset.engineerFilter;
+    const next = filterBar.sharedStatus() === value ? "all" : value;
+    if (trashMode || doneMode) {
+      trashMode = false;
+      doneMode = false;
+      await renderRecords(activeProfileKey);
+    }
+    filterBar.setStatusAll(next);
+    if (next !== "all") document.querySelector("#records-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   document.querySelector(".portal-stats").addEventListener("click", async (event) => {
     const card = event.target.closest(".stat-card");
     if (!card || card.disabled || !activeProfileKey) return;
@@ -612,9 +633,12 @@
         if (!actions.dpCanDecide(release)) return refresh();
         run = () => actions.dpDecide(release, true);
       } else if (action === "dp-refuse") {
-        // DP recusa como o engenheiro: devolve ao solicitante com os motivos, para ele ajustar e reenviar.
+        // DP recusa devolvendo ao engenheiro, com o motivo escrito, para ele refazer o abonado / não abonado.
         if (!actions.dpCanDecide(release)) return refresh();
-        actions.openRefuseDialog(release, refresh, { refuse: (reasons) => actions.dpRefuse(release, reasons) });
+        actions.openDpReturnDialog(release, refresh, {
+          target: `${release.name} · Eng. ${release.engineer || "—"} marcou ${release.bonusStatus === "approved" ? "abonado" : release.bonusStatus === "denied" ? "não abonado" : "—"}`,
+          save: (text) => actions.dpRefuse(release, [text])
+        });
         return;
       } else {
         // Engenheiro: abonar, não abonar ou recusar (exige a assinatura do engenheiro)
@@ -710,28 +734,50 @@
   }
   const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
 
-  // "Pendências de abono": quantas esperam cada engenheiro (o "Enviar para" da liberação, nome do cadastro dele)
-  // e quantas foram para todos. Mostra o primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros.
-  function byEngineerLines(list) {
+  // Pendências de abono por engenheiro de destino (o "Enviar para" da liberação, nome do cadastro dele) e as enviadas
+  // a todos. Primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros. Viram os cartões "Aguardando ..." e as
+  // opções "Aguardando por engenheiro" da Situação (js/core/filter-bar.js).
+  function byEngineerGroups(individual, collective) {
     const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     const groups = new Map();
-    list.forEach((record) => {
+    const add = (record, kind) => {
       const name = String(record.targetEngineer || "").trim().replace(/\s+/g, " ");
       const key = name.toLowerCase();
-      if (!groups.has(key)) groups.set(key, { name, count: 0 });
-      groups.get(key).count += 1;
-    });
+      if (!groups.has(key)) groups.set(key, { key, name, count: 0, ind: 0, col: 0 });
+      const group = groups.get(key);
+      group.count += 1;
+      group[kind] += 1;
+    };
+    individual.forEach((record) => add(record, "ind"));
+    collective.forEach((record) => add(record, "col"));
     const named = [...groups.values()].filter((group) => group.name);
     const first = (name) => name.split(" ")[0].toLowerCase();
     const short = (name) => {
-      const clash = named.some((other) => other.name.toLowerCase() !== name.toLowerCase() && first(other.name) === first(name));
+      const clash = named.some((other) => other.key !== name.toLowerCase() && first(other.name) === first(name));
       return name.split(" ").slice(0, clash ? 2 : 1).map(title).join(" ");
     };
-    const lines = named.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-      .map((group) => `aguardando ${short(group.name)}: ${group.count}`);
-    const all = groups.get("")?.count || 0;
-    if (all) lines.push(`aguardando todos: ${all}`);
-    return lines;
+    const list = named.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).map((group) => ({ ...group, label: short(group.name) }));
+    const all = groups.get("");
+    if (all) list.push({ ...all, label: "Todos os engenheiros" });
+    return list;
+  }
+
+  // Fileira "Aguardando por engenheiro": um cartão por engenheiro (e um para "todos"); clicar filtra as duas listas.
+  function renderEngineerCards(groups, hidden) {
+    const host = document.querySelector("#engineer-stats");
+    if (!host) return;
+    host.hidden = hidden || !groups.length;
+    const filterBar = window.portalFilterBar;
+    window.portalFilterBar?.setEngineers(hidden ? [] : groups.map(({ key, label, count }) => ({ key, label, count })));
+    if (host.hidden) { host.innerHTML = ""; return; }
+    host.innerHTML = groups.map((group) => {
+      const value = filterBar?.engineerValue(group.key) || "";
+      const split = [group.ind ? plural(group.ind, "individual", "individuais") : "", group.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
+      return `<button class="stat-card stat-card-engineer" type="button" data-engineer-filter="${escapeHtml(value)}">
+        <span>Aguardando</span><b class="stat-engineer-name">${escapeHtml(group.key ? group.label : "todos os engenheiros")}</b>
+        <strong>${group.count}</strong><small class="stat-detail">${escapeHtml(split)}</small></button>`;
+    }).join("");
+    highlightStatCard();
   }
 
   // collective = { pending, approved, bonus, stageOf } das coletivas (js/features/collective-panel.js), ou null.
@@ -760,7 +806,8 @@
     ]);
 
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
-    detail("stat-bonus-detail", isPortaria ? [] : [...byEngineerLines([...bonus, ...col.bonus]), splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
+    detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
+    renderEngineerCards(byEngineerGroups(bonus, col.bonus), isPortaria);
 
     // "Abonos lançados no RM": os que o DP já carimbou como lançados (individuais + coletivas).
     const launchedAll = launched.length + (col.launched || []).length;
@@ -785,6 +832,7 @@
     const current = filterBar?.active() ? filterBar.sharedStatus() : statFilter;
     const aliases = filterBar?.aliases?.() || {};
     elements.statCards.forEach((card) => card.classList.toggle("is-active", !!current && (aliases[card.dataset.stat] || card.dataset.stat) === current));
+    document.querySelectorAll("[data-engineer-filter]").forEach((card) => card.classList.toggle("is-active", !!current && card.dataset.engineerFilter === current));
   }
   document.addEventListener("portal-filter-status", highlightStatCard);
 

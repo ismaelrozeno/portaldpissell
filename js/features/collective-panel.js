@@ -50,7 +50,7 @@
       : chip("wait", `Engenheiro: aguardando${sheet.targetEngineer ? ` (${esc(sheet.targetEngineer)})` : ""}`));
     chips.push(sheet.dpSigner
       ? chip(stage === "closed" ? "no" : "yes", `DP <b>${esc(sheet.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`)
-      : retroactive ? chip("info", "Retroativa · sem autorização de saída nem portaria") : chip("wait", "DP: aguardando"));
+      : retroactive ? chip("info", "Retroativa · sem autorização de saída nem portaria") : chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
     if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${esc(sheet.abonoLaunchedBy || "DP")}</b>`));
     else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
@@ -65,6 +65,11 @@
     const signedBio = sheetApi().signedCount(sheet);
     if (people && (signedBio || profile === "dp")) chips.push(chip(signedBio === people ? "yes" : "wait", `Digitais: <b>${signedBio} de ${people}</b>`));
 
+    // Devolvida pelo DP ao engenheiro: motivo e o que estava marcado, até o engenheiro decidir de novo.
+    if (stage === "engineer" && !decided && sheet.dpReturnReason) {
+      const prev = sheet.dpReturnPrevBonus === "approved" ? " · estava abonado" : sheet.dpReturnPrevBonus === "denied" ? " · estava não abonado" : "";
+      chips.unshift(chip("no", `Devolvida pelo DP <b>${esc(sheet.dpReturnBy || "")}</b>: ${esc(sheet.dpReturnReason)}${prev}`));
+    }
     if (stage === "foreman") {
       chips.length = 0;
       chips.push(chip("no", `Recusada por <b>${esc(sheet.refusedBy || "")}</b>${sheet.refusalReason ? ` · ${esc(sheet.refusalReason)}` : ""}`));
@@ -72,8 +77,8 @@
     const engineerButtons = canDecide(sheet)
       ? `${btn("row-yes-btn", "approved", decided === "approved" ? "Abonado ✓" : "Abonado")}${btn("row-no-btn", "denied", decided === "denied" ? "Não abonado ✓" : "Não abonado")}`
       : "";
-    // O DP pode autorizar ou negar mesmo com a folha ainda aguardando o engenheiro (como nas individuais).
-    const dpButtons = profile === "dp" && ["engineer", "dp"].includes(stage) && !retroactive
+    // O DP só autoriza ou recusa depois que o engenheiro assinou (mesmo fluxo das individuais).
+    const dpButtons = profile === "dp" && stage === "dp" && !retroactive
       ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}`
       : "";
     // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, inclusive depois da saída confirmada na portaria.
@@ -373,10 +378,15 @@
     else if (action === "approved" || action === "denied") {
       button.disabled = true;
       await decide(sheet, action);
-    } else if (action === "refuse" || action === "dp-refuse") {
-      // Engenheiro ou DP recusam do mesmo jeito: a folha volta ao solicitante com os motivos, para ajustar e reenviar.
-      const byDp = action === "dp-refuse";
-      if (!byDp && !await actions().ensureEngineerSignature()) return;
+    } else if (action === "dp-refuse") {
+      // DP devolve ao engenheiro, com o motivo escrito, para ele refazer o abonado / não abonado (como nas individuais).
+      actions().openDpReturnDialog(sheet, () => render(profile), {
+        target: `Liberação coletiva: ${sheet.motive} · Eng. ${sheet.engineer || "—"} marcou ${sheet.bonusStatus === "approved" ? "abonado" : sheet.bonusStatus === "denied" ? "não abonado" : "—"}`,
+        save: (text) => store().update(sheet.id, actions().dpReturnChanges(sheet, text, session()?.name || "Departamento Pessoal"))
+      });
+    } else if (action === "refuse") {
+      // Engenheiro recusa: a folha volta ao solicitante com os motivos, para ajustar e reenviar.
+      if (!await actions().ensureEngineerSignature()) return;
       const who = session();
       actions().openRefuseDialog(sheet, () => render(profile), {
         target: `Liberação coletiva: ${sheet.motive} · solicitada por ${sheet.requester}`,
@@ -389,8 +399,8 @@
           dpSigner: null,
           dpRole: null,
           dpDecisionAt: null,
-          refusedBy: who?.name || (byDp ? "Departamento Pessoal" : "Engenheiro responsável"),
-          refusedByRole: byDp ? "DP" : "Engenheiro",
+          refusedBy: who?.name || "Engenheiro responsável",
+          refusedByRole: "Engenheiro",
           refusedAt: new Date().toISOString(),
           refusalReasons: reasons,
           refusalReason: reasons.join(" e ")

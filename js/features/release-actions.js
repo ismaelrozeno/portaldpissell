@@ -160,10 +160,44 @@
     await refuseRelease(release, reasons, signerName("Engenheiro responsável"), "Engenheiro");
   }
 
-  // O DP também recusa (em vez de negar): devolve ao solicitante com os motivos, como o engenheiro. No reenvio a
-  // liberação volta ao começo (engenheiro), porque o que foi ajustado pode mudar o abono.
+  // O DP recusa devolvendo ao ENGENHEIRO (não ao solicitante), com o motivo escrito: a decisão de abono é apagada
+  // para o engenheiro marcar de novo abonado ou não abonado; depois ela volta ao DP. Cada devolução fica no histórico.
+  function dpReturnChanges(record, text, by) {
+    const now = new Date().toISOString();
+    return {
+      stage: "engineer",
+      status: "pending",
+      bonusStatus: null,
+      hours: "Pendente",
+      engineer: null,
+      engineerRole: null,
+      engineerDecisionAt: null,
+      dpSigner: null,
+      dpRole: null,
+      dpDecisionAt: null,
+      dpReturnReason: text,
+      dpReturnBy: by,
+      dpReturnAt: now,
+      dpReturnPrevBonus: record.bonusStatus || null,
+      dpReturnHistory: [...(record.dpReturnHistory || []), { reason: text, by, at: now, prevBonus: record.bonusStatus || null, prevEngineer: record.engineer || null }]
+    };
+  }
+
   async function dpRefuse(release, reasons) {
-    await refuseRelease(release, reasons, signerName("Departamento Pessoal"), "DP");
+    await store().updateRelease(release.id, { ...dpReturnChanges(release, reasons.join(" "), signerName("Departamento Pessoal")), hoursType: null });
+  }
+
+  // Mesma janela para a individual e a coletiva: o DP escreve o motivo da devolução.
+  function openDpReturnDialog(record, onDone, { target, save }) {
+    openRefuseDialog(record, onDone, {
+      freeText: true,
+      title: "Devolver ao engenheiro",
+      prompt: "A liberação volta para o engenheiro marcar de novo abonado ou não abonado. Escreva o motivo:",
+      placeholder: "Ex.: horário não confere com o ponto; rever se é abonado",
+      confirmText: "Devolver ao engenheiro",
+      target,
+      refuse: (reasons) => save(reasons.join(" "))
+    });
   }
 
   async function refuseRelease(release, reasons, by, byRole) {
@@ -195,8 +229,9 @@
         <dialog id="refuse-dialog" class="refuse-dialog" aria-labelledby="refuse-title">
           <h2 id="refuse-title">Recusar liberação</h2>
           <p id="refuse-target"></p>
-          <p>Escolha o que o encarregado precisa ajustar:</p>
+          <p id="refuse-prompt">Escolha o que o encarregado precisa ajustar:</p>
           <div id="refuse-reasons" class="refuse-reasons"></div>
+          <textarea id="refuse-text" class="refuse-text" rows="3" maxlength="300" hidden></textarea>
           <p id="refuse-error" class="text-danger" role="alert" hidden>Selecione pelo menos um motivo.</p>
           <div class="refuse-buttons">
             <button type="button" id="refuse-cancel" class="bonus-yes">Cancelar</button>
@@ -206,10 +241,22 @@
       refuseDialog = document.querySelector("#refuse-dialog");
     }
     const reasonsBox = refuseDialog.querySelector("#refuse-reasons");
+    const textBox = refuseDialog.querySelector("#refuse-text");
     const error = refuseDialog.querySelector("#refuse-error");
+    // custom.freeText: em vez das caixinhas, um texto escrito (usado pelo DP ao devolver ao engenheiro).
+    const freeText = !!custom?.freeText;
+    const emptyMessage = freeText ? "Escreva o motivo." : "Selecione pelo menos um motivo.";
+    const confirmLabel = custom?.confirmText || "Confirmar recusa";
+    refuseDialog.querySelector("#refuse-title").textContent = custom?.title || "Recusar liberação";
+    refuseDialog.querySelector("#refuse-prompt").textContent = custom?.prompt || "Escolha o que o encarregado precisa ajustar:";
     refuseDialog.querySelector("#refuse-target").textContent = custom?.target ?? `${release.name} · solicitado por ${release.requester}`;
-    reasonsBox.innerHTML = flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
-    error.textContent = "Selecione pelo menos um motivo.";
+    reasonsBox.hidden = freeText;
+    textBox.hidden = !freeText;
+    textBox.value = "";
+    textBox.placeholder = custom?.placeholder || "";
+    textBox.oninput = () => { error.hidden = true; };
+    reasonsBox.innerHTML = freeText ? "" : flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
+    error.textContent = emptyMessage;
     error.hidden = true;
     // Botões recriados a cada abertura para não acumular ouvintes de recusas anteriores.
     for (const id of ["#refuse-cancel", "#refuse-confirm"]) {
@@ -217,10 +264,13 @@
       old.replaceWith(old.cloneNode(true));
     }
     refuseDialog.querySelector("#refuse-cancel").addEventListener("click", () => refuseDialog.close());
+    refuseDialog.querySelector("#refuse-confirm").textContent = confirmLabel;
     refuseDialog.querySelector("#refuse-confirm").addEventListener("click", async () => {
-      const reasons = [...reasonsBox.querySelectorAll("input:checked")].map((input) => input.value);
+      const reasons = freeText
+        ? [textBox.value.trim()].filter(Boolean)
+        : [...reasonsBox.querySelectorAll("input:checked")].map((input) => input.value);
       if (!reasons.length) {
-        error.textContent = "Selecione pelo menos um motivo.";
+        error.textContent = emptyMessage;
         error.hidden = false;
         return;
       }
@@ -238,18 +288,19 @@
         return;
       } finally {
         confirmButton.disabled = false;
-        confirmButton.textContent = "Confirmar recusa";
+        confirmButton.textContent = confirmLabel;
       }
       if (onDone) onDone();
     });
     refuseDialog.showModal();
+    if (freeText) textBox.focus();
   }
 
   // ---------- DP ----------
 
-  // O DP pode autorizar/negar mesmo com a liberação ainda aguardando o engenheiro.
-  // Retroativa não tem saída para autorizar: o DP não decide (só lança o abono no RM).
-  const dpCanDecide = (release) => ["dp", "engineer"].includes(flow().stageOf(release)) && !flow().isRetroactive(release);
+  // Fluxo: solicitante -> engenheiro assina (abono) -> DP autoriza -> portaria confirma a saída.
+  // O DP só decide depois da assinatura do engenheiro (etapa "dp"). Retroativa não tem saída para autorizar.
+  const dpCanDecide = (release) => flow().stageOf(release) === "dp" && !flow().isRetroactive(release);
 
   async function dpDecide(release, authorize) {
     await store().updateRelease(release.id, {
@@ -431,6 +482,8 @@ Deseja continuar?`;
     dpCanDecide,
     dpDecide,
     dpRefuse,
+    dpReturnChanges,
+    openDpReturnDialog,
     canSignBiometric,
     signBiometric,
     needsLaunch,

@@ -111,6 +111,19 @@
 
   let config = null;
   const bars = [];
+  // Opções dinâmicas "Aguardando por engenheiro" (value "eng:<nome em minúsculas>", "eng:" = enviadas a todos),
+  // montadas pelo portal com os engenheiros que têm pendência (setEngineers). Os cartões por engenheiro usam as mesmas.
+  let engineers = [];
+  const ENG = "eng:";
+  const normName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+  const awaitingEngineer = (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage);
+  function statusOptionsHtml() {
+    const base = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
+    if (!engineers.length) return base;
+    const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    return `${base}<optgroup label="Aguardando por engenheiro">${engineers.map(({ key, label, count }) => `<option value="${esc(ENG + key)}">${esc(label)} (${count})</option>`).join("")}</optgroup>`;
+  }
+  const isValidStatus = (value) => config.statuses.some((item) => item.value === value) || engineers.some((item) => ENG + item.key === value);
   const defaultSort = () => config?.defaultSort || "recent";
   const isClean = (bar) => bar.status.value === "all" && bar.period.value === "any" && bar.sort.value === defaultSort() && !bar.search.value;
 
@@ -252,7 +265,7 @@
       bar.native = false;
       row?.querySelector(".sort-filter")?.removeAttribute("hidden");
       if (config) {
-        bar.status.innerHTML = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
+        bar.status.innerHTML = statusOptionsHtml();
         bar.sort.innerHTML = config.sorts.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
         bar.status.value = "all";
         bar.sort.value = defaultSort();
@@ -274,6 +287,8 @@
   function matchesStatus(search, record, stage, collective = false) {
     const value = status(search);
     if (value === "all") return true;
+    // "Aguardando <engenheiro>": sem decisão de abono e enviada a ele ("eng:" = enviada a todos).
+    if (value.startsWith(ENG)) return awaitingEngineer(record, stage) && normName(record.targetEngineer) === value.slice(ENG.length);
     const rule = config.statuses.find((item) => item.value === value);
     return !rule?.test || rule.test(record, stage, collective);
   }
@@ -284,7 +299,7 @@
     value = config.aliases?.[value] || value;
     bars.forEach((bar) => {
       if (bar.el.hidden) return;
-      bar.status.value = config.statuses.some((item) => item.value === value) ? value : "all";
+      bar.status.value = isValidStatus(value) ? value : "all";
       apply(bar);
     });
     statusChanged();
@@ -299,5 +314,21 @@
 
   const aliases = () => config?.aliases || {};
 
-  window.portalFilterBar = Object.freeze({ use, active, status, matchesStatus, setStatusAll, sharedStatus, aliases });
+  // Lista de engenheiros com pendência ([{ key, label, count }]); refaz as opções mantendo a escolha atual.
+  function setEngineers(list) {
+    const next = list || [];
+    if (JSON.stringify(next) === JSON.stringify(engineers)) return;
+    engineers = next;
+    if (!config) return;
+    bars.forEach((bar) => {
+      const current = bar.status.value;
+      bar.status.innerHTML = statusOptionsHtml();
+      bar.status.value = isValidStatus(current) ? current : "all";
+      if (bar.status.value !== current) apply(bar);
+    });
+    statusChanged();
+  }
+  const engineerValue = (key) => ENG + key;
+
+  window.portalFilterBar = Object.freeze({ use, active, status, matchesStatus, setStatusAll, sharedStatus, aliases, setEngineers, engineerValue });
 })();
