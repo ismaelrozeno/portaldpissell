@@ -90,10 +90,12 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
   .portal-stats { grid-template-columns: repeat(2, 1fr); }
   .portal-stats .stat-card:last-child { grid-column: span 2; }
   /* Cartão largo: número à direita, título e "por lançar" à esquerda, barra embaixo — mais baixo e sem espaço vazio. */
-  .portal-stats .stat-card-launch { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "title num" "note num" "bar bar"; align-items: center; column-gap: 1rem; }
+  .portal-stats .stat-card-launch { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "title num" "note num" "detail num" "bar bar"; align-items: center; column-gap: 1rem; }
   .stat-card-launch span { grid-area: title; }
   .stat-card-launch strong { grid-area: num; margin: 0; }
   .stat-card-launch small { grid-area: note; margin: .2rem 0 0; }
+  /* Cada linha pequena na sua área: antes as duas caíam em "note" e ficavam uma por cima da outra. */
+  .stat-card-launch small.stat-detail { grid-area: detail; margin: .45rem 0 0; }
   .stat-card-launch .stat-progress { grid-area: bar; margin-top: .7rem; }
   .portal-grid { grid-template-columns: 1fr; }
 }

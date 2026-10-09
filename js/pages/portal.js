@@ -740,15 +740,17 @@
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
     detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
 
-    // "Abonos lançados no RM": os que o DP já carimbou como lançados (só individuais: a coletiva não tem lançamento no RM).
-    const abonados = launched.length + toLaunch.length;
-    const percent = abonados ? Math.round((launched.length / abonados) * 100) : 0;
-    elements.launched.textContent = isPortaria ? "—" : launched.length;
-    elements.launchedNote.textContent = isPortaria ? "carimbados pelo DP" : `${toLaunch.length} por lançar no RM`;
-    detail("stat-launched-detail", isPortaria ? [] : [`${launched.length} de ${abonados} abonados (${percent}%)`, "só liberações individuais"]);
+    // "Abonos lançados no RM": os que o DP já carimbou como lançados (individuais + coletivas).
+    const launchedAll = launched.length + (col.launched || []).length;
+    const toLaunchAll = toLaunch.length + (col.toLaunch || []).length;
+    const abonados = launchedAll + toLaunchAll;
+    const percent = abonados ? Math.round((launchedAll / abonados) * 100) : 0;
+    elements.launched.textContent = isPortaria ? "—" : launchedAll;
+    elements.launchedNote.textContent = isPortaria ? "carimbados pelo DP" : `${toLaunchAll} por lançar no RM`;
+    detail("stat-launched-detail", isPortaria ? [] : [`${launchedAll} de ${abonados} abonados (${percent}%)`, splitLabel(launched, col.launched || [])]);
     elements.launchedProgress.hidden = isPortaria;
     elements.launchedBar.style.width = `${percent}%`;
-    elements.launchedProgress.title = `${launched.length} de ${abonados} abonos lançados no RM`;
+    elements.launchedProgress.title = `${launchedAll} de ${abonados} abonos lançados no RM`;
   }
   window.portalWriteStats = writeStats;
 

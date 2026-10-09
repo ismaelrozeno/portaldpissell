@@ -246,6 +246,9 @@
     else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet)));
     extra.approved = mine.filter((sheet) => ["gate", "exited"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today);
     if (profile !== "portaria") extra.bonus = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
+    // Abono no RM: as coletivas abonadas também são lançadas pelo DP (cartão "Abonos lançados").
+    extra.launched = mine.filter((sheet) => !!sheet.abonoLaunchedAt);
+    extra.toLaunch = mine.filter((sheet) => sheet.bonusStatus === "approved" && !sheet.abonoLaunchedAt && open(sheet));
     window.portalWriteStats?.(extra);
   }
 
