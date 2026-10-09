@@ -196,7 +196,6 @@ body.dash .site-footer, body.dash footer { padding-bottom: calc(var(--d-tab-h) +
   .dash-nav-actions { display: grid; gap: .5rem; margin-top: 1.3rem; padding-top: 1.1rem; border-top: 1px solid rgba(255, 255, 255, .08); }
   .dash-nav-actions[hidden] { display: none; }
   .dash-nav-actions a { display: block; padding: .7rem .8rem; border-radius: 10px; color: #fff; background: var(--d-accent); font-weight: 600; text-align: center; text-decoration: none; }
-  .dash-nav-actions a + a { color: #fff; background: rgba(255, 255, 255, .08); }
   .dash-nav-actions a:hover { filter: brightness(1.08); }
   .dash-nav-actions a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .dash-nav-foot { display: block; margin-top: auto; padding: 1rem .6rem 0; color: #7f93ab; font-size: .78rem; line-height: 1.4; }
@@ -360,3 +359,8 @@ body.dash.release-page .dash-fab, body.dash.release-page .dash-fab-menu { displa
 /* Fechamento, Backup e Perfil com o menu do dashboard: fundo do portal e sem o espaço antigo no topo */
 body.dash:is(.closing-page, .backup-page, .profile-page) { background: var(--d-page); }
 body.dash :is(.closing-content, .backup-content, .profile-content) { min-height: 0; padding-top: 0; }
+
+/* Menu lateral: "Nova liberação individual" quebrava em duas linhas (o menu tem ~220px). Os dois botões numa linha só. */
+@media (min-width: 992px) {
+  .dash-nav-actions a { padding: .7rem .5rem; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
