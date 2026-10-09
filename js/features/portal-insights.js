@@ -80,7 +80,7 @@
       return {
         icon: "fingerprint", tone: "violet", title: "Digitais pendentes",
         value: ind.length + people,
-        note: ind.length + people ? "colaboradores sem assinar com a digital" : "todos assinaram com a digital ✓",
+        note: ind.length + people ? `${ind.length + people === 1 ? "colaborador" : "colaboradores"} sem assinar com a digital` : "todos assinaram com a digital ✓",
         details: [
           `${plural(ind.length, "individual", "individuais")} · ${plural(people, "pessoa", "pessoas")} em ${plural(cols.length, "coletiva", "coletivas")}`,
           oldest ? `mais antiga esperando há ${ageLabel(oldest)}` : ""
@@ -101,7 +101,7 @@
       return {
         icon: "door", tone: "green", title: "Aguardando saída",
         value: ind.length + inside,
-        note: ind.length + inside ? "pessoas autorizadas que ainda não saíram" : "ninguém aguardando na portaria",
+        note: ind.length + inside ? (ind.length + inside === 1 ? "pessoa autorizada que ainda não saiu" : "pessoas autorizadas que ainda não saíram") : "ninguém aguardando na portaria",
         details: [`${plural(ind.length, "individual", "individuais")} · ${plural(inside, "pessoa", "pessoas")} em ${plural(cols.length, "coletiva", "coletivas")}`],
         rows, rowsTitle: cols.length ? "Coletivas · saíram" : ""
       };
