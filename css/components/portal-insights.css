@@ -56,6 +56,54 @@
 .insight-indigo { --tone: #3f51b5; --tone-soft: #eaecfa; }
 .insight-amber { --tone: #b7791f; --tone-soft: #fbf2e1; }
 
+/* ===== Gráficos (js/features/portal-insights-charts.js) ===== */
+.insights-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.insights-charts[hidden] { display: none; }
+.chart-card { min-width: 0; padding: 1rem 1.1rem 1.1rem; border: 1px solid #dfe7f0; border-radius: 1rem; background: #fff; box-shadow: 0 2px 10px rgba(0, 20, 45, .05); }
+.chart-head h3 { margin: 0; color: #00142d; font-size: .95rem; font-weight: 800; }
+.chart-head p { margin: .15rem 0 .7rem; color: #617188; font-size: .8rem; }
+.chart-host { width: 100%; min-height: 190px; }
+.chart-svg { display: block; overflow: visible; }
+.chart-tick { fill: #898781; font: 500 10.5px system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+.chart-col .chart-hit { cursor: pointer; outline: none; }
+.chart-col:has(.chart-hit.is-hover) path, .chart-col:has(.chart-hit.is-hover) rect:not(.chart-hit) { filter: brightness(1.12); }
+.chart-col .chart-hit.is-hover { fill: rgba(0, 20, 45, .045); }
+
+.chart-legend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin: 0 0 .6rem; padding: 0; list-style: none; font-size: .78rem; color: #52514e; }
+.chart-legend li { display: inline-flex; align-items: center; gap: .35rem; }
+.chart-legend b { color: #0b0b0b; font-variant-numeric: tabular-nums; }
+.chart-legend small { color: #898781; font-size: .72rem; }
+.chart-swatch { flex: none; width: .7rem; height: .7rem; border-radius: 3px; }
+
+/* Barras horizontais (quem mais criou) */
+.chart-hbars { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.chart-hbars li { display: grid; grid-template-columns: minmax(70px, 30%) 1fr; align-items: center; gap: .6rem; padding: .1rem .2rem; border-radius: .4rem; cursor: pointer; outline: none; }
+.chart-hbars li.is-hover, .chart-hbars li:focus-visible { background: #f3f6fa; }
+.chart-hbar-label { overflow: hidden; color: #52514e; font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.chart-hbar-track { display: flex; align-items: center; gap: .45rem; min-width: 0; }
+.chart-hbar { display: block; height: 14px; border-radius: 0 4px 4px 0; }
+.chart-hbar-value { flex: none; color: #0b0b0b; font-size: .8rem; font-variant-numeric: tabular-nums; }
+
+/* Barra dividida (situação do mês): 2px de folga entre os pedaços, pontas arredondadas */
+.chart-stack { display: flex; gap: 2px; height: 22px; margin: .2rem 0 .8rem; border-radius: 4px; overflow: hidden; }
+.chart-stack-seg { display: block; min-width: 3px; flex-basis: 0; cursor: pointer; outline: none; }
+.chart-stack-seg.is-hover, .chart-stack-seg:focus-visible { filter: brightness(1.12); }
+.chart-stack + .chart-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem 1rem; }
+.chart-stack + .chart-legend li { display: grid; grid-template-columns: auto 1fr auto auto; }
+.chart-stack + .chart-legend small { min-width: 2.4rem; text-align: right; }
+
+/* Dica ao passar o mouse/tocar */
+.chart-tip { position: absolute; z-index: 3000; min-width: 140px; max-width: 260px; padding: .55rem .7rem; border-radius: .55rem; color: #0b0b0b; background: #fff; box-shadow: 0 6px 22px rgba(0, 20, 45, .18); border: 1px solid rgba(11, 11, 11, .08); font-size: .78rem; pointer-events: none; }
+.chart-tip[hidden] { display: none; }
+.chart-tip-title { display: block; margin-bottom: .3rem; color: #52514e; font-size: .74rem; font-weight: 600; }
+.chart-tip-row { display: flex; align-items: center; gap: .4rem; }
+.chart-tip-row b { font-size: .9rem; font-variant-numeric: tabular-nums; }
+.chart-tip-row span { color: #52514e; }
+.chart-tip-key { flex: none; width: 10px; height: 2px; border-radius: 1px; }
+
+@media (max-width: 900px) { .insights-charts { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .chart-stack + .chart-legend { grid-template-columns: 1fr; } .chart-card { padding: .9rem; } }
+
 @media (max-width: 600px) {
   /* Celular: faixa branca com título e mês em cima e o botão "Mostrar mais informações" na largura toda embaixo. */
   .portal-insights > summary { display: grid; grid-template-columns: 1fr; gap: .15rem; padding: .85rem .9rem; border: 1px solid #dfe7f0; border-radius: .9rem; background: #fff; box-shadow: 0 2px 10px rgba(0, 20, 45, .05); }

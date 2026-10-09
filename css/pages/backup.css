@@ -29,7 +29,7 @@ body.backup-page { background:var(--bk-bg); color:#16283d; }
 .backup-result.is-error { color:#7a1f27; background:#fdeeee; }
 .backup-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-bottom:.5rem; }
 .backup-filters label { margin:0; color:var(--bk-muted); font-size:.8rem; font-weight:700; }
-.backup-filters input { padding:.5rem .65rem; border:1px solid var(--bk-line); border-radius:.45rem; background:#fff; }
+.backup-filters input, .backup-filters select { padding:.5rem .65rem; border:1px solid var(--bk-line); border-radius:.45rem; background:#fff; }
 .backup-card small { color:var(--bk-muted); }
 @media (max-width:760px) { .backup-grid { grid-template-columns:1fr; } .backup-button { width:100%; } .backup-filters input { flex:1 1 0; min-width:0; } }
 .backup-card select { padding:.5rem .65rem; border:1px solid var(--bk-line); border-radius:.45rem; background:#fff; }

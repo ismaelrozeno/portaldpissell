@@ -1,6 +1,6 @@
 // "Indicadores do mês" do Meu portal: cartões claros abaixo dos cartões do dia, montados só com o que o sistema já
 // grava (liberações individuais + coletivas visíveis no perfil aberto). Cada perfil vê os indicadores que fazem
-// sentido para ele (CARDS_BY_PROFILE). A seção abre sempre recolhida; "Mostrar" expande.
+// sentido para ele (CARDS_BY_PROFILE), com gráficos embaixo (portal-insights-charts.js). Abre sempre recolhida.
 // Uso: window.portalInsights.render({ profileKey, releases, sheets })  (chamado por writeStats em js/pages/portal.js)
 (() => {
   const esc = (value) => window.escapeHtml(value);
@@ -259,9 +259,12 @@
       <details class="portal-insights" id="portal-insights" hidden>
         <summary><span class="portal-insights-title">Indicadores do mês</span><small id="portal-insights-month"></small><span class="portal-insights-toggle" aria-hidden="true"></span></summary>
         <div class="insights-grid" id="insights-grid"></div>
+        <div class="insights-charts" id="insights-charts"></div>
       </details>`);
     // Sempre começa recolhida (<details> sem "open"): a pessoa abre quando quiser.
     section = document.querySelector("#portal-insights");
+    // Os gráficos de colunas precisam da largura real: redesenha ao abrir.
+    section.addEventListener("toggle", () => { if (section.open) window.portalInsightCharts?.redraw(); });
     return section;
   }
 
@@ -276,6 +279,10 @@
     el.querySelector("#insights-grid").innerHTML = keys.map((key) => {
       try { return cardHtml(CARDS[key](data)); } catch (error) { console.warn(`Indicador "${key}" indisponível.`, error); return ""; }
     }).join("");
+    // Gráficos embaixo dos cartões (js/features/portal-insights-charts.js).
+    const charts = el.querySelector("#insights-charts");
+    if (window.portalInsightCharts) window.portalInsightCharts.render(charts, { profileKey, releases, sheets });
+    else charts.hidden = true;
   }
 
   window.portalInsights = Object.freeze({ render, CARDS_BY_PROFILE });
