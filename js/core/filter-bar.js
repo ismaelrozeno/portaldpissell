@@ -97,8 +97,6 @@
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
         { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
       ],
-      // O DP abre (e o "Limpar filtros" volta) no que espera a autorização dele, de qualquer data.
-      defaultStatus: "pending",
       sorts: [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]]
     }
   };
