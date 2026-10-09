@@ -28,6 +28,7 @@
   // Os "value" que têm cartão (pending, approved, bonus, launched) precisam existir para o clique no cartão filtrar;
   // aliases: cartão que, naquele perfil, é a mesma Situação de outro (no engenheiro, "bonus" = "pending").
   // defaultSort: ordem com que a lista abre e para a qual o "Limpar filtros" volta.
+  // defaultStatus: Situação com que a lista abre e para a qual o "Limpar filtros" volta (sem ela, "Todas").
   const today = () => iso(new Date());
   const RULES = {
     approvedToday: (record, stage) => ["gate", "exited"].includes(stage)
@@ -80,6 +81,8 @@
         { value: "exitedToday", label: "Saíram hoje", test: (record, stage) => stage === "exited" && localDay(record.exitConfirmedAt) === today() },
         { value: "exited", label: "Saída confirmada", test: (record, stage) => stage === "exited" }
       ],
+      // A portaria abre (e o "Limpar filtros" volta) no que tem o botão "Confirmar saída", de qualquer data.
+      defaultStatus: "gate",
       sorts: BASIC_SORTS
     },
     dp: {
@@ -125,7 +128,8 @@
   }
   const isValidStatus = (value) => config.statuses.some((item) => item.value === value) || engineers.some((item) => ENG + item.key === value);
   const defaultSort = () => config?.defaultSort || "recent";
-  const isClean = (bar) => bar.status.value === "all" && bar.period.value === "any" && bar.sort.value === defaultSort() && !bar.search.value;
+  const defaultStatus = () => config?.defaultStatus || "all";
+  const isClean = (bar) => bar.status.value === defaultStatus() && bar.period.value === "any" && bar.sort.value === defaultSort() && !bar.search.value;
 
   const legacyRow = (search) => search.nextElementSibling?.classList.contains("date-filter") ? search.nextElementSibling : null;
 
@@ -237,7 +241,7 @@
     });
     bar.clear.addEventListener("click", () => {
       search.value = "";
-      bar.status.value = "all";
+      bar.status.value = defaultStatus();
       bar.sort.value = defaultSort();
       closeNative(bar);
       setPeriod(bar, "any");
@@ -267,7 +271,7 @@
       if (config) {
         bar.status.innerHTML = statusOptionsHtml();
         bar.sort.innerHTML = config.sorts.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
-        bar.status.value = "all";
+        bar.status.value = defaultStatus();
         bar.sort.value = defaultSort();
         setPeriod(bar, "any");
         write(bar);
