@@ -360,3 +360,8 @@ body.dash.release-page .dash-fab, body.dash.release-page .dash-fab-menu { displa
 /* Fechamento, Backup e Perfil com o menu do dashboard: fundo do portal e sem o espaço antigo no topo */
 body.dash:is(.closing-page, .backup-page, .profile-page) { background: var(--d-page); }
 body.dash :is(.closing-content, .backup-content, .profile-content) { min-height: 0; padding-top: 0; }
+
+/* Menu lateral: "Nova liberação individual" quebrava em duas linhas (o menu tem ~220px). Os dois botões numa linha só. */
+@media (min-width: 992px) {
+  .dash-nav-actions a { padding: .7rem .5rem; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
