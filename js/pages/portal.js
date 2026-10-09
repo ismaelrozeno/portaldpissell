@@ -12,8 +12,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+      shortcuts: ["Nova liberação individual", "Nova liberação coletiva", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "Liberacao-Coletiva.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     // Analista: chefe de equipe como o encarregado, mais a importação do relatório do RM. Com acessos dados pelo
     // administrador, também abre os painéis do DP, do engenheiro e da segurança do trabalho.
@@ -28,8 +28,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Importar relatório do RM", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "Importar-Colaboradores.html", "#activity-section"]
+      shortcuts: ["Nova liberação individual", "Nova liberação coletiva", "Consultar minha equipe", "Equipes e Excel", "Importar relatório do RM", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "Liberacao-Coletiva.html", "#foreman-summary", "Equipes.html", "Importar-Colaboradores.html", "#activity-section"]
     },
     estagiario_engenharia: {
       title: "Painel do estagiário de engenharia",
@@ -42,8 +42,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+      shortcuts: ["Nova liberação individual", "Nova liberação coletiva", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "Liberacao-Coletiva.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     seguranca_trabalho: {
       title: "Painel da segurança do trabalho",
@@ -56,8 +56,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Registrar liberação", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
-      shortcutHrefs: ["Liberacao.html", "#foreman-summary", "Equipes.html", "#activity-section"]
+      shortcuts: ["Nova liberação individual", "Nova liberação coletiva", "Consultar minha equipe", "Equipes e Excel", "Ver histórico"],
+      shortcutHrefs: ["Liberacao.html", "Liberacao-Coletiva.html", "#foreman-summary", "Equipes.html", "#activity-section"]
     },
     dp: {
       title: "Painel do Departamento Pessoal",
@@ -70,8 +70,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Conferir liberações", "Nova liberação individual", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel", "Digitais dos colaboradores"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html", "Biometria.html"]
+      shortcuts: ["Conferir liberações", "Nova liberação individual", "Nova liberação coletiva", "Equipes e Excel", "Importar relatório do RM", "Fechamento mensal", "Backup e Excel", "Digitais dos colaboradores"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Liberacao-Coletiva.html", "Equipes.html", "Importar-Colaboradores.html", "Fechamento.html", "Backup.html", "Biometria.html"]
     },
     engenheiro: {
       title: "Painel do engenheiro responsável",
@@ -84,8 +84,8 @@
       pending: "0",
       approved: "0",
       bonus: "0",
-      shortcuts: ["Assinar abono", "Nova liberação individual", "Equipes e Excel", "Histórico de assinaturas"],
-      shortcutHrefs: ["#records-section", "Liberacao.html", "Equipes.html", "#activity-section"]
+      shortcuts: ["Assinar abono", "Nova liberação individual", "Nova liberação coletiva", "Equipes e Excel", "Histórico de assinaturas"],
+      shortcutHrefs: ["#records-section", "Liberacao.html", "Liberacao-Coletiva.html", "Equipes.html", "#activity-section"]
     },
     portaria: {
       title: "Painel da portaria",
