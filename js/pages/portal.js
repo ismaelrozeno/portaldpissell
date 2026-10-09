@@ -846,6 +846,8 @@
     activeProfileKey = profileKey;
     // Filtros do perfil (cada perfil tem a sua configuração; sem configuração fica o filtro antigo).
     window.portalFilterBar?.use(profileKey);
+    // Link de outra tela com a lista já filtrada (Portal.html?situacao=...): aplica assim que a barra do perfil existe.
+    window.portalDashboard?.applyUrlStatus();
     const profile = profiles[profileKey];
     elements.title.textContent = profile.title;
     elements.description.textContent = profile.description;

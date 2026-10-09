@@ -364,3 +364,13 @@ body.dash :is(.closing-content, .backup-content, .profile-content) { min-height:
 @media (min-width: 992px) {
   .dash-nav-actions a { padding: .7rem .5rem; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* Fechamento mensal: cartões no visual do Meu portal (brancos, com borda) e clicáveis (abrem a lista filtrada) */
+body.dash .closing-stats { gap: .6rem; }
+body.dash .closing-stats .closing-stat { display: flex; flex-direction: column; padding: .85rem .9rem; border: 1px solid var(--d-line); border-radius: var(--d-radius); color: var(--d-ink); background: var(--d-surface); text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+body.dash .closing-stats .closing-stat:nth-child(n) { background: var(--d-surface); }
+body.dash .closing-stats .closing-stat span, body.dash .closing-stats .closing-stat small { color: var(--d-ink-2); font-size: .8rem; }
+body.dash .closing-stats .closing-stat strong { margin: .2rem 0; color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.9rem; font-weight: 700; line-height: 1.05; }
+body.dash .closing-stats .closing-stat:hover { border-color: var(--d-accent); }
+body.dash .closing-stats .closing-stat:focus-visible { outline: none; border-color: var(--d-accent); box-shadow: 0 0 0 3px rgba(239, 122, 14, .18); }
+@media (min-width: 992px) { body.dash .closing-stats { gap: .8rem; } }

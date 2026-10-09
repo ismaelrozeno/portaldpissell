@@ -141,8 +141,23 @@
   const MINE = { chief: "foreman", engenheiro: "engineer", dp: "dp", portaria: "gate" };
 
   let lastProfile = "";
+  // Link de outra tela com a lista já filtrada (ex.: Fechamento mensal → Portal.html?situacao=bonusYes#individuais).
+  // Aplica uma vez, quando a barra de filtros do perfil já existe, e tira o parâmetro do endereço.
+  let urlStatus = new URLSearchParams(location.search).get("situacao");
+  function applyUrlStatus() {
+    const bar = window.portalFilterBar;
+    if (!urlStatus || !bar?.active()) return;
+    // Zera antes de aplicar: aplicar redesenha a lista e os números, que chamam esta função de novo.
+    const value = urlStatus;
+    urlStatus = null;
+    bar.setStatusAll(value);
+    const url = new URL(location.href);
+    url.searchParams.delete("situacao");
+    history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+  }
   function update({ profileKey, releases = [], sheets = [] }) {
     lastProfile = profileKey;
+    applyUrlStatus();
     const flow = window.portalReleaseFlow;
     const col = window.portalCollectiveSheet;
     const stageInd = (r) => flow.stageOf(r);
@@ -284,6 +299,8 @@
     }
   });
 
-  window.portalDashboard = Object.freeze({ update, go, showPage });
+  window.portalDashboard = Object.freeze({ update, go, showPage, applyUrlStatus });
   showPage(pageFromHash(), { scroll: false });
+  // O portal pode ter montado a barra de filtros antes deste arquivo carregar.
+  applyUrlStatus();
 })();
