@@ -356,3 +356,7 @@ body.dash[data-page="coletivas"] #collective-section .records-toolbar { margin: 
 body.dash.release-page { background: var(--d-page); }
 body.dash .release-content { min-height: 0; padding-top: 0; padding-bottom: 0; }
 body.dash.release-page .dash-fab, body.dash.release-page .dash-fab-menu { display: none !important; }
+
+/* Fechamento, Backup e Perfil com o menu do dashboard: fundo do portal e sem o espaço antigo no topo */
+body.dash:is(.closing-page, .backup-page, .profile-page) { background: var(--d-page); }
+body.dash :is(.closing-content, .backup-content, .profile-content) { min-height: 0; padding-top: 0; }
