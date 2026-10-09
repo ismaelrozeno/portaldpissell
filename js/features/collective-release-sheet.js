@@ -31,7 +31,9 @@
     registered: { label: "Retroativa · registrada", tone: "approved" }
   };
   // Mesma conta do portalReleaseFlow.isRetroactive (esta tela também abre sem ele, em Liberacao-Coletiva.html).
+  // Entrada e saída marcadas juntas também é retroativa (o colaborador não bateu o ponto).
   const isRetroactive = (sheet) => {
+    if ((sheet?.movement || []).includes("entrada") && (sheet?.movement || []).includes("saida")) return true;
     const created = new Date(sheet?.createdAt || "");
     if (!sheet?.date || Number.isNaN(created.getTime())) return false;
     const pad = (n) => String(n).padStart(2, "0");

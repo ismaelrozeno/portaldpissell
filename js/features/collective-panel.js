@@ -245,7 +245,7 @@
       return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     };
     const today = day(Date.now());
-    const extra = { pending: [], approved: [], bonus: [], stageOf };
+    const extra = { pending: [], approved: [], bonus: [], stageOf, all: mine };
     if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
     else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp");
     else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet)));

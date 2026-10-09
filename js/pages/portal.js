@@ -211,7 +211,7 @@
         chips.push(chip(stage === "closed" ? "no" : "yes", `DP <b>${short(release.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`));
       } else if (window.portalReleaseFlow.isRetroactive(release)) {
         // Data anterior ao dia em que foi criada: o colaborador já saiu, não há saída para autorizar nem confirmar.
-        chips.push(chip("info", "Retroativa · sem autorização de saída nem portaria", "A data da liberação é anterior ao dia em que ela foi criada. Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
+        chips.push(chip("info", "Retroativa · sem autorização de saída nem portaria", "A data da liberação é anterior ao dia em que ela foi criada, ou entrada e saída foram marcadas juntas (o colaborador não bateu o ponto). Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
       } else {
         chips.push(chip("wait", "DP: aguardando"));
       }
@@ -710,6 +710,30 @@
   }
   const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
 
+  // "Pendências de abono": quantas esperam cada engenheiro (o "Enviar para" da liberação, nome do cadastro dele)
+  // e quantas foram para todos. Mostra o primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros.
+  function byEngineerLines(list) {
+    const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    const groups = new Map();
+    list.forEach((record) => {
+      const name = String(record.targetEngineer || "").trim().replace(/\s+/g, " ");
+      const key = name.toLowerCase();
+      if (!groups.has(key)) groups.set(key, { name, count: 0 });
+      groups.get(key).count += 1;
+    });
+    const named = [...groups.values()].filter((group) => group.name);
+    const first = (name) => name.split(" ")[0].toLowerCase();
+    const short = (name) => {
+      const clash = named.some((other) => other.name.toLowerCase() !== name.toLowerCase() && first(other.name) === first(name));
+      return name.split(" ").slice(0, clash ? 2 : 1).map(title).join(" ");
+    };
+    const lines = named.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .map((group) => `aguardando ${short(group.name)}: ${group.count}`);
+    const all = groups.get("")?.count || 0;
+    if (all) lines.push(`aguardando todos: ${all}`);
+    return lines;
+  }
+
   // collective = { pending, approved, bonus, stageOf } das coletivas (js/features/collective-panel.js), ou null.
   function writeStats(collective) {
     if (!individualStats) return;
@@ -736,7 +760,7 @@
     ]);
 
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
-    detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
+    detail("stat-bonus-detail", isPortaria ? [] : [...byEngineerLines([...bonus, ...col.bonus]), splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
 
     // "Abonos lançados no RM": os que o DP já carimbou como lançados (individuais + coletivas).
     const launchedAll = launched.length + (col.launched || []).length;
@@ -749,6 +773,9 @@
     elements.launchedProgress.hidden = isPortaria;
     elements.launchedBar.style.width = `${percent}%`;
     elements.launchedProgress.title = `${launchedAll} de ${abonados} abonos lançados no RM`;
+
+    // "Indicadores do mês" (js/features/portal-insights.js), com as mesmas listas que o perfil vê.
+    window.portalInsights?.render({ profileKey, releases: individualStats.all || [], sheets: col.all || [] });
   }
   window.portalWriteStats = writeStats;
 
@@ -799,6 +826,7 @@
     // Individuais de cada cartão; o painel das coletivas soma as dele por cima (writeStats, chamado por refreshStats).
     individualStats = {
       profileKey,
+      all: releases,
       pending: releases.filter(rules.pending),
       approved: releases.filter(rules.approved),
       bonus: releases.filter(rules.bonus),

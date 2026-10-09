@@ -25,8 +25,10 @@
       // autorizar nem para a portaria confirmar. Depois do engenheiro ela já fica registrada (o DP só lança o abono no RM).
       registered: { label: "Retroativa · registrada", tone: "approved" }
     }),
-    // Data da liberação anterior ao dia em que ela foi criada (pelo relógio local de quem vê).
+    // Retroativa: data da liberação anterior ao dia em que ela foi criada (pelo relógio local de quem vê), ou
+    // entrada E saída marcadas juntas (o colaborador não bateu o ponto, então a movimentação já aconteceu).
     isRetroactive(record) {
+      if (window.portalReleaseFlow.hasBothMovements(record)) return true;
       const created = new Date(record?.createdAt || record?.requestedAt || "");
       if (!record?.date || Number.isNaN(created.getTime())) return false;
       const pad = (n) => String(n).padStart(2, "0");
@@ -36,6 +38,11 @@
       "Ajustar horário",
       "Ajustar motivo da liberação"
     ]),
+    // Entrada e saída marcadas na mesma liberação (conta como retroativa).
+    hasBothMovements(record) {
+      const list = record?.movement || [];
+      return list.includes("entrada") && list.includes("saida");
+    },
     // "Entrada", "Saída" ou "Entrada e saída". Liberações antigas não guardaram: eram só saída.
     movementLabel(release) {
       const list = release.movement?.length ? release.movement : ["saida"];
