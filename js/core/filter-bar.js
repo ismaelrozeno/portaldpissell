@@ -33,7 +33,19 @@
   const RULES = {
     approvedToday: (record, stage) => ["gate", "exited"].includes(stage)
       && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === today(),
-    awaitingBonus: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage)
+    awaitingBonus: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage),
+    exitedToday: (record, stage) => stage === "exited" && localDay(record.exitConfirmedAt) === today(),
+    // Digital pendente (em andamento): individual sem a digital do colaborador; coletiva com alguém da lista sem assinar.
+    bioPending: (record, stage, collective) => !["foreman", "closed"].includes(stage) && (collective
+      ? (window.portalCollectiveSheet?.signedCount(record) || 0) < (record.participants || []).length
+      : record.employeeSignature?.method !== "biometria")
+  };
+  // Etapas da "Esteira do fluxo" (js/features/portal-dashboard.js): clicar numa estação filtra a lista por ela.
+  const FLOW = {
+    refused: { value: "refused", label: "Recusadas · com o encarregado", test: (record, stage) => stage === "foreman" },
+    waitDp: { value: "waitDp", label: "Aguardando DP", test: (record, stage) => stage === "dp" },
+    gate: { value: "gate", label: "Aguardando saída", test: (record, stage) => stage === "gate" },
+    exitedToday: { value: "exitedToday", label: "Saíram hoje", test: RULES.exitedToday }
   };
   const BASIC_SORTS = [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]];
   // Encarregado, analista, estagiário e segurança do trabalho: acompanham o que eles mesmos pediram.
@@ -46,6 +58,9 @@
       { value: "bonus", label: "Abono · aguardando engenheiro", test: RULES.awaitingBonus },
       { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
       { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" },
+      FLOW.waitDp,
+      FLOW.gate,
+      FLOW.exitedToday,
       { value: "exited", label: "Saída confirmada na portaria", test: (record, stage) => stage === "exited" },
       { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
       { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
@@ -65,6 +80,9 @@
         { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
         { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" },
         { value: "refused", label: "Recusadas · devolvidas ao solicitante", test: (record, stage) => stage === "foreman" },
+        FLOW.waitDp,
+        FLOW.gate,
+        FLOW.exitedToday,
         { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
         { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
@@ -78,7 +96,7 @@
         { value: "all", label: "Todas" },
         { value: "gate", label: "Aguardando saída", test: (record, stage) => stage === "gate" },
         { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
-        { value: "exitedToday", label: "Saíram hoje", test: (record, stage) => stage === "exited" && localDay(record.exitConfirmedAt) === today() },
+        FLOW.exitedToday,
         { value: "exited", label: "Saída confirmada", test: (record, stage) => stage === "exited" }
       ],
       // A portaria abre (e o "Limpar filtros" volta) no que tem o botão "Confirmar saída", de qualquer data.
@@ -94,6 +112,10 @@
         { value: "bonus", label: "Abono · aguardando engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
         { value: "toLaunch", label: "Abono · por lançar no RM", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
+        { value: "bioPending", label: "Digital pendente", test: RULES.bioPending },
+        FLOW.refused,
+        FLOW.gate,
+        FLOW.exitedToday,
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
         { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
       ],
