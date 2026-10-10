@@ -394,3 +394,5 @@ body.dash .portal-stats .stat-card-engineer:has(> button.is-active) { border-col
 /* Linha "Total N" do cartão por engenheiro (aguardando + abonadas) */
 .stat-engineer-total { margin: .3rem .9rem .85rem; color: var(--d-ink, #0e1f33); font-size: .82rem; }
 body.dash .portal-stats .stat-engineer-total small { display: inline; margin: 0; padding: 0; border: 0; color: var(--d-muted, #66768a); font-size: inherit; }
+/* Etiqueta "Gestor" ao lado do nome do engenheiro gestor */
+.stat-engineer-tag { display: inline-block; margin-left: .3rem; padding: .05rem .45rem; border-radius: 999px; color: var(--d-ink-2, #3b4d63); background: #e8edf2; font: 600 .68rem/1.5 "Barlow", sans-serif; font-style: normal; vertical-align: 2px; }
