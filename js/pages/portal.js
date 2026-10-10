@@ -741,11 +741,12 @@
   // Pendências de abono por engenheiro de destino (o "Enviar para" da liberação, nome do cadastro dele) e as enviadas
   // a todos. Primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros. Viram os cartões "Aguardando ..." e as
   // opções "Aguardando por engenheiro" da Situação (js/core/filter-bar.js).
-  function byEngineerGroups(individual, collective) {
+  // field: "targetEngineer" (para quem foi enviada) ou "engineer" (quem assinou o abono, nas "Abonadas por").
+  function byEngineerGroups(individual, collective, field = "targetEngineer") {
     const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     const groups = new Map();
     const add = (record, kind) => {
-      const name = String(record.targetEngineer || "").trim().replace(/\s+/g, " ");
+      const name = String(record[field] || "").trim().replace(/\s+/g, " ");
       const key = name.toLowerCase();
       if (!groups.has(key)) groups.set(key, { key, name, count: 0, ind: 0, col: 0 });
       const group = groups.get(key);
@@ -766,21 +767,27 @@
     return list;
   }
 
-  // Fileira "Aguardando por engenheiro": um cartão por engenheiro (e um para "todos"); clicar filtra as duas listas.
-  function renderEngineerCards(groups, hidden) {
+  // Cartões por engenheiro: "Aguardando <engenheiro>" (e "todos") e "Abonadas por <engenheiro>" (quem assinou o abono).
+  // Clicar filtra as duas listas; as mesmas opções aparecem na Situação (js/core/filter-bar.js).
+  function renderEngineerCards(groups, approvedGroups, hidden) {
     const host = document.querySelector("#engineer-stats");
     if (!host) return;
-    host.hidden = hidden || !groups.length;
+    const approved = approvedGroups.filter((group) => group.key);
+    host.hidden = hidden || (!groups.length && !approved.length);
     const filterBar = window.portalFilterBar;
-    window.portalFilterBar?.setEngineers(hidden ? [] : groups.map(({ key, label, count }) => ({ key, label, count })));
+    const options = (list) => list.map(({ key, label, count }) => ({ key, label, count }));
+    window.portalFilterBar?.setEngineers(hidden ? [] : options(groups), hidden ? [] : options(approved));
     if (host.hidden) { host.innerHTML = ""; return; }
-    host.innerHTML = groups.map((group) => {
-      const value = filterBar?.engineerValue(group.key) || "";
+    const card = (group, kind) => {
+      const value = filterBar?.engineerValue(group.key, kind) || "";
       const split = [group.ind ? plural(group.ind, "individual", "individuais") : "", group.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
-      return `<button class="stat-card stat-card-engineer" type="button" data-engineer-filter="${escapeHtml(value)}">
-        <span>Aguardando</span><b class="stat-engineer-name">${escapeHtml(group.key ? group.label : "todos os engenheiros")}</b>
+      const heading = kind === "approved" ? "Abonadas por" : "Aguardando";
+      const name = group.key ? group.label : "todos os engenheiros";
+      return `<button class="stat-card stat-card-engineer${kind === "approved" ? " stat-card-approved" : ""}" type="button" data-engineer-filter="${escapeHtml(value)}">
+        <span>${heading}</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
         <strong>${group.count}</strong><small class="stat-detail">${escapeHtml(split)}</small></button>`;
-    }).join("");
+    };
+    host.innerHTML = [...groups.map((group) => card(group, "pending")), ...approved.map((group) => card(group, "approved"))].join("");
     highlightStatCard();
   }
 
@@ -811,7 +818,9 @@
 
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
     detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
-    renderEngineerCards(byEngineerGroups(bonus, col.bonus), isPortaria);
+    // "Abonadas por <engenheiro>": de todas as liberações que o perfil vê, as que o engenheiro marcou como abonadas.
+    const approvedBy = (list) => (list || []).filter((record) => record.bonusStatus === "approved");
+    renderEngineerCards(byEngineerGroups(bonus, col.bonus), byEngineerGroups(approvedBy(individualStats.all), approvedBy(col.all), "engineer"), isPortaria);
 
     // "Abonos lançados no RM": os que o DP já carimbou como lançados (individuais + coletivas).
     const launchedAll = launched.length + (col.launched || []).length;

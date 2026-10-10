@@ -374,3 +374,6 @@ body.dash .closing-stats .closing-stat strong { margin: .2rem 0; color: var(--d-
 body.dash .closing-stats .closing-stat:hover { border-color: var(--d-accent); }
 body.dash .closing-stats .closing-stat:focus-visible { outline: none; border-color: var(--d-accent); box-shadow: 0 0 0 3px rgba(239, 122, 14, .18); }
 @media (min-width: 992px) { body.dash .closing-stats { gap: .8rem; } }
+
+/* Cartões "Abonadas por <engenheiro>": verde discreto para diferenciar dos "Aguardando" */
+body.dash .portal-stats .stat-card-approved { border-left: 4px solid var(--d-ok); }

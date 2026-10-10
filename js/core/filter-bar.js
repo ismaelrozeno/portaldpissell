@@ -143,15 +143,21 @@
   // montadas pelo portal com os engenheiros que têm pendência (setEngineers). Os cartões por engenheiro usam as mesmas.
   let engineers = [];
   const ENG = "eng:";
+  // "Abonadas por <engenheiro>" (value "ab:<nome em minúsculas>"): marcadas como abonadas por aquele engenheiro.
+  let approvers = [];
+  const AB = "ab:";
   const normName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
   const awaitingEngineer = (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage);
   function statusOptionsHtml() {
     const base = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
-    if (!engineers.length) return base;
     const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-    return `${base}<optgroup label="Aguardando por engenheiro">${engineers.map(({ key, label, count }) => `<option value="${esc(ENG + key)}">${esc(label)} (${count})</option>`).join("")}</optgroup>`;
+    const group = (label, prefix, list) => (list.length
+      ? `<optgroup label="${label}">${list.map(({ key, label: name, count }) => `<option value="${esc(prefix + key)}">${esc(name)} (${count})</option>`).join("")}</optgroup>`
+      : "");
+    return base + group("Aguardando por engenheiro", ENG, engineers) + group("Abonadas por engenheiro", AB, approvers);
   }
-  const isValidStatus = (value) => config.statuses.some((item) => item.value === value) || engineers.some((item) => ENG + item.key === value);
+  const isValidStatus = (value) => config.statuses.some((item) => item.value === value)
+    || engineers.some((item) => ENG + item.key === value) || approvers.some((item) => AB + item.key === value);
   const defaultSort = () => config?.defaultSort || "recent";
   const defaultStatus = () => config?.defaultStatus || "all";
   const isClean = (bar) => bar.status.value === defaultStatus() && bar.period.value === "any" && bar.sort.value === defaultSort() && !bar.search.value;
@@ -318,6 +324,8 @@
     if (value === "all") return true;
     // "Aguardando <engenheiro>": sem decisão de abono e enviada a ele ("eng:" = enviada a todos).
     if (value.startsWith(ENG)) return awaitingEngineer(record, stage) && normName(record.targetEngineer) === value.slice(ENG.length);
+    // "Abonadas por <engenheiro>": ele marcou como abonada.
+    if (value.startsWith(AB)) return record.bonusStatus === "approved" && normName(record.engineer) === value.slice(AB.length);
     const rule = config.statuses.find((item) => item.value === value);
     return !rule?.test || rule.test(record, stage, collective);
   }
@@ -343,11 +351,14 @@
 
   const aliases = () => config?.aliases || {};
 
-  // Lista de engenheiros com pendência ([{ key, label, count }]); refaz as opções mantendo a escolha atual.
-  function setEngineers(list) {
+  // Engenheiros com pendência e engenheiros que abonaram ([{ key, label, count }] cada); refaz as opções mantendo a
+  // escolha atual.
+  function setEngineers(list, approvedList) {
     const next = list || [];
-    if (JSON.stringify(next) === JSON.stringify(engineers)) return;
+    const nextApprovers = approvedList || [];
+    if (JSON.stringify(next) === JSON.stringify(engineers) && JSON.stringify(nextApprovers) === JSON.stringify(approvers)) return;
     engineers = next;
+    approvers = nextApprovers;
     if (!config) return;
     bars.forEach((bar) => {
       const current = bar.status.value;
@@ -357,7 +368,7 @@
     });
     statusChanged();
   }
-  const engineerValue = (key) => ENG + key;
+  const engineerValue = (key, kind) => (kind === "approved" ? AB : ENG) + key;
 
   window.portalFilterBar = Object.freeze({ use, active, status, matchesStatus, setStatusAll, sharedStatus, aliases, setEngineers, engineerValue });
 })();
