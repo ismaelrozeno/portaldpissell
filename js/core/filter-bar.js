@@ -108,6 +108,8 @@
       // do grupo Engenheiro (engineersAfter / approversAfter). Os "value" com cartão continuam os mesmos.
       engineersAfter: "bonus",
       approversAfter: "bonusYes",
+      // Cartão "Abonos lançados": abre a PENDÊNCIA do DP, o que falta lançar no RM.
+      aliases: { launched: "toLaunch" },
       statuses: [
         { value: "all", label: "Todas" },
         { ...FLOW.refused, label: "Recusadas · para ajustar", group: "Encarregado" },
