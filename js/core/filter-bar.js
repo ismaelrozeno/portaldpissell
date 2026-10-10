@@ -104,12 +104,17 @@
       sorts: BASIC_SORTS
     },
     dp: {
-      // Agrupada por PERFIL (de quem é a vez de agir): DP, Engenheiro, Portaria, Encarregado. Os engenheiros entram dentro
+      // Agrupada por PERFIL (de quem é a vez de agir): Encarregado, Engenheiro, DP, Portaria. Os engenheiros entram dentro
       // do grupo Engenheiro (engineersAfter / approversAfter). Os "value" com cartão continuam os mesmos.
       engineersAfter: "bonus",
       approversAfter: "bonusYes",
       statuses: [
         { value: "all", label: "Todas" },
+        { ...FLOW.refused, label: "Recusadas · para ajustar", group: "Encarregado" },
+        { value: "bonus", label: "Aguardando abono · todos", group: "Engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
+        // "Abonadas" e "Não abonadas" também são os cartões do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
+        { value: "bonusYes", label: "Abonadas · todas", group: "Engenheiro", test: (record) => record.bonusStatus === "approved" },
+        { value: "bonusNo", label: "Não abonadas", group: "Engenheiro", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
         { value: "pending", label: "Pendentes · aguardando DP", group: "DP", test: (record, stage) => stage === "dp" },
         { value: "approved", label: "Autorizadas hoje", group: "DP", test: (record, stage) => ["gate", "exited"].includes(stage)
           && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === iso(new Date()) },
@@ -118,13 +123,8 @@
         { value: "bioPending", label: "Digital pendente", group: "DP", test: RULES.bioPending },
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
         { value: "retroactive", label: "Retroativas · registradas", group: "DP", test: (record, stage) => stage === "registered" },
-        { value: "bonus", label: "Aguardando abono · todos", group: "Engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
-        // "Abonadas" e "Não abonadas" também são os cartões do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
-        { value: "bonusYes", label: "Abonadas · todas", group: "Engenheiro", test: (record) => record.bonusStatus === "approved" },
-        { value: "bonusNo", label: "Não abonadas", group: "Engenheiro", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
         { ...FLOW.gate, group: "Portaria" },
-        { ...FLOW.exitedToday, group: "Portaria" },
-        { ...FLOW.refused, label: "Recusadas · para ajustar", group: "Encarregado" }
+        { ...FLOW.exitedToday, group: "Portaria" }
       ],
       sorts: [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]]
     }
