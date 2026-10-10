@@ -779,7 +779,6 @@
     const options = (list) => list.map(({ key, label, count }) => ({ key, label, count }));
     window.portalFilterBar?.setEngineers(hidden ? [] : options(groups), hidden ? [] : options(approved));
     if (host.hidden) { host.innerHTML = ""; return; }
-    const splitOf = (group) => [group.ind ? plural(group.ind, "individual", "individuais") : "", group.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
     // Junta pelo nome: quem tem pendência e quem já abonou (o rótulo curto vem de quem tiver).
     const byKey = new Map();
     groups.forEach((group) => byKey.set(group.key, { key: group.key, label: group.label, pending: group }));
@@ -796,9 +795,9 @@
       const name = item.key ? item.label : "todos os engenheiros";
       const main = `<button class="stat-engineer-main" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}"${waiting ? "" : " disabled"}>
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
-          <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
+          <strong>${waiting}</strong></button>`;
       const approvedLine = item.key
-        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>· ${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
+        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}</button>`
         : "";
       return `<div class="stat-card stat-card-engineer">${main}${approvedLine}</div>`;
     }).join("");
