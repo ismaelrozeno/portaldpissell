@@ -770,7 +770,19 @@
   // Um cartão por engenheiro: "Aguardando abono" em destaque (o número grande, o que importa agora) e, embaixo, as
   // "abonadas" por ele (quem assinou o abono). As duas partes filtram as listas; as mesmas opções ficam na Situação
   // (js/core/filter-bar.js). As enviadas a "todos os engenheiros" têm o cartão delas, só com o aguardando.
+  // Engenheiros gestores (privilégio "gestor" no cadastro): o cartão deles ganha a etiqueta "Gestor" (abonam em último
+  // caso). A lista vem do cadastro uma vez; quando chega, os cartões são redesenhados.
+  let managerNames = new Set();
+  let lastEngineerCards = null;
+  window.portalAuthDemo?.getTeamDirectory?.().then((directory) => {
+    managerNames = new Set((directory?.all || [])
+      .filter((user) => user.roleValue === "engenheiro" && (user.privileges || []).includes("gestor"))
+      .map((user) => String(user.name || "").trim().replace(/\s+/g, " ").toLowerCase()));
+    if (managerNames.size && lastEngineerCards) renderEngineerCards(...lastEngineerCards);
+  }).catch(() => { /* sem a lista, os cartões ficam sem a etiqueta */ });
+
   function renderEngineerCards(groups, approvedGroups, hidden) {
+    lastEngineerCards = [groups, approvedGroups, hidden];
     const host = document.querySelector("#engineer-stats");
     if (!host) return;
     const approved = approvedGroups.filter((group) => group.key);
@@ -795,7 +807,7 @@
       const done = item.approved?.count || 0;
       const name = item.key ? item.label : "todos os engenheiros";
       const main = `<button class="stat-engineer-main" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}"${waiting ? "" : " disabled"}>
-          <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
+          <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}${managerNames.has(item.key) ? ' <em class="stat-engineer-tag">Gestor</em>' : ""}</b>
           <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
       const approvedLine = item.key
         ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>· ${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
@@ -837,7 +849,9 @@
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
     detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
     // "Abonadas por <engenheiro>": de todas as liberações que o perfil vê, as que o engenheiro marcou como abonadas.
-    const approvedBy = (list) => (list || []).filter((record) => record.bonusStatus === "approved");
+    // O Administrador Analista (perfil de teste e correções) não entra nos cartões.
+    const byAdmin = (record) => /administrador/i.test(`${record.engineerRole || ""} ${record.engineer || ""}`);
+    const approvedBy = (list) => (list || []).filter((record) => record.bonusStatus === "approved" && !byAdmin(record));
     renderEngineerCards(byEngineerGroups(bonus, col.bonus), byEngineerGroups(approvedBy(individualStats.all), approvedBy(col.all), "engineer"), isPortaria);
 
     // "Abonos lançados no RM": os que o DP já carimbou como lançados (individuais + coletivas).
