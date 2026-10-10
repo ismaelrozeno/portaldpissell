@@ -798,9 +798,9 @@
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
           <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
       const approvedLine = item.key
-        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}>✓ ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
+        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>· ${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
         : "";
-      return `<div class="stat-card stat-card-engineer${waiting ? " has-waiting" : ""}">${main}${approvedLine}</div>`;
+      return `<div class="stat-card stat-card-engineer">${main}${approvedLine}</div>`;
     }).join("");
     highlightStatCard();
   }
