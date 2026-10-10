@@ -460,7 +460,7 @@
   document.querySelector("#engineer-stats")?.addEventListener("click", async (event) => {
     const card = event.target.closest("[data-engineer-filter]");
     const filterBar = window.portalFilterBar;
-    if (!card || !filterBar?.active()) return;
+    if (!card || card.disabled || !filterBar?.active()) return;
     const value = card.dataset.engineerFilter;
     const next = filterBar.sharedStatus() === value ? "all" : value;
     if (trashMode || doneMode) {
@@ -767,8 +767,9 @@
     return list;
   }
 
-  // Cartões por engenheiro: "Aguardando <engenheiro>" (e "todos") e "Abonadas por <engenheiro>" (quem assinou o abono).
-  // Clicar filtra as duas listas; as mesmas opções aparecem na Situação (js/core/filter-bar.js).
+  // Um cartão por engenheiro: "Aguardando abono" em destaque (o número grande, o que importa agora) e, embaixo, as
+  // "abonadas" por ele (quem assinou o abono). As duas partes filtram as listas; as mesmas opções ficam na Situação
+  // (js/core/filter-bar.js). As enviadas a "todos os engenheiros" têm o cartão delas, só com o aguardando.
   function renderEngineerCards(groups, approvedGroups, hidden) {
     const host = document.querySelector("#engineer-stats");
     if (!host) return;
@@ -778,16 +779,29 @@
     const options = (list) => list.map(({ key, label, count }) => ({ key, label, count }));
     window.portalFilterBar?.setEngineers(hidden ? [] : options(groups), hidden ? [] : options(approved));
     if (host.hidden) { host.innerHTML = ""; return; }
-    const card = (group, kind) => {
-      const value = filterBar?.engineerValue(group.key, kind) || "";
-      const split = [group.ind ? plural(group.ind, "individual", "individuais") : "", group.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
-      const heading = kind === "approved" ? "Abonadas por" : "Aguardando";
-      const name = group.key ? group.label : "todos os engenheiros";
-      return `<button class="stat-card stat-card-engineer${kind === "approved" ? " stat-card-approved" : ""}" type="button" data-engineer-filter="${escapeHtml(value)}">
-        <span>${heading}</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
-        <strong>${group.count}</strong><small class="stat-detail">${escapeHtml(split)}</small></button>`;
-    };
-    host.innerHTML = [...groups.map((group) => card(group, "pending")), ...approved.map((group) => card(group, "approved"))].join("");
+    const splitOf = (group) => [group.ind ? plural(group.ind, "individual", "individuais") : "", group.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
+    // Junta pelo nome: quem tem pendência e quem já abonou (o rótulo curto vem de quem tiver).
+    const byKey = new Map();
+    groups.forEach((group) => byKey.set(group.key, { key: group.key, label: group.label, pending: group }));
+    approved.forEach((group) => {
+      const item = byKey.get(group.key) || { key: group.key, label: group.label };
+      item.approved = group;
+      byKey.set(group.key, item);
+    });
+    const items = [...byKey.values()].sort((a, b) => (!a.key) - (!b.key)
+      || (b.pending?.count || 0) - (a.pending?.count || 0) || (b.approved?.count || 0) - (a.approved?.count || 0) || a.label.localeCompare(b.label));
+    host.innerHTML = items.map((item) => {
+      const waiting = item.pending?.count || 0;
+      const done = item.approved?.count || 0;
+      const name = item.key ? item.label : "todos os engenheiros";
+      const main = `<button class="stat-engineer-main" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}"${waiting ? "" : " disabled"}>
+          <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
+          <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
+      const approvedLine = item.key
+        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}>✓ ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
+        : "";
+      return `<div class="stat-card stat-card-engineer${waiting ? " has-waiting" : ""}">${main}${approvedLine}</div>`;
+    }).join("");
     highlightStatCard();
   }
 
