@@ -151,10 +151,11 @@
   function statusOptionsHtml() {
     const base = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
     const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-    const group = (label, prefix, list) => (list.length
-      ? `<optgroup label="${label}">${list.map(({ key, label: name, count }) => `<option value="${esc(prefix + key)}">${esc(name)} (${count})</option>`).join("")}</optgroup>`
+    // O número ao lado do nome é sempre a PENDÊNCIA (aguardando abono); nas "Abonadas por" vai só o nome.
+    const group = (label, prefix, list, withCount) => (list.length
+      ? `<optgroup label="${label}">${list.map(({ key, label: name, count }) => `<option value="${esc(prefix + key)}">${esc(name)}${withCount ? ` (${count})` : ""}</option>`).join("")}</optgroup>`
       : "");
-    return base + group("Aguardando por engenheiro", ENG, engineers) + group("Abonadas por engenheiro", AB, approvers);
+    return base + group("Aguardando por engenheiro", ENG, engineers, true) + group("Abonadas por engenheiro", AB, approvers, false);
   }
   const isValidStatus = (value) => config.statuses.some((item) => item.value === value)
     || engineers.some((item) => ENG + item.key === value) || approvers.some((item) => AB + item.key === value);

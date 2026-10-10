@@ -789,7 +789,10 @@
     host.hidden = hidden || (!groups.length && !approved.length);
     const filterBar = window.portalFilterBar;
     const options = (list) => list.map(({ key, label, count }) => ({ key, label, count }));
-    window.portalFilterBar?.setEngineers(hidden ? [] : options(groups), hidden ? [] : options(approved));
+    // "Aguardando por engenheiro" na Situação: TODOS os engenheiros (também quem está com 0), com a pendência de cada um.
+    const pendingKeys = new Set(groups.map((group) => group.key));
+    const everyEngineer = [...groups.filter((group) => group.key), ...approved.filter((group) => !pendingKeys.has(group.key)).map((group) => ({ ...group, count: 0 })), ...groups.filter((group) => !group.key)];
+    window.portalFilterBar?.setEngineers(hidden ? [] : options(everyEngineer), hidden ? [] : options(approved));
     if (host.hidden) { host.innerHTML = ""; return; }
     // Junta pelo nome: quem tem pendência e quem já abonou (o rótulo curto vem de quem tiver).
     const splitOf = (group) => [group?.ind ? plural(group.ind, "individual", "individuais") : "", group?.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
