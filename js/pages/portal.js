@@ -809,8 +809,8 @@
       const waiting = item.pending?.count || 0;
       const done = item.approved?.count || 0;
       const name = item.key ? item.label : "todos os engenheiros";
-      // A parte de cima filtra o aguardando; sem nada aguardando, filtra as abonadas (o clique sempre leva a uma lista).
-      const mainFilter = waiting || !done ? filterBar?.engineerValue(item.key) : filterBar?.engineerValue(item.key, "approved");
+      // O cartão leva SEMPRE às pendências do engenheiro (aguardando abono), mesmo com 0.
+      const mainFilter = filterBar?.engineerValue(item.key);
       const main = `<button class="stat-engineer-main" type="button" data-engineer-filter="${escapeHtml(mainFilter || "")}">
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}${managerNames.has(item.key) ? ' <em class="stat-engineer-tag">Gestor</em>' : ""}</b>
           <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
