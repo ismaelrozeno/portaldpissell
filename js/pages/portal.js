@@ -780,6 +780,7 @@
     window.portalFilterBar?.setEngineers(hidden ? [] : options(groups), hidden ? [] : options(approved));
     if (host.hidden) { host.innerHTML = ""; return; }
     // Junta pelo nome: quem tem pendência e quem já abonou (o rótulo curto vem de quem tiver).
+    const splitOf = (group) => [group?.ind ? plural(group.ind, "individual", "individuais") : "", group?.col ? plural(group.col, "coletiva", "coletivas") : ""].filter(Boolean).join(" · ");
     const byKey = new Map();
     groups.forEach((group) => byKey.set(group.key, { key: group.key, label: group.label, pending: group }));
     approved.forEach((group) => {
@@ -795,11 +796,15 @@
       const name = item.key ? item.label : "todos os engenheiros";
       const main = `<button class="stat-engineer-main" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}"${waiting ? "" : " disabled"}>
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}</b>
-          <strong>${waiting}</strong></button>`;
+          <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small></button>`;
       const approvedLine = item.key
-        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}</button>`
+        ? `<button class="stat-engineer-approved" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key, "approved") || "")}"${done ? "" : " disabled"}><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>· ${escapeHtml(splitOf(item.approved))}</small>` : ""}</button>`
         : "";
-      return `<div class="stat-card stat-card-engineer">${main}${approvedLine}</div>`;
+      // Total do engenheiro: aguardando + abonadas, com a mesma divisão.
+      const total = waiting + done;
+      const both = { ind: (item.pending?.ind || 0) + (item.approved?.ind || 0), col: (item.pending?.col || 0) + (item.approved?.col || 0) };
+      const totalLine = item.key ? `<p class="stat-engineer-total"><b>Total ${total}</b>${total ? ` <small>· ${escapeHtml(splitOf(both))}</small>` : ""}</p>` : "";
+      return `<div class="stat-card stat-card-engineer">${main}${approvedLine}${totalLine}</div>`;
     }).join("");
     highlightStatCard();
   }
