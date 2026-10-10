@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=524ea575">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=01d0059f">
 
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
@@ -76,13 +76,14 @@
 
       <section class="closing-stats" aria-label="Resumo do período">
 
-        <article><span>Autorizações</span><strong id="closing-total">0</strong><small>registros locais</small></article>
+        <!-- Cada cartão abre a lista de Individuais do Meu portal já filtrada (Portal.html?situacao=...). -->
+        <a class="closing-stat" href="Portal.html#individuais"><span>Autorizações</span><strong id="closing-total">0</strong><small>registros locais</small></a>
 
-        <article><span>Abonos assinados</span><strong id="closing-approved">0</strong><small>pelo engenheiro</small></article>
+        <a class="closing-stat" href="Portal.html?situacao=bonusYes#individuais"><span>Abonos assinados</span><strong id="closing-approved">0</strong><small>pelo engenheiro</small></a>
 
-        <article><span>Não abonados</span><strong id="closing-denied">0</strong><small>registros locais</small></article>
+        <a class="closing-stat" href="Portal.html?situacao=bonusNo#individuais"><span>Não abonados</span><strong id="closing-denied">0</strong><small>registros locais</small></a>
 
-        <article><span>Pendências</span><strong id="closing-pending">0</strong><small>precisam de conferência</small></article>
+        <a class="closing-stat" href="Portal.html?situacao=pending#individuais"><span>Pendências</span><strong id="closing-pending">0</strong><small>aguardando o DP</small></a>
 
       </section>
 
@@ -165,7 +166,7 @@
 
   <script src="js/core/firebase-release-store.js?v=bded763a"></script>
 
-  <script src="js/pages/fechamento.js?v=f8592812"></script>
+  <script src="js/pages/fechamento.js?v=1ecc1d83"></script>
 
   <!-- Menu do dashboard: barra de abas embaixo no celular e menu lateral no computador -->
   <script src="js/features/dash-shell.js?v=251f1912"></script>

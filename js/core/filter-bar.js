@@ -113,6 +113,9 @@
         { value: "toLaunch", label: "Abono · por lançar no RM", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
         { value: "bioPending", label: "Digital pendente", test: RULES.bioPending },
+        // Cartões "Abonos assinados" e "Não abonados" do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
+        { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
+        { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
         FLOW.refused,
         FLOW.gate,
         FLOW.exitedToday,
