@@ -98,9 +98,10 @@ window.portalAvatars = (() => {
     return;
   }
   const isAdminSession = currentSession?.role === "Administrador Analista" || currentSession?.roleValue === "administrador-analista";
-  // Qualquer perfil de DP (o DP e o analista, com ou sem acesso de DP) também importa o relatório do RM.
+  // Qualquer perfil de DP (o DP e o analista, com ou sem acesso de DP) também importa o relatório do RM e cadastra
+  // colaborador manualmente.
   const isDpSession = ["dp", "analista"].includes(currentSession?.roleValue) || !!window.portalAuthDemo?.isDpDelegate?.();
-  const pageAllowed = currentPage === "Importar-Colaboradores.html" ? isAdminSession || isDpSession : isAdminSession;
+  const pageAllowed = ["Importar-Colaboradores.html", "Cadastrar-Colaborador.html"].includes(currentPage) ? isAdminSession || isDpSession : isAdminSession;
   if (["Cadastrar-Colaborador.html", "Importar-Colaboradores.html", "Administrador-Portal.html"].includes(currentPage) && !pageAllowed) {
     window.location.replace("Portal.html");
     return;
