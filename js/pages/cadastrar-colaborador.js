@@ -1,7 +1,10 @@
 (async () => {
   await window.portalAuthDemo?.ready();
   const session = window.portalAuthDemo?.getSession();
-  if (session?.roleValue !== "administrador-analista" && session?.role !== "Administrador Analista") {
+  // Administrador e time do DP (DP e analista, com ou sem acesso de DP; mesma regra de js/core/shared-components.js).
+  const isAdmin = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
+  const isDpTeam = ["dp", "analista"].includes(session?.roleValue) || !!window.portalAuthDemo?.isDpDelegate?.();
+  if (!isAdmin && !isDpTeam) {
     window.location.replace("Portal.html");
     return;
   }
@@ -12,7 +15,11 @@
   registration.addEventListener("input", () => {
     registration.value = registration.value.replace(/\D/g, "").slice(0, 7);
   });
-  const users = await window.portalAuthDemo.getAllUsers();
+  // O banco só deixa o administrador listar todos os usuários; o DP usa a lista da equipe (encarregados, estagiários,
+  // engenheiros, analistas e DP), que ele pode ler.
+  const users = isAdmin
+    ? await window.portalAuthDemo.getAllUsers()
+    : ((await window.portalAuthDemo.getTeamDirectory().catch(() => null))?.all || []);
   const foremanRoles = ["encarregado", "dp", "engenheiro", "estagiario_engenharia", "analista", "seguranca_trabalho"];
   const foremen = users.filter((user) => foremanRoles.includes(user.roleValue) && user.status === "approved");
   foremanSelect.innerHTML = '<option value="">Sem encarregado</option>' +
