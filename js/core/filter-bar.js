@@ -104,23 +104,25 @@
       sorts: BASIC_SORTS
     },
     dp: {
+      // Em grupos, na ordem do fluxo (group = rótulo do grupo na lista). Os "value" com cartão (pending, approved, bonus,
+      // launched, toLaunch, bioPending...) continuam os mesmos: cartões, esteira e links seguem ligados a eles.
       statuses: [
         { value: "all", label: "Todas" },
-        { value: "pending", label: "Pendentes · aguardando DP", test: (record, stage) => stage === "dp" },
-        { value: "approved", label: "Autorizadas hoje", test: (record, stage) => ["gate", "exited"].includes(stage)
+        { ...FLOW.refused, group: "Etapa do fluxo" },
+        { value: "bonus", label: "Abono · aguardando engenheiro", group: "Etapa do fluxo", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
+        { value: "pending", label: "Pendentes · aguardando DP", group: "Etapa do fluxo", test: (record, stage) => stage === "dp" },
+        { ...FLOW.gate, group: "Etapa do fluxo" },
+        { ...FLOW.exitedToday, group: "Etapa do fluxo" },
+        { value: "approved", label: "Autorizadas hoje", group: "Etapa do fluxo", test: (record, stage) => ["gate", "exited"].includes(stage)
           && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === iso(new Date()) },
-        { value: "bonus", label: "Abono · aguardando engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
-        { value: "toLaunch", label: "Abono · por lançar no RM", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
-        { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
-        { value: "bioPending", label: "Digital pendente", test: RULES.bioPending },
-        // Cartões "Abonos assinados" e "Não abonados" do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
-        { value: "bonusYes", label: "Abonadas", test: (record) => record.bonusStatus === "approved" },
-        { value: "bonusNo", label: "Não abonadas", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
-        FLOW.refused,
-        FLOW.gate,
-        FLOW.exitedToday,
+        // "Abonadas" e "Não abonadas" também são os cartões do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
+        { value: "bonusYes", label: "Abonadas", group: "Abono", test: (record) => record.bonusStatus === "approved" },
+        { value: "bonusNo", label: "Não abonadas", group: "Abono", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
+        { value: "toLaunch", label: "Abonadas · por lançar no RM", group: "Abono", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
+        { value: "launched", label: "Abonadas · lançadas no RM", group: "Abono", test: (record) => !!record.abonoLaunchedAt },
+        { value: "bioPending", label: "Digital pendente", group: "Outros", test: RULES.bioPending },
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
-        { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+        { value: "retroactive", label: "Retroativas · registradas", group: "Outros", test: (record, stage) => stage === "registered" }
       ],
       sorts: [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]]
     }
@@ -149,7 +151,18 @@
   const normName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
   const awaitingEngineer = (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage);
   function statusOptionsHtml() {
-    const base = config.statuses.map(({ value, label }) => `<option value="${value}">${label}</option>`).join("");
+    // Situações com "group" saem dentro de um <optgroup> (os que têm o mesmo grupo seguidos).
+    let base = "";
+    let open = "";
+    config.statuses.forEach(({ value, label, group = "" }) => {
+      if (group !== open) {
+        if (open) base += "</optgroup>";
+        if (group) base += `<optgroup label="${group}">`;
+        open = group;
+      }
+      base += `<option value="${value}">${label}</option>`;
+    });
+    if (open) base += "</optgroup>";
     const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
     // O número ao lado do nome é sempre a PENDÊNCIA (aguardando abono); nas "Abonadas por" vai só o nome.
     const group = (label, prefix, list, withCount) => (list.length
