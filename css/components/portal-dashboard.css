@@ -374,3 +374,23 @@ body.dash .closing-stats .closing-stat strong { margin: .2rem 0; color: var(--d-
 body.dash .closing-stats .closing-stat:hover { border-color: var(--d-accent); }
 body.dash .closing-stats .closing-stat:focus-visible { outline: none; border-color: var(--d-accent); box-shadow: 0 0 0 3px rgba(239, 122, 14, .18); }
 @media (min-width: 992px) { body.dash .closing-stats { gap: .8rem; } }
+
+/* Cartão por engenheiro, no mesmo padrão dos outros cartões da Visão geral (branco, número escuro, detalhe cinza):
+   em cima "Aguardando abono" com o número; embaixo, como linha de detalhe, "✓ N abonadas". As duas partes filtram. */
+body.dash .portal-stats .stat-card-engineer { display: flex; flex-direction: column; padding: 0; cursor: default; }
+body.dash .portal-stats .stat-card-engineer:hover { transform: none; }
+.stat-card-engineer > button { display: block; width: 100%; border: 0; border-radius: inherit; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
+.stat-card-engineer > button:disabled { cursor: default; }
+.stat-card-engineer > .stat-engineer-main { display: flex; flex: 1; flex-direction: column; justify-content: flex-start; padding: .85rem .9rem 0; }
+.stat-engineer-main span, .stat-engineer-main small { display: block; }
+.stat-engineer-approved { margin: .5rem .9rem 0; padding: .45rem 0 0 !important; border-top: 1px solid var(--d-line, #dde3ea) !important; width: auto !important; border-radius: 0 !important; color: var(--d-ink-2, #3b4d63) !important; font-size: .82rem !important; }
+.stat-engineer-approved b { color: var(--d-ok, #1e9e5a); }
+body.dash .portal-stats .stat-engineer-approved small { display: inline; margin: 0; padding: 0; border: 0; color: inherit; font-size: inherit; }
+body.dash .portal-stats .stat-card-engineer:has(> button.is-active) { border-color: var(--d-accent); box-shadow: 0 0 0 3px rgba(239, 122, 14, .18); }
+.stat-card-engineer > button:focus-visible { outline: 2px solid var(--d-accent, #ef7a0e); outline-offset: 2px; }
+@media (hover: hover) { body.dash .portal-stats .stat-card-engineer:has(> button:not(:disabled):hover) { border-color: #c5cfdb; } .stat-engineer-approved:not(:disabled):hover { color: var(--d-ink, #0e1f33) !important; text-decoration: underline; } }
+/* Cartão "todos os engenheiros" (sem a linha das abonadas): mesmo respiro embaixo */
+.stat-card-engineer > .stat-engineer-main:only-child { padding-bottom: .85rem; }
+/* Linha "Total N" do cartão por engenheiro (aguardando + abonadas) */
+.stat-engineer-total { margin: .3rem .9rem .85rem; color: var(--d-ink, #0e1f33); font-size: .82rem; }
+body.dash .portal-stats .stat-engineer-total small { display: inline; margin: 0; padding: 0; border: 0; color: var(--d-muted, #66768a); font-size: inherit; }
