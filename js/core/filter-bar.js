@@ -104,19 +104,22 @@
       sorts: BASIC_SORTS
     },
     dp: {
-      // Em grupos, na ordem do fluxo (group = rótulo do grupo na lista). Os "value" com cartão (pending, approved, bonus,
-      // launched, toLaunch, bioPending...) continuam os mesmos: cartões, esteira e links seguem ligados a eles.
+      // Em grupos, na ordem de importância e do fluxo (group = rótulo do grupo na lista). Os engenheiros entram dentro do
+      // grupo "Aguardando abono do engenheiro" (engineersAfter) e os que abonaram dentro de "Abono" (approversAfter).
+      // Os "value" com cartão (pending, approved, bonus, launched, toLaunch, bioPending...) continuam os mesmos.
+      engineersAfter: "bonus",
+      approversAfter: "bonusYes",
       statuses: [
         { value: "all", label: "Todas" },
+        { value: "bonus", label: "Todos os engenheiros", group: "Aguardando abono do engenheiro", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
         { ...FLOW.refused, group: "Etapa do fluxo" },
-        { value: "bonus", label: "Abono · aguardando engenheiro", group: "Etapa do fluxo", test: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage) },
         { value: "pending", label: "Pendentes · aguardando DP", group: "Etapa do fluxo", test: (record, stage) => stage === "dp" },
         { ...FLOW.gate, group: "Etapa do fluxo" },
         { ...FLOW.exitedToday, group: "Etapa do fluxo" },
         { value: "approved", label: "Autorizadas hoje", group: "Etapa do fluxo", test: (record, stage) => ["gate", "exited"].includes(stage)
           && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === iso(new Date()) },
         // "Abonadas" e "Não abonadas" também são os cartões do Fechamento mensal (mesmas regras de js/pages/fechamento.js).
-        { value: "bonusYes", label: "Abonadas", group: "Abono", test: (record) => record.bonusStatus === "approved" },
+        { value: "bonusYes", label: "Todas as abonadas", group: "Abono", test: (record) => record.bonusStatus === "approved" },
         { value: "bonusNo", label: "Não abonadas", group: "Abono", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
         { value: "toLaunch", label: "Abonadas · por lançar no RM", group: "Abono", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
         { value: "launched", label: "Abonadas · lançadas no RM", group: "Abono", test: (record) => !!record.abonoLaunchedAt },
@@ -151,24 +154,35 @@
   const normName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
   const awaitingEngineer = (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage);
   function statusOptionsHtml() {
-    // Situações com "group" saem dentro de um <optgroup> (os que têm o mesmo grupo seguidos).
-    let base = "";
+    const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    // Lista na ordem do perfil. Os engenheiros entram logo depois da Situação marcada com engineersAfter (no mesmo grupo
+    // dela) e os que abonaram depois da marcada com approversAfter; sem a marca, vão em grupos próprios no fim.
+    // O número ao lado do nome é sempre a PENDÊNCIA (aguardando abono); nas abonadas vai só o nome.
+    const pendingItems = (group) => engineers.map(({ key, label, count }) => ({ value: ENG + key, label: key ? `${label} (${count})` : `Enviadas a todos (${count})`, group }));
+    const approvedItems = (group) => approvers.map(({ key, label }) => ({ value: AB + key, label: `Por ${label}`, group }));
+    const items = [];
+    const pendingTotal = engineers.reduce((sum, { count }) => sum + (count || 0), 0);
+    config.statuses.forEach((item) => {
+      // "Todos os engenheiros" também mostra a pendência (a soma de todos).
+      items.push(config.engineersAfter === item.value && engineers.length ? { ...item, label: `${item.label} (${pendingTotal})` } : item);
+      if (config.engineersAfter === item.value) items.push(...pendingItems(item.group || ""));
+      if (config.approversAfter === item.value) items.push(...approvedItems(item.group || ""));
+    });
+    if (!config.engineersAfter) items.push(...pendingItems("Aguardando por engenheiro"));
+    if (!config.approversAfter) items.push(...approvedItems("Abonadas por engenheiro"));
+    // Itens com "group" saem dentro de um <optgroup> (os que têm o mesmo grupo seguidos).
+    let html = "";
     let open = "";
-    config.statuses.forEach(({ value, label, group = "" }) => {
+    items.forEach(({ value, label, group = "" }) => {
       if (group !== open) {
-        if (open) base += "</optgroup>";
-        if (group) base += `<optgroup label="${group}">`;
+        if (open) html += "</optgroup>";
+        if (group) html += `<optgroup label="${esc(group)}">`;
         open = group;
       }
-      base += `<option value="${value}">${label}</option>`;
+      html += `<option value="${esc(value)}">${esc(label)}</option>`;
     });
-    if (open) base += "</optgroup>";
-    const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-    // O número ao lado do nome é sempre a PENDÊNCIA (aguardando abono); nas "Abonadas por" vai só o nome.
-    const group = (label, prefix, list, withCount) => (list.length
-      ? `<optgroup label="${label}">${list.map(({ key, label: name, count }) => `<option value="${esc(prefix + key)}">${esc(name)}${withCount ? ` (${count})` : ""}</option>`).join("")}</optgroup>`
-      : "");
-    return base + group("Aguardando por engenheiro", ENG, engineers, true) + group("Abonadas por engenheiro", AB, approvers, false);
+    if (open) html += "</optgroup>";
+    return html;
   }
   const isValidStatus = (value) => config.statuses.some((item) => item.value === value)
     || engineers.some((item) => ENG + item.key === value) || approvers.some((item) => AB + item.key === value);
