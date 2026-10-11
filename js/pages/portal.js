@@ -804,7 +804,7 @@
   let lastEngineerCards = null;
   window.portalAuthDemo?.getTeamDirectory?.().then((directory) => {
     managerNames = new Set((directory?.all || [])
-      .filter((user) => user.roleValue === "engenheiro" && (user.privileges || []).includes("gestor"))
+      .filter((user) => (user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"))) && (user.privileges || []).includes("gestor"))
       .map((user) => String(user.name || "").trim().replace(/\s+/g, " ").toLowerCase()));
     if (managerNames.size && lastEngineerCards) renderEngineerCards(...lastEngineerCards);
   }).catch(() => { /* sem a lista, os cartões ficam sem a etiqueta */ });

@@ -48,8 +48,11 @@
         }
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       }
-      // Analista com acesso de engenheiro, no painel do engenheiro: recebe todas as folhas (como o engenheiro Gestor).
-      if (role === "analista" && profileKey === "engenheiro" && window.portalAuthDemo?.isEngineerLike?.()) return sheets;
+      // Analista com acesso de engenheiro, no painel do engenheiro: igual ao engenheiro
+      // (só o Gestor recebe todas; o comum, o que foi enviado a ele ou a todos — igual ao engenheiro).
+      if (role === "analista" && profileKey === "engenheiro" && window.portalAuthDemo?.isEngineerLike?.()) {
+        return window.portalAuthDemo?.isManager?.() ? sheets : sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, session.name));
+      }
       if (role === "dp" || role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) return sheets;
       // Engenheiro Gestor recebe todas as folhas, mesmo as enviadas a outro engenheiro.
       if (role === "engenheiro" && window.portalAuthDemo?.isManager?.()) return sheets;
