@@ -283,3 +283,8 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 /* "Data da liberação: 10/10/2026" (a data escolhida no pedido), sempre visível. */
 .portal-table .col-who small.row-date { display:block; margin-top:.05rem; color:var(--portal-muted); font-size:.74rem; font-weight:500; }
 .portal-table .col-who small.row-date b { color:var(--portal-ink); font-weight:700; }
+/* Celular: linha laranja separando os dados da liberação do "Criada" (fica embaixo da linha que vem antes dele). */
+@media (max-width:760px) {
+  .portal-table td.col-who > small:has(+ small.row-created)::after { content:""; display:block; height:2px; margin-top:.6rem; border-radius:2px; background:var(--portal-orange); }
+  .portal-table td.col-who small.row-created { margin-top:.6rem; }
+}
