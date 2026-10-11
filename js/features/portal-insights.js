@@ -9,10 +9,10 @@
 
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
   const CARDS_BY_PROFILE = {
-    dp: ["fingerprints", "leaving", "frequent", "tasksByPerson", "particularByPerson", "topTasks", "topParticular", "byRole", "refused", "response", "reasons", "teams", "retroactive"],
+    dp: ["fingerprints", "leaving", "frequent", "tasksByPerson", "particularByPerson", "topTasks", "topParticular", "byRole", "refused", "response", "reasons", "teams", "retroactive", "noClock", "entries"],
     engenheiro: ["response", "frequent", "tasksByPerson", "topTasks", "reasons", "teams"],
     portaria: ["leaving"],
-    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "tasksByPerson", "topTasks", "reasons", "retroactive"]]))
+    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "tasksByPerson", "topTasks", "reasons", "retroactive", "noClock", "entries"]]))
   };
 
   // ---------- Datas e textos ----------
@@ -89,6 +89,26 @@
   const reasonOf = (record) => record.reasonType
     || (/^tarefa/i.test(record.reason || "") ? "tarefa" : /^particular/i.test(record.reason || "") ? "particular" : "");
   const counted = (stage) => !["foreman", "closed"].includes(stage);
+  const movementsOf = (record) => record.movement || [];
+  const bothMovements = (record) => movementsOf(record).includes("entrada") && movementsOf(record).includes("saida");
+  const entryOnly = (record) => movementsOf(record).includes("entrada") && !movementsOf(record).includes("saida");
+  // Cartão de um tipo de liberação no período (individual + coletiva): total, % do período e quem mais pediu.
+  function kindCard({ releases, sheets }, test, { icon, tone, title, what, none, info }) {
+    const ind = releases.filter((r) => inPeriod(r) && counted(stageInd(r)) && test(r));
+    const cols = sheets.filter((s) => inPeriod(s) && counted(stageCol(s)) && test(s));
+    const map = new Map();
+    ind.forEach((r) => bump(map, String(r.requester || "Sem solicitante").trim()));
+    cols.forEach((s) => bump(map, String(s.requester || "Sem solicitante").trim()));
+    const periodTotal = releases.filter(inPeriod).length + sheets.filter(inPeriod).length;
+    const total = ind.length + cols.length;
+    const short = shortNames([...map.keys()]);
+    return {
+      icon, tone, title, value: total,
+      note: total ? `${periodTotal ? Math.round((total / periodTotal) * 100) : 0}% das liberações ${ofPhrase()} · ${ind.length} ${ind.length === 1 ? "individual" : "individuais"} e ${cols.length} ${cols.length === 1 ? "coletiva" : "coletivas"}` : none,
+      details: [info],
+      rows: rank(map, 4).map((row) => ({ ...row, label: short(row.label), raw: row.value })), rowsTitle: total ? what : ""
+    };
+  }
 
   // Ranking: [{ label, value }] ordenado, com a barra relativa ao maior.
   function rank(map, limit = 5) {
@@ -263,22 +283,32 @@
       };
     },
 
-    // 8. Retroativas no mês: registradas depois do dia, ou com entrada e saída juntas (não bateu o ponto).
-    retroactive({ releases, sheets }) {
-      const ind = releases.filter((r) => inPeriod(r) && flow().isRetroactive(r));
-      const cols = sheets.filter((s) => inPeriod(s) && collective()?.isRetroactive(s));
-      const map = new Map();
-      ind.forEach((r) => bump(map, String(r.requester || "Sem solicitante").trim()));
-      cols.forEach((s) => bump(map, String(s.requester || "Sem solicitante").trim()));
-      const monthTotal = releases.filter(inPeriod).length + sheets.filter(inPeriod).length;
-      const total = ind.length + cols.length;
-      const short = shortNames([...map.keys()]);
-      return {
-        icon: "back", tone: "amber", title: "Retroativas",
-        value: total,
-        note: total ? `${monthTotal ? Math.round((total / monthTotal) * 100) : 0}% das liberações ${ofPhrase()} foram retroativas` : "nenhuma retroativa ✓",
-        rows: rank(map, 4).map((row) => ({ ...row, label: short(row.label), raw: row.value })), rowsTitle: total ? "Quem mais registrou retroativas" : ""
-      };
+    // 8. Liberações que não seguem o fluxo de saída (cada uma tem seu cartão):
+    //    Retroativa: data anterior ao dia em que foi criada (sem DP e sem portaria);
+    //    Não bateu o ponto: entrada e saída marcadas juntas (sem DP e sem portaria);
+    //    Entrada: só entrada, o colaborador está chegando (engenheiro e DP assinam, sem portaria).
+    retroactive(data) {
+      return kindCard(data, (r) => flow().isRetroactive(r) && !bothMovements(r), {
+        icon: "back", tone: "amber", title: "Retroativas", what: "Quem mais registrou retroativas", none: "nenhuma retroativa ✓",
+        info: "Data anterior ao dia do pedido: não passa pelo DP nem pela portaria."
+      });
+    },
+    noClock(data) {
+      return kindCard(data, bothMovements, {
+        icon: "clockoff", tone: "red", title: "Não bateu o ponto", what: "Quem mais registrou sem ponto", none: "todos bateram o ponto ✓",
+        info: "Entrada e saída marcadas juntas: não passa pelo DP nem pela portaria."
+      });
+    },
+    entries(data) {
+      const card = kindCard(data, entryOnly, {
+        icon: "enter", tone: "teal", title: "Entradas", what: "Quem mais pediu entradas", none: "nenhuma entrada no período",
+        info: "Colaborador chegando: engenheiro e DP assinam (Autorizar entrada), sem portaria."
+      });
+      const list = [...data.releases.filter((r) => inPeriod(r) && entryOnly(r)).map(stageInd), ...data.sheets.filter((s) => inPeriod(s) && entryOnly(s)).map(stageCol)];
+      const done = list.filter((stage) => stage === "entered").length;
+      const waiting = list.filter((stage) => ["engineer", "dp"].includes(stage)).length;
+      if (list.length) card.details.push(`${plural(done, "autorizada pelo DP", "autorizadas pelo DP")} · ${waiting} em andamento`);
+      return card;
     },
 
     // 9. Mais saídas por tarefa (colaboradores; cada pessoa de uma coletiva conta).
@@ -352,6 +382,8 @@
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     split: '<path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18"/><circle cx="12" cy="12" r="9"/>',
     team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+    clockoff: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M4 4l16 16"/>',
+    enter: '<path d="M10 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M14 17l5-5-5-5"/><path d="M19 12H9"/>',
     back: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M14 16h-5l2-2m-2 2l2 2"/>',
     task: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
     person: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',

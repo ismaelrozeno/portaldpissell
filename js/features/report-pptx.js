@@ -14,6 +14,8 @@
   const MUTED = "5B6B7F";
   const LINE = "E3E8EF";
   const SERIES = ["1F5FBF", "CC0835", "74AEF9", "E9A100", "1E9E5A", "8E5BD8"];
+  // Situação das liberações (9 grupos).
+  const STAGE_COLORS = ["1F5FBF", "74AEF9", "E9A100", "1E9E5A", "13877F", "B7791F", "8E5BD8", "CC0835", "8A94A6"];
   const FONT = "Arial";
 
   // ---------- Datas e textos ----------
@@ -97,10 +99,12 @@
     sheets.filter(createdIn).forEach((s) => { const i = dates.indexOf(createdDay(s)); if (i >= 0) perDayCol[i] += 1; });
 
     // Situação
+    const both = (r) => (r.movement || []).includes("entrada") && (r.movement || []).includes("saida");
     const stageGroups = [
       ["Aguardando engenheiro", ["engineer"]], ["Aguardando DP", ["dp"]], ["Aguardando saída", ["gate"]],
-      ["Saída confirmada", ["exited"]], ["Retroativa ou só entrada", ["registered", "entered"]], ["Recusada ou negada", ["foreman", "closed"]]
-    ].map(([label, keys]) => ({ label, value: all.filter((x) => keys.includes(x.stage)).length }));
+      ["Saída confirmada", ["exited"]], ["Entrada autorizada", ["entered"]], ["Retroativa", ["registered"]], ["Não bateu o ponto", ["noclock"]],
+      ["Recusada ou negada", ["foreman", "closed"]]
+    ].map(([label, keys]) => ({ label, value: all.filter((x) => keys.includes(x.stage === "registered" && both(x.r) ? "noclock" : x.stage)).length }));
 
     // Rankings
     const rank = (map, n) => [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, n);
@@ -175,7 +179,7 @@
         approvedPct: decided.length ? Math.round((approved.length / decided.length) * 100) : null, approved: approved.length, decided: decided.length,
         launched: launched.length, launchPct: approved.length ? Math.round((launched.length / approved.length) * 100) : null,
         retro, retroPct: all.length ? Math.round((retro / all.length) * 100) : 0, pendingBioPeople,
-        response: respAll.n ? duration(respAll.sum / respAll.n) : "—", refused: stageGroups[5].value
+        response: respAll.n ? duration(respAll.sum / respAll.n) : "—", refused: stageGroups[stageGroups.length - 1].value
       },
       perDay: { labels: dates.map((d) => `${d.slice(8, 10)}/${d.slice(5, 7)}`), ind: perDayInd, col: perDayCol },
       stageGroups, creators, frequent, tarefa, particular, hours, response, waitingBy, refusals, bioList, launchList
@@ -321,18 +325,18 @@
       const total = groups.reduce((a, g) => a + g.value, 0);
       if (total) {
         slide.addChart(pres.ChartType.doughnut, [{ name: "Situação", labels: groups.map((g) => g.label), values: groups.map((g) => g.value) }], {
-          x: 0.6, y: 1.85, w: 6.0, h: 4.9, holeSize: 58, chartColors: SERIES, showLegend: false, showPercent: true, showValue: false,
+          x: 0.6, y: 1.85, w: 6.0, h: 4.9, holeSize: 58, chartColors: STAGE_COLORS, showLegend: false, showPercent: true, showValue: false,
           dataLabelColor: "FFFFFF", dataLabelFontFace: FONT, dataLabelFontSize: 11, dataLabelFontBold: true
         });
         slide.addText([{ text: total.toLocaleString("pt-BR"), options: { fontSize: 34, bold: true, color: NAVY, breakLine: true } }, { text: "liberações", options: { fontSize: 13, color: MUTED } }],
           { x: 2.35, y: 3.75, w: 2.5, h: 1.1, fontFace: FONT, align: "center", valign: "middle", margin: 0, isTextBox: true });
         divider(slide, pres, 6.95);
         groups.forEach((g, i) => {
-          const yy = 2.05 + i * 0.75;
-          slide.addShape(pres.ShapeType.roundRect, { x: 7.45, y: yy + 0.12, w: 0.32, h: 0.32, rectRadius: 0.06, fill: { color: SERIES[i] }, line: { color: SERIES[i] } });
-          slide.addText(g.label, { x: 7.95, y: yy, w: 3.4, h: 0.55, fontFace: FONT, fontSize: 15, color: INK, margin: 0, valign: "middle", isTextBox: true });
+          const yy = 1.95 + i * 0.55;
+          slide.addShape(pres.ShapeType.roundRect, { x: 7.45, y: yy + 0.1, w: 0.3, h: 0.3, rectRadius: 0.06, fill: { color: STAGE_COLORS[i] }, line: { color: STAGE_COLORS[i] } });
+          slide.addText(g.label, { x: 7.95, y: yy, w: 3.4, h: 0.5, fontFace: FONT, fontSize: 14, color: INK, margin: 0, valign: "middle", isTextBox: true });
           slide.addText([{ text: g.value.toLocaleString("pt-BR"), options: { bold: true, color: INK } }, { text: `  ${total ? Math.round((g.value / total) * 100) : 0}%`, options: { color: MUTED, fontSize: 12 } }],
-            { x: 11.0, y: yy, w: 1.75, h: 0.55, fontFace: FONT, fontSize: 15, align: "right", margin: 0, valign: "middle", isTextBox: true });
+            { x: 11.0, y: yy, w: 1.75, h: 0.5, fontFace: FONT, fontSize: 14, align: "right", margin: 0, valign: "middle", isTextBox: true });
         });
       } else empty(slide, 0.6, 2, 12, 4.5);
     }
