@@ -96,10 +96,34 @@ window.portalAvatars = (() => {
   // alguns segundos, e o topo ficava vazio). Entram na página assim que chegam; a parte da conta (nome, avatar, sair)
   // é preenchida depois do login. Os botões de "Entrar" ficam invisíveis até lá, para não piscarem para quem já está
   // logado. A versão (?v=) vem do tools/versionar.js, então o navegador pode reaproveitar a cópia guardada.
+  // Preenche a parte da conta do cabeçalho (nome, avatar, sair, links de quem está logado) ou, sem sessão, volta aos
+  // botões de "Entrar". Usada duas vezes: na hora, com a sessão guardada no aparelho, e depois com a confirmada.
+  const fillAccount = (session) => {
+    const guestActions = document.querySelector("[data-guest-actions]");
+    const profileAction = document.querySelector("[data-profile-action]");
+    const profileLabel = document.querySelector("[data-profile-label]");
+    const logoutAction = document.querySelector("[data-logout-action]");
+    const accountActions = document.querySelector("[data-account-actions]");
+    const isAdmin = session && (session.role === "Administrador Analista" || session.roleValue === "administrador-analista");
+    document.querySelectorAll("[data-auth-only]").forEach((link) => { link.hidden = !session; });
+    document.querySelectorAll("[data-admin-only]").forEach((link) => { link.hidden = !isAdmin; });
+    if (!guestActions || !profileAction) return;
+    guestActions.hidden = !!session;
+    guestActions.classList.toggle("d-none", !!session);
+    if (accountActions) accountActions.hidden = !session;
+    if (logoutAction) logoutAction.hidden = !session;
+    if (!session) return;
+    profileAction.href = "Perfil.html";
+    profileAction.setAttribute("aria-label", `Abrir perfil de ${session.name}`);
+    if (profileLabel) profileLabel.textContent = session.name;
+    window.portalAvatars?.render(document.querySelector(".site-header .profile-avatar"), session);
+  };
+
   const components = [
     ["[data-site-header]", "partials/header.html?v=951c9816"],
     ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
   ];
+  let authConfirmed = false;
   const partialsReady = Promise.all(components.map(async ([selector, file]) => {
     const target = document.querySelector(selector);
     if (!target) return;
@@ -108,8 +132,15 @@ window.portalAvatars = (() => {
       throw new Error(`Não foi possível carregar ${file}: ${response.status}`);
     }
     target.outerHTML = await response.text();
+    if (selector !== "[data-site-header]" || authConfirmed) return;
+    // Já entrou antes neste aparelho: o cabeçalho aparece na hora com nome e avatar guardados (o login é confirmado por
+    // trás e, se a sessão tiver acabado, volta para "Entrar"). Primeira vez: bolinha girando no lugar do perfil.
+    const cached = window.portalAuthDemo?.cachedSession?.();
+    if (cached) {
+      fillAccount(cached);
+      return;
+    }
     document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = "hidden"; });
-    // Bolinha girando no lugar do perfil enquanto o login é confirmado (sai quando a conta é preenchida).
     const accountSlot = document.querySelector(".site-header [data-account-actions]");
     if (accountSlot && !document.querySelector(".header-auth-loading")) {
       accountSlot.insertAdjacentHTML("beforebegin", '<span class="header-auth-loading" role="status" aria-label="Carregando a sua conta"><span class="button-spinner" aria-hidden="true"></span></span>');
@@ -117,6 +148,7 @@ window.portalAvatars = (() => {
   }));
 
   await window.portalAuthDemo?.ready();
+  authConfirmed = true;
   const currentSession = window.portalAuthDemo?.getSession();
   if (protectedPages.has(currentPage) && !currentSession) {
     window.location.replace("Acesso.html#login");
@@ -180,35 +212,10 @@ window.portalAvatars = (() => {
   window.portalRenderHeaderAvatar = (profile) => {
     window.portalAvatars.render(document.querySelector(".site-header .profile-avatar"), profile);
   };
-  const guestActions = document.querySelector("[data-guest-actions]");
-  const profileAction = document.querySelector("[data-profile-action]");
-  const profileLabel = document.querySelector("[data-profile-label]");
-  const logoutAction = document.querySelector("[data-logout-action]");
-  const accountActions = document.querySelector("[data-account-actions]");
-  const authenticatedLinks = document.querySelectorAll("[data-auth-only]");
-  const adminLinks = document.querySelectorAll("[data-admin-only]");
-  if (session && guestActions && profileAction) {
-    guestActions.hidden = true;
-    guestActions.classList.add("d-none");
-    if (accountActions) accountActions.hidden = false;
-    profileAction.href = "Perfil.html";
-    profileAction.setAttribute("aria-label", `Abrir perfil de ${session.name}`);
-    if (profileLabel) profileLabel.textContent = session.name;
-    window.portalRenderHeaderAvatar(session);
-    authenticatedLinks.forEach((link) => { link.hidden = false; });
-    adminLinks.forEach((link) => {
-      link.hidden = session.role !== "Administrador Analista" && session.roleValue !== "administrador-analista";
-    });
-    if (logoutAction) {
-      logoutAction.hidden = false;
-      logoutAction.addEventListener("click", () => {
-        window.portalOpenLogoutModal();
-      });
-    }
-  } else {
-    authenticatedLinks.forEach((link) => { link.hidden = true; });
-    adminLinks.forEach((link) => { link.hidden = true; });
-  }
+  fillAccount(session);
+  document.querySelector("[data-logout-action]")?.addEventListener("click", () => {
+    window.portalOpenLogoutModal();
+  });
   // Login confirmado: os botões de "Entrar" voltam a valer (escondidos acima se a pessoa está logada) e sai a bolinha.
   document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = ""; });
   document.querySelector(".header-auth-loading")?.remove();
