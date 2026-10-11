@@ -27,6 +27,14 @@
     const text = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
+  // Folha fecha no dia 20: o mês "AAAA-MM" vai do dia 21 do mês anterior ao dia 20 dele (ex.: outubro = 21/09 a 20/10).
+  const payrollKey = (day) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day || "");
+    if (!match) return "";
+    const [y, m, d] = match.slice(1).map(Number);
+    return d >= 21 ? (m === 12 ? `${y + 1}-01` : `${y}-${pad(m + 1)}`) : `${y}-${pad(m)}`;
+  };
+  const rangeText = (key) => { const [y, m] = key.split("-").map(Number); return `21/${pad(new Date(y, m - 2, 1).getMonth() + 1)} a 20/${pad(m)}`; };
   const plural = (n, one, many) => `${n.toLocaleString("pt-BR")} ${n === 1 ? one : many}`;
   const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   const PARTICLES = ["da", "de", "do", "das", "dos", "e"];
@@ -56,8 +64,8 @@
     const stageCol = (s) => col?.stageOf(s) || s.stage || "engineer";
     const recordDay = (r) => String(r.date || "").slice(0, 10) || dayOf(r.createdAt);
     const createdDay = (r) => dayOf(r.createdAt) || recordDay(r);
-    const inMonth = (r) => recordDay(r).startsWith(month);
-    const createdIn = (r) => createdDay(r).startsWith(month);
+    const inMonth = (r) => payrollKey(recordDay(r)) === month;
+    const createdIn = (r) => payrollKey(createdDay(r)) === month;
     const live = (stage) => !["foreman", "closed"].includes(stage);
     const people = (s) => (s.participants || []).length;
 
@@ -77,14 +85,16 @@
     const pendingBioPeople = pendingBio.length + colLive.reduce((a, s) => a + Math.max(0, people(s) - (col?.signedCount(s) || 0)), 0);
 
     // Liberações criadas por dia
+    // Do dia 21 do mês anterior ao dia 20 (a folha atual vai até hoje).
     const [y, m] = month.split("-").map(Number);
-    const lastDay = new Date(y, m, 0).getDate();
-    const today = new Date();
-    const days = (today.getFullYear() === y && today.getMonth() + 1 === m) ? today.getDate() : lastDay;
+    const today = dayOf(new Date());
+    const dates = [];
+    for (let d = new Date(y, m - 2, 21); dayOf(d) <= `${month}-20` && dayOf(d) <= today; d.setDate(d.getDate() + 1)) dates.push(dayOf(d));
+    const days = dates.length;
     const perDayInd = Array(days).fill(0);
     const perDayCol = Array(days).fill(0);
-    releases.filter(createdIn).forEach((r) => { const d = Number(createdDay(r).slice(8, 10)); if (d >= 1 && d <= days) perDayInd[d - 1] += 1; });
-    sheets.filter(createdIn).forEach((s) => { const d = Number(createdDay(s).slice(8, 10)); if (d >= 1 && d <= days) perDayCol[d - 1] += 1; });
+    releases.filter(createdIn).forEach((r) => { const i = dates.indexOf(createdDay(r)); if (i >= 0) perDayInd[i] += 1; });
+    sheets.filter(createdIn).forEach((s) => { const i = dates.indexOf(createdDay(s)); if (i >= 0) perDayCol[i] += 1; });
 
     // Situação
     const stageGroups = [
@@ -125,7 +135,7 @@
     // Abono: tempo de resposta por engenheiro (decididas no mês) e pendências por destino (situação de agora)
     const resp = new Map();
     [...releases, ...sheets].forEach((r) => {
-      if (!r.engineerDecisionAt || !r.engineer || !dayOf(r.engineerDecisionAt).startsWith(month)) return;
+      if (!r.engineerDecisionAt || !r.engineer || payrollKey(dayOf(r.engineerDecisionAt)) !== month) return;
       const minutes = (new Date(r.engineerDecisionAt) - new Date(r.requestedAt || r.createdAt)) / 60000;
       if (!(minutes >= 0)) return;
       const key = clean(r.engineer);
@@ -159,7 +169,7 @@
       .sort((a, b) => a[1].split("/").reverse().join("").localeCompare(b[1].split("/").reverse().join("")));
 
     return {
-      month, label: monthLabel(month),
+      month, label: monthLabel(month), range: rangeText(month),
       kpis: {
         total: ind.length + cols.length, ind: ind.length, cols: cols.length, exits,
         approvedPct: decided.length ? Math.round((approved.length / decided.length) * 100) : null, approved: approved.length, decided: decided.length,
@@ -167,7 +177,7 @@
         retro, retroPct: all.length ? Math.round((retro / all.length) * 100) : 0, pendingBioPeople,
         response: respAll.n ? duration(respAll.sum / respAll.n) : "—", refused: stageGroups[5].value
       },
-      perDay: { labels: Array.from({ length: days }, (_, i) => String(i + 1)), ind: perDayInd, col: perDayCol },
+      perDay: { labels: dates.map((d) => `${d.slice(8, 10)}/${d.slice(5, 7)}`), ind: perDayInd, col: perDayCol },
       stageGroups, creators, frequent, tarefa, particular, hours, response, waitingBy, refusals, bioList, launchList
     };
   }
@@ -207,7 +217,7 @@
     brand(slide, NAVY);
     slide.addText(heading, { x: 0.6, y: 0.62, w: 9.6, h: 0.65, fontFace: FONT, fontSize: 28, bold: true, color: NAVY, margin: 0, isTextBox: true, objectName: "Título" });
     if (sub) slide.addText(sub, { x: 0.6, y: 1.25, w: 11.5, h: 0.4, fontFace: FONT, fontSize: 14, color: MUTED, margin: 0, isTextBox: true, objectName: "Subtítulo" });
-    slide.addText(`Portal DP · Obra 369 · ${data.label}`, { x: 0.6, y: 7.0, w: 8, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED, margin: 0, isTextBox: true });
+    slide.addText(`Portal DP · Obra 369 · ${data.label} (${data.range})`, { x: 0.6, y: 7.0, w: 8, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED, margin: 0, isTextBox: true });
     slide.slideNumber = { x: 12.2, y: 7.0, w: 0.6, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED, align: "right" };
     return slide;
   }
@@ -260,7 +270,7 @@
     const pres = new window.PptxGenJS();
     pres.layout = "LAYOUT_WIDE";
     pres.author = "Portal DP";
-    pres.title = `Relatório de liberações · Obra 369 · ${data.label}`;
+    pres.title = `Relatório de liberações · Obra 369 · ${data.label} (${data.range})`;
     pres.theme = { headFontFace: FONT, bodyFontFace: FONT };
 
     // 1. Capa
@@ -271,13 +281,14 @@
       slide.addText("RELATÓRIO DE LIBERAÇÕES", { x: 0.9, y: 2.35, w: 6.4, h: 0.45, fontFace: FONT, fontSize: 16, bold: true, color: "B9D6FC", charSpacing: 3, margin: 0, isTextBox: true });
       slide.addText([{ text: "OBRA ", options: { color: "FFFFFF" } }, { text: "369", options: { color: RED } }], { x: 0.9, y: 2.8, w: 6.4, h: 1.3, fontFace: FONT, fontSize: 72, bold: true, margin: 0, isTextBox: true, objectName: "Título" });
       slide.addText(data.label, { x: 0.9, y: 4.1, w: 6.4, h: 0.6, fontFace: FONT, fontSize: 26, color: "FFFFFF", margin: 0, isTextBox: true });
+      slide.addText(`Folha de ${data.range}`, { x: 0.9, y: 4.7, w: 6.4, h: 0.4, fontFace: FONT, fontSize: 16, color: "B9D6FC", margin: 0, isTextBox: true });
       slide.addText(`Gerado pelo Portal DP em ${new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`,
         { x: 0.9, y: 6.6, w: 6.4, h: 0.35, fontFace: FONT, fontSize: 12, color: "B9D6FC", margin: 0, isTextBox: true });
     }
 
     // 2. Resumo do mês (números em destaque, como o slide de números do modelo)
     {
-      const slide = contentSlide(pres, data, "Resumo do mês", `${plural(k.total, "liberação", "liberações")} com data em ${data.label.toLowerCase()} · ${plural(k.ind, "individual", "individuais")} e ${plural(k.cols, "coletiva", "coletivas")}`);
+      const slide = contentSlide(pres, data, "Resumo do mês", `${plural(k.total, "liberação", "liberações")} com data de ${data.range} · ${plural(k.ind, "individual", "individuais")} e ${plural(k.cols, "coletiva", "coletivas")}`);
       const cells = [
         { icon: "≡", value: k.total.toLocaleString("pt-BR"), label: "liberações no mês", note: `${k.ind} individuais · ${k.cols} coletivas` },
         { icon: "→", value: k.exits.toLocaleString("pt-BR"), label: "pessoas liberadas", note: "cada colaborador da coletiva conta" },
@@ -417,7 +428,7 @@
       diagonals(slide, pres, { x: -0.3, y: -0.3, size: 3.6, n: 14, gap: 0.16, color: "FFFFFF", transparency: 60 });
       diagonals(slide, pres, { x: 10.0, y: 4.2, size: 3.6, n: 14, gap: 0.16, color: "FFFFFF", transparency: 60, flip: true });
       slide.addText([{ text: "OBRA ", options: { color: "FFFFFF" } }, { text: "369", options: { color: RED } }], { x: 1, y: 2.75, w: 11.33, h: 1.2, fontFace: FONT, fontSize: 64, bold: true, align: "center", margin: 0, isTextBox: true });
-      slide.addText(`Relatório de liberações · ${data.label}`, { x: 1, y: 3.95, w: 11.33, h: 0.5, fontFace: FONT, fontSize: 20, color: "FFFFFF", align: "center", margin: 0, isTextBox: true });
+      slide.addText(`Relatório de liberações · ${data.label} (${data.range})`, { x: 1, y: 3.95, w: 11.33, h: 0.5, fontFace: FONT, fontSize: 20, color: "FFFFFF", align: "center", margin: 0, isTextBox: true });
       slide.addText("Portal DP", { x: 1, y: 6.55, w: 11.33, h: 0.35, fontFace: FONT, fontSize: 12, color: "B9D6FC", align: "center", margin: 0, isTextBox: true });
     }
     return { pres, data };
@@ -439,11 +450,11 @@
     const select = document.querySelector("#pptx-month");
     const result = document.querySelector("#pptx-result");
     if (!button || !select) return;
-    const now = new Date();
+    const [cy, cm] = payrollKey(dayOf(new Date())).split("-").map(Number);
     select.innerHTML = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const date = new Date(cy, cm - 1 - i, 1);
       const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
-      return `<option value="${key}">${monthLabel(key)}${i === 0 ? " (mês atual)" : ""}</option>`;
+      return `<option value="${key}">${monthLabel(key)} · ${rangeText(key)}</option>`;
     }).join("");
     const show = (text, isError) => {
       result.textContent = text;
