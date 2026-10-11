@@ -406,9 +406,9 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${release.time ? `<small class="row-clock">Batida do ponto: <b>${escapeHtml(release.time)}</b></small>` : ""}${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
-        <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
+        <td data-label="Horário" class="col-horario">${release.time ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
         <td class="text-end row-actions col-actions" data-label="Ação">
           <button class="row-yes-btn" type="button" data-row-action="restore" data-release-id="${escapeHtml(release.id)}">Restaurar</button>
@@ -458,9 +458,9 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${release.time ? `<small class="row-clock">Batida do ponto: <b>${escapeHtml(release.time)}</b></small>` : ""}${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
-        <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
+        <td data-label="Horário" class="col-horario">${release.time ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
