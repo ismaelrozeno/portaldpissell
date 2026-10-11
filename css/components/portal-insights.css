@@ -63,8 +63,10 @@
 .chart-head h3 { margin: 0; color: #00142d; font-size: .95rem; font-weight: 800; }
 .chart-head p { margin: .15rem 0 .7rem; color: #617188; font-size: .8rem; }
 .chart-host { width: 100%; min-height: 190px; }
-.chart-svg { display: block; overflow: visible; }
-.chart-tick { fill: #898781; font: 500 10.5px system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+/* O gráfico ocupa a largura toda do cartão (o desenho é feito na largura medida e ajusta se o cartão mudar). */
+.chart-svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* Números e horas dos eixos legíveis no celular: mais escuros e um pouco maiores. */
+.chart-tick { fill: #52514e; font: 600 12px system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
 .chart-col .chart-hit { cursor: pointer; outline: none; }
 .chart-col:has(.chart-hit.is-hover) path, .chart-col:has(.chart-hit.is-hover) rect:not(.chart-hit) { filter: brightness(1.12); }
 .chart-col .chart-hit.is-hover { fill: rgba(0, 20, 45, .045); }
