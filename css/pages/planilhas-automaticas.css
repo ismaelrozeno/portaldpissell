@@ -165,3 +165,11 @@
   .download-card { padding: 1.35rem; }
   .download-button { width: 100%; text-align: center; }
 }
+
+/* Como usar (passos) e título de cada grupo de ferramentas (Planilhas; depois, Programas) */
+.downloads-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin: 0 0 2.2rem; padding: 0; list-style: none; counter-reset: passo; }
+.downloads-steps li { position: relative; padding: 1rem 1rem 1rem 3.2rem; border: 1px solid rgba(255, 255, 255, .08); border-radius: 1rem; color: var(--issell-muted, #aab4c3); background: rgba(255, 255, 255, .03); font-size: .95rem; line-height: 1.5; counter-increment: passo; }
+.downloads-steps li::before { position: absolute; top: 1rem; left: 1rem; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; color: #1b1205; background: var(--issell-orange, #f5820a); font-weight: 800; font-size: .85rem; content: counter(passo); }
+.downloads-steps strong { color: #fff; }
+.downloads-group { margin: 0 0 1rem; color: #fff; font-size: 1.3rem; font-weight: 700; }
+@media (max-width: 767.98px) { .downloads-steps { grid-template-columns: 1fr; } }
