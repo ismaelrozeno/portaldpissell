@@ -240,7 +240,8 @@
   // Cartões de resumo do Meu portal: as liberações coletivas entram na conta, com as mesmas regras das individuais.
   // Aqui só separa as folhas de cada cartão; quem soma e escreve os cartões é o portal (window.portalWriteStats).
   function refreshStats() {
-    const me = session();
+    // Simulador do administrador: conta pela pessoa simulada.
+    const me = window.portalViewAs || session();
     const foremanRoles = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
     // Encarregado/estagiário/segurança contam só o que eles mesmos solicitaram.
     const mine = foremanRoles.includes(profile) ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : sheets;

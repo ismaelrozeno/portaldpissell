@@ -410,3 +410,7 @@ body.dash.dash-loading .dash-page-loading { display: flex; align-items: center; 
 }
 /* Navegador antigo sem "overflow: clip": corta com hidden só na área do conteúdo (nunca no body). */
 @supports not (overflow: clip) { @media (max-width: 991.98px) { body.dash .dash-shell { overflow-x: hidden; } } }
+/* Simulador do administrador: a pessoa simulada fica numa linha própria, embaixo do perfil. */
+body.dash .demo-switcher { flex-wrap: wrap; }
+body.dash .demo-switcher #admin-person-select { flex: 1 1 100%; width: 100%; max-width: none; }
+body.dash .demo-switcher #admin-person-select[hidden] { display: none; }
