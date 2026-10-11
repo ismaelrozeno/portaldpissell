@@ -503,6 +503,15 @@
     filterBar.setStatusAll(next);
     if (next !== "all") document.querySelector("#records-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  // Encarregado, estagiário, analista e segurança (body.info-only): cartões, esteira e cartões dos engenheiros só
+  // informam a obra toda; não levam para os filtros (a lista deles só tem o que eles pediram).
+  document.addEventListener("click", (event) => {
+    if (!document.body.classList.contains("info-only")) return;
+    if (event.target.closest(".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
   document.querySelector(".portal-stats").addEventListener("click", async (event) => {
     const card = event.target.closest(".stat-card");
     if (!card || card.disabled || !activeProfileKey) return;
@@ -869,7 +878,7 @@
     const isPortaria = profileKey === "portaria";
 
     elements.pending.textContent = pending.length + col.pending.length;
-    document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento (engenheiro ou DP)";
+    document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento na obra (engenheiro ou DP)";
     detail("stat-pending-detail", isPortaria ? [] : [splitLabel(pending, col.pending), waitingLabel([...pending, ...col.pending])]);
 
     const stageCount = (stage) => approved.filter((release) => window.portalReleaseFlow.stageOf(release) === stage).length
@@ -907,7 +916,10 @@
     // "Indicadores do mês" (js/features/portal-insights.js), com as mesmas listas que o perfil vê.
     window.portalInsights?.render({ profileKey, releases: individualStats.all || [], sheets: col.all || [] });
     // Dashboard (js/features/portal-dashboard.js): esteira do fluxo, "Para você agora" e números do menu.
-    window.portalDashboard?.update({ profileKey, releases: individualStats.all || [], sheets: col.all || [] });
+    window.portalDashboard?.update({
+      profileKey, releases: individualStats.all || [], sheets: col.all || [],
+      own: individualStats.own ? { releases: individualStats.own, sheets: col.own || [] } : null
+    });
   }
   window.portalWriteStats = writeStats;
 
@@ -958,15 +970,21 @@
     elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
     const stageOf = window.portalReleaseFlow.stageOf;
     const rules = statRules(profileKey);
+    // Encarregado, estagiário, analista e segurança: as listas mostram só o que eles pediram, mas os cartões de
+    // informação (números, esteira, BI) mostram o que está acontecendo na obra toda — só para ver, sem levar aos filtros.
+    const isChief = foremanRoleValues.includes(profileKey);
+    const obra = isChief ? allReleases : releases;
+    document.body.classList.toggle("info-only", isChief);
     // Individuais de cada cartão; o painel das coletivas soma as dele por cima (writeStats, chamado por refreshStats).
     individualStats = {
       profileKey,
-      all: releases,
-      pending: releases.filter(rules.pending),
-      approved: releases.filter(rules.approved),
-      bonus: releases.filter(rules.bonus),
-      launched: releases.filter(rules.launched),
-      toLaunch: releases.filter(rules.toLaunch)
+      all: obra,
+      own: isChief ? releases : null,
+      pending: obra.filter(rules.pending),
+      approved: obra.filter(rules.approved),
+      bonus: obra.filter(rules.bonus),
+      launched: obra.filter(rules.launched),
+      toLaunch: obra.filter(rules.toLaunch)
     };
     elements.statCards.forEach((card) => {
       const key = card.dataset.stat;

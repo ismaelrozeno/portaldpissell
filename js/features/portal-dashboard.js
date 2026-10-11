@@ -159,7 +159,9 @@
   // Se algo falhar, depois de 20 s sai do carregando para não ficar girando para sempre.
   const doneLoading = () => body.classList.remove("dash-loading");
   setTimeout(doneLoading, 20000);
-  function update({ profileKey, releases = [], sheets = [] }) {
+  // own: só as liberações da própria pessoa (encarregado, segurança, estagiário, analista). Para esses perfis a esteira
+  // mostra a obra toda (releases/sheets) e o "Para você agora" e os números do menu, só o que é dela.
+  function update({ profileKey, releases = [], sheets = [], own = null }) {
     doneLoading();
     lastProfile = profileKey;
     applyUrlStatus();
@@ -168,21 +170,24 @@
     const stageInd = (r) => flow.stageOf(r);
     const stageCol = (s) => col?.stageOf(s) || s.stage || "engineer";
     const live = (stage) => !["foreman", "closed"].includes(stage);
-    const all = [
-      ...releases.map((r) => ({ r, kind: "ind", stage: stageInd(r), people: 1 })),
-      ...sheets.map((s) => ({ r: s, kind: "col", stage: stageCol(s), people: (s.participants || []).length }))
+    const entries = (inds, cols) => [
+      ...inds.map((r) => ({ r, kind: "ind", stage: stageInd(r), people: 1 })),
+      ...cols.map((s) => ({ r: s, kind: "col", stage: stageCol(s), people: (s.participants || []).length }))
     ];
+    const all = entries(releases, sheets);
     const today = dayOf(Date.now());
     const count = (test) => all.filter(test);
-    const groups = {
-      foreman: count((x) => x.stage === "foreman"),
-      engineer: count((x) => !x.r.bonusStatus && live(x.stage)),
-      dp: count((x) => x.stage === "dp"),
+    const groupsOf = (list) => ({
+      foreman: list.filter((x) => x.stage === "foreman"),
+      engineer: list.filter((x) => !x.r.bonusStatus && live(x.stage)),
+      dp: list.filter((x) => x.stage === "dp"),
       // "Aguardando saída": todas as que têm o botão "Confirmar saída" na portaria (autorizadas pelo DP e ainda sem
       // saída), de qualquer data.
-      gate: count((x) => x.stage === "gate"),
-      exited: count((x) => x.stage === "exited" && dayOf(x.r.exitConfirmedAt) === today)
-    };
+      gate: list.filter((x) => x.stage === "gate"),
+      exited: list.filter((x) => x.stage === "exited" && dayOf(x.r.exitConfirmedAt) === today)
+    });
+    const groups = groupsOf(all);
+    const mineGroups = own ? groupsOf(entries(own.releases || [], own.sheets || [])) : groups;
     const role = roleKey(profileKey);
     const statusFor = STATUS_FOR[role] || {};
     const people = (list) => list.reduce((sum, x) => sum + x.people, 0);
@@ -208,7 +213,7 @@
             <span class="dash-num">${n}</span>
           </button></li>`;
       }).join("");
-      flowEl.querySelector("#dash-flow-note").textContent = `${plural(all.filter((x) => live(x.stage) && !["exited", "registered", "entered"].includes(x.stage)).length, "liberação em andamento", "liberações em andamento")}`;
+      flowEl.querySelector("#dash-flow-note").textContent = `${plural(all.filter((x) => live(x.stage) && !["exited", "registered", "entered"].includes(x.stage)).length, "liberação em andamento", "liberações em andamento")}${own ? " na obra" : ""}`;
     }
 
     // Para você agora: o que esse perfil precisa fazer (até 3 itens)
@@ -229,9 +234,9 @@
       add(groups.gate, "aguardando saída", "confirme quando o colaborador passar", "individuais", statusFor.gate);
       add(count((x) => x.kind === "col" && x.stage === "gate" && (col?.exitedCount(x.r) || 0) > 0), "coletivas com saída pela metade", "ainda falta gente passar pela portaria", "coletivas", statusFor.gate);
     } else {
-      add(groups.foreman, "recusadas para ajustar", "corrija e reenvie ao engenheiro", "individuais", statusFor.foreman);
-      add(groups.engineer, "aguardando o engenheiro", "o abono ainda não foi decidido", "individuais", statusFor.engineer);
-      add(groups.gate, "autorizadas, aguardando saída", "liberadas pelo DP", "individuais", statusFor.gate);
+      add(mineGroups.foreman, "recusadas para ajustar", "corrija e reenvie ao engenheiro", "individuais", statusFor.foreman);
+      add(mineGroups.engineer, "aguardando o engenheiro", "o abono ainda não foi decidido", "individuais", statusFor.engineer);
+      add(mineGroups.gate, "autorizadas, aguardando saída", "liberadas pelo DP", "individuais", statusFor.gate);
     }
     const nowEl = $("#dash-now");
     if (nowEl) {
@@ -247,7 +252,7 @@
 
     // Números no menu: o que espera pelo perfil em cada lista
     const mineKey = MINE[role];
-    const badgeCount = (kind) => (groups[mineKey] || []).filter((x) => x.kind === kind).length;
+    const badgeCount = (kind) => (mineGroups[mineKey] || []).filter((x) => x.kind === kind).length;
     setBadge("individuais", badgeCount("ind"));
     setBadge("coletivas", badgeCount("col"));
 
