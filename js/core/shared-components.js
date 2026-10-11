@@ -120,7 +120,7 @@ window.portalAvatars = (() => {
   };
 
   const components = [
-    ["[data-site-header]", "partials/header.html?v=951c9816"],
+    ["[data-site-header]", "partials/header.html?v=7a46b7fa"],
     ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
   ];
   let authConfirmed = false;

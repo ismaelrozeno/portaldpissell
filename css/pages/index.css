@@ -343,3 +343,22 @@
 
   .hero__metric strong { overflow-wrap: anywhere; }
 }
+
+/* Ícones numerados do cartão "Visão geral do portal" */
+.hero__feature-icon { font-weight: 700; }
+
+/* "O que cada um faz no portal" (abaixo do cartão principal) */
+.home-roles { width: min(100%, 1200px); margin: 3.5rem auto 0; padding: 0 clamp(.25rem, 3vw, 2rem); }
+.home-roles h2 { margin: 0 0 .75rem; color: #fff; font-size: clamp(1.7rem, 3.5vw, 2.4rem); font-weight: 700; letter-spacing: -.02em; }
+.home-roles__lead { max-width: 720px; margin: 0 0 2rem !important; color: var(--issell-muted); font-size: 1.05rem !important; line-height: 1.6; }
+.home-roles__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.home-role { position: relative; padding: 1.4rem 1.3rem 1.3rem; border: 1px solid rgba(255, 255, 255, .08); border-radius: 1.25rem; background: linear-gradient(160deg, rgba(44, 53, 67, .8), rgba(22, 29, 39, .95)); }
+.home-role__step { display: inline-grid; place-items: center; width: 2rem; height: 2rem; margin-bottom: .9rem; border-radius: 50%; color: #1b1205; background: var(--issell-orange); font-weight: 800; }
+.home-role h3 { margin: 0 0 .5rem; color: #fff; font-size: 1.15rem; font-weight: 700; }
+.home-role p { margin: 0 !important; color: var(--issell-muted); font-size: .95rem !important; line-height: 1.55; }
+.home-roles__app { margin: 1.6rem 0 0 !important; color: var(--issell-muted); font-size: 1rem !important; }
+.home-roles__app a { margin-left: .3rem; color: #fff; font-weight: 600; text-decoration: none; }
+.home-roles__app a span { color: var(--issell-orange); }
+.home-roles__app a:hover { color: var(--issell-orange); }
+@media (max-width: 991.98px) { .home-roles__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .home-roles { margin-top: 2.5rem; } .home-roles__grid { grid-template-columns: 1fr; } }
