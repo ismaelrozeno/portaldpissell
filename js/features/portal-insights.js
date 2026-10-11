@@ -21,14 +21,29 @@
     const date = value ? new Date(value) : null;
     return !date || Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   };
-  const monthKey = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+  // Folha fecha no dia 20: o mês "AAAA-MM" vai do dia 21 do mês anterior ao dia 20 dele (ex.: outubro = 21/09 a 20/10).
+  // Um dia 21 ou depois já entra na folha do mês seguinte.
+  const payrollKey = (day) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day || "");
+    if (!match) return "";
+    const [y, m, d] = match.slice(1).map(Number);
+    return d >= 21 ? (m === 12 ? `${y + 1}-01` : `${y}-${pad(m + 1)}`) : `${y}-${pad(m)}`;
+  };
+  const monthKey = (date = new Date()) => payrollKey(dayOf(date));
+  // Primeiro e último dia ("AAAA-MM-DD") da folha.
+  const payrollRange = (key) => {
+    const [y, m] = key.split("-").map(Number);
+    const start = new Date(y, m - 2, 21);
+    return { from: dayOf(start), to: `${key}-20` };
+  };
+  const rangeText = (key) => { const { from, to } = payrollRange(key); const br = (d) => d.slice(8, 10) + "/" + d.slice(5, 7); return `${br(from)} a ${br(to)}`; };
   const recordDay = (record) => String(record.date || "").slice(0, 10) || dayOf(record.createdAt);
 
-  // ---------- Período escolhido no topo da BI Dados: um mês ("AAAA-MM") ou "all" (todo o período) ----------
+  // ---------- Período escolhido no topo da BI Dados: uma folha ("AAAA-MM", 21 a 20) ou "all" (todo o período) ----------
   // Os cartões de "agora" (digitais pendentes, aguardando saída, recusadas) não dependem do período.
   let period = monthKey();
   const isAll = () => period === "all";
-  const inKey = (key) => (record) => key === "all" || recordDay(record).startsWith(key);
+  const inKey = (key) => (record) => key === "all" || payrollKey(recordDay(record)) === key;
   const inPeriod = (record) => inKey(period)(record);
   const prevMonthKey = (key) => { const [y, m] = key.split("-").map(Number); return monthKey(new Date(y, m - 2, 1)); };
   const monthLabel = (key, withYear = false) => {
@@ -36,8 +51,8 @@
     const text = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", withYear ? { month: "long", year: "numeric" } : { month: "long" });
     return withYear ? text.charAt(0).toUpperCase() + text.slice(1) : text;
   };
-  // "Outubro de 2026" / "Todo o período" no título; nas frases, "em outubro" / "no período todo".
-  const periodTitle = () => (isAll() ? "Todo o período" : monthLabel(period, true));
+  // "Outubro de 2026 · 21/09 a 20/10" / "Todo o período" no título; nas frases, "em outubro" / "no período todo".
+  const periodTitle = () => (isAll() ? "Todo o período" : `${monthLabel(period, true)} · ${rangeText(period)}`);
   const inPhrase = () => (isAll() ? "no período todo" : `em ${monthLabel(period)}`);
   const ofPhrase = () => (isAll() ? "do período" : `de ${monthLabel(period)}`);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -192,7 +207,7 @@
       const per = new Map();
       [...releases, ...sheets].forEach((r) => {
         if (!r.engineerDecisionAt || !r.engineer || /administrador/i.test(`${r.engineerRole || ""} ${r.engineer}`)) return;
-        if (!isAll() && !dayOf(r.engineerDecisionAt).startsWith(period)) return;
+        if (!isAll() && payrollKey(dayOf(r.engineerDecisionAt)) !== period) return;
         const minutes = (new Date(r.engineerDecisionAt) - new Date(r.requestedAt || r.createdAt)) / 60000;
         if (!(minutes >= 0)) return;
         const key = String(r.engineer).trim().replace(/\s+/g, " ");
@@ -415,12 +430,12 @@
       tile("Particulares", pctText(now.particularPct), "das saídas (o resto é tarefa)", "particularPct", true)
     ].join("");
   }
-  // Meses com registro (mais recente primeiro) + "Todo o período", para o seletor.
+  // Folhas com registro (mais recente primeiro) + "Todo o período", para o seletor.
   function periodOptions(data) {
     const months = new Set([monthKey()]);
-    [...data.releases, ...data.sheets].forEach((r) => { const day = recordDay(r); if (/^\d{4}-\d{2}/.test(day)) months.add(day.slice(0, 7)); });
+    [...data.releases, ...data.sheets].forEach((r) => { const day = recordDay(r); const key = payrollKey(day); if (key) months.add(key); });
     const list = [...months].sort().reverse();
-    return list.map((key) => `<option value="${key}">${esc(monthLabel(key, true))}${key === monthKey() ? " (mês atual)" : ""}</option>`).join("")
+    return list.map((key) => `<option value="${key}">${esc(monthLabel(key, true))} · ${rangeText(key)}</option>`).join("")
       + '<option value="all">Todo o período</option>';
   }
 
@@ -475,8 +490,8 @@
 
   // Os gráficos (portal-insights-charts.js) usam o mesmo período.
   window.portalInsightsPeriod = Object.freeze({
-    get: () => period, isAll, inPeriod, monthKey, monthLabel, inPhrase, ofPhrase,
-    createdInPeriod: (record) => isAll() || (dayOf(record.createdAt) || String(record.date || "").slice(0, 10)).startsWith(period)
+    get: () => period, isAll, inPeriod, monthKey, monthLabel, inPhrase, ofPhrase, payrollKey, payrollRange,
+    createdInPeriod: (record) => isAll() || payrollKey(dayOf(record.createdAt) || String(record.date || "").slice(0, 10)) === period
   });
   window.portalInsights = Object.freeze({ render, CARDS_BY_PROFILE });
 })();

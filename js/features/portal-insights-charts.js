@@ -26,10 +26,17 @@
   const recordDay = (record) => String(record.date || "").slice(0, 10) || dayOf(record.createdAt);
   // Período escolhido no topo da BI Dados (js/features/portal-insights.js): um mês ou todo o período.
   const P = () => window.portalInsightsPeriod;
-  const monthKey = () => { const key = P()?.get(); if (key && key !== "all") return key; const now = new Date(); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`; };
+  // Folha fecha no dia 20: o mês "AAAA-MM" vai do dia 21 do mês anterior ao dia 20 dele.
+  const payrollKey = (day) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day || "");
+    if (!match) return "";
+    const [y, m, d] = match.slice(1).map(Number);
+    return d >= 21 ? (m === 12 ? `${y + 1}-01` : `${y}-${pad(m + 1)}`) : `${y}-${pad(m)}`;
+  };
+  const monthKey = () => { const key = P()?.get(); return key && key !== "all" ? key : payrollKey(dayOf(new Date())); };
   const isAll = () => P()?.isAll() || false;
-  const createdInMonth = (record) => (P() ? P().createdInPeriod(record) : createdDay(record).startsWith(monthKey()));
-  const inMonth = (record) => (P() ? P().inPeriod(record) : recordDay(record).startsWith(monthKey()));
+  const createdInMonth = (record) => (P() ? P().createdInPeriod(record) : payrollKey(createdDay(record)) === monthKey());
+  const inMonth = (record) => (P() ? P().inPeriod(record) : payrollKey(recordDay(record)) === monthKey());
   const periodPhrase = () => P()?.inPhrase() || "no mês";
   const counted = (stage) => !["foreman", "closed"].includes(stage);
   const duration = (minutes) => {
@@ -224,19 +231,21 @@
     // Liberações criadas por dia no mês (individuais x coletivas).
     perDay({ releases, sheets }) {
       if (isAll()) return CHARTS.perMonth({ releases, sheets });
-      const now = new Date();
       const [year, month] = monthKey().split("-").map(Number);
-      const isCurrent = year === now.getFullYear() && month === now.getMonth() + 1;
-      // Mês atual: até hoje; mês passado: o mês inteiro.
-      const days = isCurrent ? now.getDate() : new Date(year, month, 0).getDate();
+      // Folha do dia 21 do mês anterior ao dia 20; a folha atual vai até hoje.
+      const today = dayOf(new Date());
+      const dates = [];
+      for (let d = new Date(year, month - 2, 21); dayOf(d) <= `${monthKey()}-20` && dayOf(d) <= today; d.setDate(d.getDate() + 1)) dates.push(dayOf(d));
+      const days = dates.length;
       const ind = new Map();
       const col = new Map();
       releases.filter(createdInMonth).forEach((r) => ind.set(createdDay(r), (ind.get(createdDay(r)) || 0) + 1));
       sheets.filter(createdInMonth).forEach((s) => col.set(createdDay(s), (col.get(createdDay(s)) || 0) + 1));
       const points = Array.from({ length: days }, (_, i) => {
-        const key = `${monthKey()}-${pad(i + 1)}`;
+        const key = dates[i];
         const tickEvery = days > 20 ? 5 : days > 10 ? 2 : 1;
-        return { label: key, tick: i === 0 || (i + 1) % tickEvery === 0 ? String(i + 1) : "", values: [ind.get(key) || 0, col.get(key) || 0] };
+        const tick = `${key.slice(8, 10)}/${key.slice(5, 7)}`;
+        return { label: key, tick: i === 0 || i === days - 1 || (i % tickEvery === 0 && i < days - 2) ? tick : "", values: [ind.get(key) || 0, col.get(key) || 0] };
       });
       const totalInd = [...ind.values()].reduce((a, b) => a + b, 0);
       const totalCol = [...col.values()].reduce((a, b) => a + b, 0);
@@ -359,7 +368,7 @@
     perMonth({ releases, sheets }) {
       const ind = new Map();
       const col = new Map();
-      const monthOf = (record) => createdDay(record).slice(0, 7);
+      const monthOf = (record) => payrollKey(createdDay(record));
       releases.forEach((r) => { const key = monthOf(r); if (key) ind.set(key, (ind.get(key) || 0) + 1); });
       sheets.forEach((s) => { const key = monthOf(s); if (key) col.set(key, (col.get(key) || 0) + 1); });
       const keys = [...new Set([...ind.keys(), ...col.keys()])].sort().slice(-12);
