@@ -273,7 +273,7 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .portal-table .col-who small.row-reason .row-movement { flex-basis:100%; color:var(--portal-muted); font-size:.74rem; font-weight:500; }
 .portal-table .col-who small.row-reason .row-movement b { font-weight:700; }
 .reason-tag { display:inline-block; padding:.1rem .45rem; border-radius:.35rem; font-size:.68rem; font-weight:800; letter-spacing:.02em; text-transform:uppercase; }
-.reason-tarefa { color:#0b4a7a; background:#e3f0fb; }
+.reason-tarefa { color:#7a5200; background:#fdefc4; }
 .reason-particular { color:#5b2d9e; background:#efe6fb; }
 /* "Batida do ponto: 07:00" embaixo do engenheiro, quando a coluna "Horário" não aparece (celular / tabela apertada). */
 .portal-table .col-who small.row-clock { display:none; color:var(--portal-muted); font-size:.74rem; font-weight:500; }
