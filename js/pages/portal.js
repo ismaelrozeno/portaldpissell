@@ -988,11 +988,11 @@
 
   const session = window.portalAuthDemo?.getSession();
   const isAdministrator = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
-  // Analista com acessos dados pelo administrador (DP, engenheiro, segurança do trabalho): alterna entre o painel de
-  // analista e só os painéis a que ele tem acesso.
+  // Analista é o perfil "coringa": com um acesso dado pelo administrador ele VIRA aquele perfil (sem "Acessar como").
+  // Com acesso de DP, é DP; senão, engenheiro ou segurança do trabalho. Só com dois desses (sem DP) escolhe entre eles.
   const analystAccess = window.portalAuthDemo?.analystAccess?.() || [];
   const isDpDelegate = analystAccess.length > 0;
-  const delegateProfiles = ["analista", ...analystAccess];
+  const delegateProfiles = analystAccess.includes("dp") ? ["dp"] : ["engenheiro", "seguranca_trabalho"].filter((key) => analystAccess.includes(key));
   // O cadastro salva o perfil como "porteiro", mas o painel dele se chama "portaria".
   const profileKey = (session?.roleValue === "porteiro" ? "portaria" : session?.roleValue)
     || (session?.role?.toLowerCase().includes("engenheiro") ? "engenheiro"
@@ -1003,10 +1003,10 @@
   const savedAdminProfile = () => {
     try {
       const saved = localStorage.getItem(adminProfileKey);
-      if (isDpDelegate) return delegateProfiles.includes(saved) ? saved : "analista";
+      if (isDpDelegate) return delegateProfiles.includes(saved) ? saved : delegateProfiles[0];
       return profiles[saved] ? saved : "dp";
     } catch (error) {
-      return isDpDelegate ? "analista" : "dp";
+      return isDpDelegate ? delegateProfiles[0] : "dp";
     }
   };
   let initialProfile = profiles[profileKey] ? profileKey : "dp";
@@ -1015,11 +1015,12 @@
       // Só os painéis a que ele tem direito.
       [...elements.adminProfile.options].forEach((option) => { if (!delegateProfiles.includes(option.value)) option.remove(); });
       const hint = elements.adminSwitcher.querySelector("small");
-      const names = [...elements.adminProfile.options].filter((option) => option.value !== "analista").map((option) => option.textContent);
-      if (hint) hint.textContent = `Você tem acesso a: ${names.join(", ")}. Alterne entre esses painéis e o de Analista.`;
+      const names = [...elements.adminProfile.options].map((option) => option.textContent);
+      if (hint) hint.textContent = `Você tem acesso a: ${names.join(" e ")}. Alterne entre esses painéis.`;
     }
     initialProfile = savedAdminProfile();
-    elements.adminSwitcher.hidden = false;
+    // Analista com um acesso só (ex.: DP): vira esse perfil, sem a caixa "Acessar como".
+    elements.adminSwitcher.hidden = isDpDelegate && delegateProfiles.length < 2;
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
       trashMode = false;
