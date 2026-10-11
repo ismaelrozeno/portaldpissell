@@ -196,7 +196,8 @@
     const sheet = {
       participants: [...chosen.values()],
       date: document.querySelector("#release-date").value,
-      time: document.querySelector("#release-time").value,
+      // Entrada e saída: não bateu o ponto, então não há horário.
+      time: movement.length > 1 ? "" : document.querySelector("#release-time").value,
       movement,
       reasonType: "tarefa",
       motive: service.value.trim(),

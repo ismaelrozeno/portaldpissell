@@ -216,7 +216,8 @@
       role: selectedEmployeeRole,
       date: document.querySelector("#release-date").value,
       team: "Equipe local",
-      time: document.querySelector("#release-time").value,
+      // Entrada e saída: não bateu o ponto, então não há horário.
+      time: movementInputs().length > 1 ? "" : document.querySelector("#release-time").value,
       movement: movementInputs(),
       bonusRequest,
       reasonType: reason,
