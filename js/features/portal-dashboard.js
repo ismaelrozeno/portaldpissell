@@ -228,8 +228,8 @@
       items.push({ n: bioPeople, title: bioPeople === 1 ? "colaborador com digital pendente" : "colaboradores com digital pendente", note: "ainda não assinaram com a digital", page: "individuais", status: statusFor.bio });
       add(count((x) => x.r.bonusStatus === "approved" && !x.r.abonoLaunchedAt), "abonos por lançar no RM", "abonados pelo engenheiro, sem o carimbo do DP", "individuais", statusFor.toLaunch);
     } else if (role === "engenheiro") {
-      add(groups.engineer, "aguardando seu abono", "marque abonado ou não abonado", "individuais", statusFor.engineer);
-      add(count((x) => x.stage === "engineer" && !x.r.bonusStatus && x.r.dpReturnReason), "devolvidas pelo DP", "o DP pediu para rever o abono", "individuais", statusFor.engineer);
+      add(mineGroups.engineer, "aguardando seu abono", "marque abonado ou não abonado", "individuais", statusFor.engineer);
+      add(mineGroups.engineer.filter((x) => x.stage === "engineer" && x.r.dpReturnReason), "devolvidas pelo DP", "o DP pediu para rever o abono", "individuais", statusFor.engineer);
     } else if (role === "portaria") {
       add(groups.gate, "aguardando saída", "confirme quando o colaborador passar", "individuais", statusFor.gate);
       add(count((x) => x.kind === "col" && x.stage === "gate" && (col?.exitedCount(x.r) || 0) > 0), "coletivas com saída pela metade", "ainda falta gente passar pela portaria", "coletivas", statusFor.gate);

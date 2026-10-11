@@ -157,6 +157,13 @@
   // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar
   // exatamente como ela vê. Sem pessoa escolhida (ou fora do simulador), é a conta de quem está logado.
   const viewerSession = () => window.portalViewAs || window.portalAuthDemo?.getSession();
+  // Engenheiro comum (não Gestor): a lista dele só tem o que foi enviado a ele (ou a todos), mas as informações
+  // (esteira, cartões, BI) são da obra toda, como as do DP. O administrador sem pessoa escolhida já vê tudo.
+  const limitedEngineer = (profileKey) => {
+    if (profileKey !== "engenheiro") return false;
+    const viewer = viewerSession();
+    return !!viewer && viewer.roleValue !== "administrador-analista" && !(viewer.privileges || []).includes("gestor");
+  };
   // "É minha?": pela conta de quem pediu (liberações novas) ou pelo nome, sem diferença de acento, maiúscula ou espaço.
   const nameKey = (name) => window.normalizeSearchText(name).replace(/\s+/g, " ").trim();
   const requestedBy = (release, person) => (release.requesterUid && person?.uid ? release.requesterUid === person.uid : false)
@@ -506,8 +513,13 @@
   // Encarregado, estagiário, analista e segurança (body.info-only): cartões, esteira e cartões dos engenheiros só
   // informam a obra toda; não levam para os filtros (a lista deles só tem o que eles pediram).
   document.addEventListener("click", (event) => {
-    if (!document.body.classList.contains("info-only")) return;
-    if (event.target.closest(".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]")) {
+    const infoOnly = document.body.classList.contains("info-only");
+    const partial = document.body.classList.contains("info-partial");
+    if (!infoOnly && !partial) return;
+    const locked = infoOnly
+      ? ".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]"
+      : ".portal-stats .stat-card:not([data-stat='team']):not([data-stat='pending']), [data-engineer-filter], [data-flow]";
+    if (event.target.closest(locked)) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -973,14 +985,18 @@
     // Encarregado, estagiário, analista e segurança: as listas mostram só o que eles pediram, mas os cartões de
     // informação (números, esteira, BI) mostram o que está acontecendo na obra toda — só para ver, sem levar aos filtros.
     const isChief = foremanRoleValues.includes(profileKey);
-    const obra = isChief ? allReleases : releases;
+    const engineerObra = limitedEngineer(profileKey);
+    const obra = isChief || engineerObra ? allReleases : releases;
     document.body.classList.toggle("info-only", isChief);
+    // Engenheiro comum: só "Liberações pendentes" (as dele) e o "Para você agora" levam à lista; o resto só informa.
+    document.body.classList.toggle("info-partial", engineerObra);
     // Individuais de cada cartão; o painel das coletivas soma as dele por cima (writeStats, chamado por refreshStats).
     individualStats = {
       profileKey,
       all: obra,
-      own: isChief ? releases : null,
-      pending: obra.filter(rules.pending),
+      own: isChief || engineerObra ? releases : null,
+      // Engenheiro comum: "Liberações pendentes" = aguardando o abono DELE (o que ele tem para fazer).
+      pending: (engineerObra ? releases : obra).filter(rules.pending),
       approved: obra.filter(rules.approved),
       bonus: obra.filter(rules.bonus),
       launched: obra.filter(rules.launched),
