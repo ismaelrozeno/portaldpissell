@@ -304,39 +304,91 @@
     }
   });
 
-  // ---------- Arrastar para trocar de aba (celular) ----------
-  // Arrastar o dedo para a esquerda vai para a próxima aba da barra de baixo; para a direita, a anterior (na ordem em que
-  // aparecem: Individuais, Coletivas, Visão geral, BI Dados, Atalhos). Só conta um arrasto bem horizontal e rápido, e não
-  // começa em campos, listas suspensas, tabelas, gráficos ou janelas abertas (para não atrapalhar rolar e digitar).
-  const SWIPE_IGNORE = "input, textarea, select, button, .table-responsive, .chart-host, .chart-svg, .filter-bar, .modal, .offcanvas, .dash-fab-menu, [data-no-swipe]";
-  let swipe = null;
+  // ---------- Arrastar para trocar de aba (celular), como a tela inicial do celular ----------
+  // O dedo pode começar em qualquer lugar (cartões, listas, botões, campos). Assim que o movimento fica claramente
+  // horizontal, a página acompanha o dedo; ao soltar, desliza para a aba vizinha (a nova entra pelo outro lado) se
+  // passou de ~1/4 da tela ou foi um "peteleco" rápido, senão volta ao lugar. Na primeira/última aba há resistência.
+  // Não arrasta com janela aberta nem dentro de algo que role para os lados de verdade (ex.: tabela larga).
+  const pane = document.querySelector(".dash-main");
   const tabsInOrder = () => [...document.querySelectorAll(".dash-nav-list .dash-nav-item[data-dash-page]")]
     .filter((item) => item.offsetParent)
     .sort((a, b) => Number(getComputedStyle(a.parentElement).order) - Number(getComputedStyle(b.parentElement).order))
     .map((item) => item.dataset.dashPage);
+  const dialogOpen = () => [...document.querySelectorAll('[aria-modal="true"], .modal.show, .offcanvas.show')]
+    .some((el) => el.offsetParent || el.classList.contains("show"));
+  const scrollsSideways = (el) => {
+    for (let node = el; node && node !== document.body; node = node.parentElement) {
+      if (node.scrollWidth > node.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(node).overflowX)) return true;
+    }
+    return false;
+  };
+  const setPane = (x, ms = 0) => {
+    if (!pane) return;
+    pane.style.transition = ms ? `transform ${ms}ms cubic-bezier(.22,.61,.36,1)` : "none";
+    pane.style.transform = x ? `translate3d(${x}px,0,0)` : "";
+  };
+  let drag = null;
+  let animating = false;
   document.addEventListener("touchstart", (event) => {
-    swipe = null;
-    if (window.innerWidth >= 992 || event.touches.length !== 1) return;
-    // Nenhuma janela aberta (folha da liberação, confirmações, menu do topo...).
-    const dialogOpen = [...document.querySelectorAll('[aria-modal="true"], .modal.show, .offcanvas.show')].some((el) => el.offsetParent || el.classList.contains("show"));
-    if (event.target.closest(SWIPE_IGNORE) || dialogOpen) return;
+    drag = null;
+    if (animating || !pane || window.innerWidth >= 992 || event.touches.length !== 1) return;
+    if (dialogOpen() || event.target.closest("input[type=range], [data-no-swipe]") || scrollsSideways(event.target)) return;
+    const index = tabsInOrder().indexOf(body.dataset.page);
+    if (index < 0) return;
     const touch = event.touches[0];
-    swipe = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+    drag = { x: touch.clientX, y: touch.clientY, t: Date.now(), dx: 0, lock: "", lastX: touch.clientX, lastT: Date.now(), v: 0 };
   }, { passive: true });
-  document.addEventListener("touchend", (event) => {
-    if (!swipe) return;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - swipe.x;
-    const dy = touch.clientY - swipe.y;
-    const quick = Date.now() - swipe.t < 700;
-    swipe = null;
-    if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+  document.addEventListener("touchmove", (event) => {
+    if (!drag) return;
+    const touch = event.touches[0];
+    const dx = touch.clientX - drag.x;
+    const dy = touch.clientY - drag.y;
+    if (!drag.lock) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      drag.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y";
+      if (drag.lock === "y") { drag = null; return; }
+      document.activeElement?.blur?.();
+    }
+    event.preventDefault(); // arrastando para o lado: a página não rola junto
     const tabs = tabsInOrder();
     const index = tabs.indexOf(body.dataset.page);
-    if (index < 0) return;
+    const atEdge = (dx > 0 && index === 0) || (dx < 0 && index === tabs.length - 1);
+    drag.dx = atEdge ? dx / 3 : dx; // resistência na primeira/última aba
+    const now = Date.now();
+    drag.v = (touch.clientX - drag.lastX) / Math.max(1, now - drag.lastT);
+    drag.lastX = touch.clientX;
+    drag.lastT = now;
+    setPane(drag.dx);
+  }, { passive: false });
+  const endDrag = () => {
+    if (!drag || drag.lock !== "x") { drag = null; return; }
+    const { dx, v } = drag;
+    drag = null;
+    const tabs = tabsInOrder();
+    const index = tabs.indexOf(body.dataset.page);
+    const width = window.innerWidth;
+    const flick = Math.abs(v) > 0.45 && Math.sign(v) === Math.sign(dx);
     const next = tabs[index + (dx < 0 ? 1 : -1)];
-    if (next) go(next);
-  }, { passive: true });
+    if (!next || (Math.abs(dx) < width / 4 && !flick)) {
+      setPane(0, 220); // não passou do ponto: volta ao lugar
+      return;
+    }
+    animating = true;
+    const out = dx < 0 ? -width : width;
+    setPane(out, 200);
+    setTimeout(() => {
+      go(next);
+      setPane(-out); // a aba nova começa do outro lado...
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        setPane(0, 240); // ...e desliza para o lugar
+        setTimeout(() => { setPane(0); animating = false; }, 260);
+      }));
+    }, 200);
+  };
+  document.addEventListener("touchend", endDrag, { passive: true });
+  document.addEventListener("touchcancel", () => { if (drag?.lock === "x") setPane(0, 200); drag = null; }, { passive: true });
+  // Arrastou de verdade: o "toque" que termina o arrasto não vira clique no botão/cartão onde o dedo começou.
+  document.addEventListener("click", (event) => { if (animating) { event.preventDefault(); event.stopPropagation(); } }, true);
 
   window.portalDashboard = Object.freeze({ update, go, showPage, applyUrlStatus });
   showPage(pageFromHash(), { scroll: false });
