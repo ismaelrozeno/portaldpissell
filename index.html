@@ -16,7 +16,7 @@
 
   <link rel="stylesheet" href="css/site-overrides.css?v=e085f28a">
 
-  <link rel="stylesheet" href="css/pages/index.css?v=b5e28e71">
+  <link rel="stylesheet" href="css/pages/index.css?v=44de14b2">
 
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 
@@ -36,9 +36,9 @@
 
         <p class="hero__eyebrow">ISSell Informática <span aria-hidden="true">·</span> Departamento Pessoal</p>
 
-        <h1>Rotinas mais simples para um departamento mais eficiente.</h1>
+        <h1>Liberações de saída da obra, do pedido à portaria.</h1>
 
-        <p class="hero__lead">Um portal interno criado para organizar informações, reduzir tarefas repetitivas e apoiar as decisões do Departamento Pessoal.</p>
+        <p class="hero__lead">O encarregado pede a liberação, o engenheiro decide o abono, o DP autoriza e lança no RM e a portaria confirma a saída. Cada etapa fica assinada, o colaborador assina com a digital e todos acompanham o andamento em tempo real, no computador ou no celular.</p>
 
         <div class="hero__actions">
 
@@ -78,37 +78,79 @@
 
         <div class="hero__metric">
 
-          <span>Organização</span>
+          <span>Fluxo da liberação</span>
 
-          <strong>Departamento Pessoal</strong>
+          <strong>Encarregado → Engenheiro → DP → Portaria</strong>
 
-          <small>Informações centralizadas</small>
+          <small>Cada perfil vê o que está esperando por ele</small>
 
         </div>
 
         <div class="hero__feature">
 
-          <span class="hero__feature-icon">•</span>
+          <span class="hero__feature-icon" aria-hidden="true">1</span>
 
-          <span><strong>Planilhas automáticas</strong><small>Ferramentas para agilizar sua rotina</small></span>
-
-          <a class="hero__arrow" href="Planilhas-Automáticas.html" aria-label="Abrir planilhas automáticas">↗</a>
+          <span><strong>Liberações individuais e coletivas</strong><small>Pedido, assinaturas e folha em PDF</small></span>
 
         </div>
 
         <div class="hero__feature hero__feature--muted">
 
-          <span class="hero__feature-icon">✓</span>
+          <span class="hero__feature-icon" aria-hidden="true">2</span>
 
-          <span><strong>Acesso controlado</strong><small>Ambiente interno e autorizado</small></span>
+          <span><strong>Abono e lançamento no RM</strong><small>O engenheiro decide, o DP carimba o lançamento</small></span>
 
-          <a class="hero__arrow" href="Acesso.html#login" aria-label="Abrir acesso ao portal">↗</a>
+        </div>
+
+        <div class="hero__feature hero__feature--muted">
+
+          <span class="hero__feature-icon" aria-hidden="true">3</span>
+
+          <span><strong>Assinatura com a digital</strong><small>O colaborador confirma no leitor biométrico do DP</small></span>
+
+        </div>
+
+        <div class="hero__feature hero__feature--muted">
+
+          <span class="hero__feature-icon" aria-hidden="true">4</span>
+
+          <span><strong>BI Dados</strong><small>Indicadores do mês, gráficos e PowerPoint pronto</small></span>
 
         </div>
 
       </div>
 
     </div>
+
+    <!-- O que cada perfil faz no portal (explicação para quem chega pela primeira vez) -->
+    <section class="home-roles" aria-labelledby="home-roles-title">
+      <p class="hero__eyebrow">Como funciona</p>
+      <h2 id="home-roles-title">O que cada um faz no portal</h2>
+      <p class="home-roles__lead">Cada pessoa entra com o seu perfil e vê só o que é dela. A liberação passa de mão em mão, e o portal mostra para cada um o que está esperando por ele.</p>
+      <ol class="home-roles__grid">
+        <li class="home-role">
+          <span class="home-role__step">1</span>
+          <h3>Encarregado</h3>
+          <p>Registra a liberação individual ou coletiva da equipe, acompanha cada etapa e corrige e reenvia quando ela volta recusada.</p>
+        </li>
+        <li class="home-role">
+          <span class="home-role__step">2</span>
+          <h3>Engenheiro</h3>
+          <p>Recebe as liberações da sua frente e marca abonado ou não abonado. O DP vê na hora o que cada engenheiro tem pendente.</p>
+        </li>
+        <li class="home-role">
+          <span class="home-role__step">3</span>
+          <h3>Departamento Pessoal</h3>
+          <p>Autoriza ou devolve a saída, colhe a digital do colaborador, lança o abono no RM e fecha o mês com backup, planilhas e BI Dados.</p>
+        </li>
+        <li class="home-role">
+          <span class="home-role__step">4</span>
+          <h3>Portaria</h3>
+          <p>Vê quem está autorizado a sair e confirma a saída de cada colaborador, inclusive um por um nas coletivas.</p>
+        </li>
+      </ol>
+      <p class="home-roles__app">Use no computador ou instale no celular como aplicativo. <a href="App.html">Ver como instalar <span aria-hidden="true">→</span></a></p>
+    </section>
 
   </main>
 
