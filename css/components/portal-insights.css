@@ -118,3 +118,24 @@
   .insight-value { font-size: 1.6rem; }
 }
 @media print { .portal-insights { display: none !important; } }
+
+/* ---------- BI Dados: período, placar do topo e barras novas ---------- */
+.insights-toolbar { display: flex; align-items: center; gap: .6rem; margin: 0 0 .9rem; }
+.insights-toolbar label { color: #52606f; font-size: .9rem; font-weight: 600; }
+.insights-toolbar select { min-width: 0; max-width: 100%; padding: .5rem 2rem .5rem .75rem; border: 1px solid #dfe7f0; border-radius: .6rem; color: #16283d; background-color: #fff; font: inherit; font-weight: 600; }
+/* Placar: 5 números do período, com a comparação com o mês anterior embaixo */
+.insights-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .7rem; margin: 0 0 1rem; }
+.insights-kpi { display: flex; flex-direction: column; min-width: 0; padding: .85rem .9rem; border: 1px solid #dfe7f0; border-radius: 1rem; color: #16283d; background: #fff; }
+.insights-kpi span { color: #3b4d63; font-size: .8rem; font-weight: 600; }
+.insights-kpi strong { margin: .15rem 0 .1rem; color: #0e1f33; font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif; font-size: 1.9rem; font-weight: 700; line-height: 1.05; }
+.insights-kpi small { color: #66768a; font-size: .74rem; line-height: 1.3; }
+.insights-kpi em { margin-top: .45rem; padding-top: .4rem; border-top: 1px solid #e6ebf0; color: #3b4d63; font-size: .74rem; font-style: normal; font-weight: 600; }
+@media (max-width: 1199.98px) { .insights-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .insights-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insights-kpis .insights-kpi:last-child:nth-child(odd) { grid-column: span 2; } }
+/* Barras com rótulo longo (tempo de cada etapa) e barra dividida (abonado | não abonado) */
+.chart-hbars-wide li { grid-template-columns: minmax(130px, 50%) 1fr; }
+.chart-hbars-wide .chart-hbar-label { white-space: normal; }
+.chart-hbar-stack { gap: 2px; }
+.chart-hbar-stack .chart-hbar { border-radius: 0; }
+.chart-hbar-stack .chart-hbar:last-of-type { border-radius: 0 4px 4px 0; }
+.chart-hbar-stack .chart-hbar-value { margin-left: .4rem; }

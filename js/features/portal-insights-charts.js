@@ -10,10 +10,10 @@
 
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
   const CHARTS_BY_PROFILE = {
-    dp: ["perDay", "creators", "stages", "hours"],
-    engenheiro: ["perDay", "creators", "stages"],
-    portaria: ["hours"],
-    ...Object.fromEntries(CHIEFS.map((role) => [role, ["perDay", "stages", "hours"]]))
+    dp: ["perDay", "creators", "stages", "flowTime", "engineerBonus", "hours", "weekday"],
+    engenheiro: ["perDay", "creators", "stages", "flowTime", "engineerBonus"],
+    portaria: ["hours", "weekday"],
+    ...Object.fromEntries(CHIEFS.map((role) => [role, ["perDay", "stages", "hours", "weekday"]]))
   };
 
   // ---------- Ajudantes ----------
@@ -22,11 +22,38 @@
     const date = value ? new Date(value) : null;
     return !date || Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   };
-  const monthKey = () => { const now = new Date(); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`; };
   const createdDay = (record) => dayOf(record.createdAt) || String(record.date || "").slice(0, 10);
   const recordDay = (record) => String(record.date || "").slice(0, 10) || dayOf(record.createdAt);
-  const createdInMonth = (record) => createdDay(record).startsWith(monthKey());
-  const inMonth = (record) => recordDay(record).startsWith(monthKey());
+  // Período escolhido no topo da BI Dados (js/features/portal-insights.js): um mês ou todo o período.
+  const P = () => window.portalInsightsPeriod;
+  const monthKey = () => { const key = P()?.get(); if (key && key !== "all") return key; const now = new Date(); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`; };
+  const isAll = () => P()?.isAll() || false;
+  const createdInMonth = (record) => (P() ? P().createdInPeriod(record) : createdDay(record).startsWith(monthKey()));
+  const inMonth = (record) => (P() ? P().inPeriod(record) : recordDay(record).startsWith(monthKey()));
+  const periodPhrase = () => P()?.inPhrase() || "no mês";
+  const counted = (stage) => !["foreman", "closed"].includes(stage);
+  const duration = (minutes) => {
+    if (minutes < 60) return `${Math.max(1, Math.round(minutes))} min`;
+    if (minutes < 1440) return `${(minutes / 60).toFixed(minutes < 600 ? 1 : 0).replace(".", ",").replace(",0", "")} h`;
+    return `${(minutes / 1440).toFixed(1).replace(".", ",").replace(",0", "")} ${minutes < 2880 ? "dia" : "dias"}`;
+  };
+  // Barras horizontais simples (rótulo, barra, valor escrito) com dica ao tocar.
+  function hbars(body, items, { color = SERIES[0], caption, head, wide = false }) {
+    const max = Math.max(1, ...items.map((item) => item.value));
+    const list = html("ol", wide ? "chart-hbars chart-hbars-wide" : "chart-hbars");
+    items.forEach((item) => {
+      const li = html("li");
+      const track = html("span", "chart-hbar-track");
+      const bar = html("i", "chart-hbar");
+      bar.style.width = `${Math.max(2, (item.value / max) * 100)}%`;
+      bar.style.background = item.color || color;
+      track.append(bar, html("b", "chart-hbar-value", item.text ?? String(item.value)));
+      li.append(html("span", "chart-hbar-label", item.label), track);
+      bindTip(li, item.label, item.tip || [{ value: item.text ?? item.value, label: "", color: item.color || color }]);
+      list.append(li);
+    });
+    body.append(list, srTable(caption, head, items.map((item) => [item.label, item.text ?? item.value])));
+  }
   const stageInd = (record) => window.portalReleaseFlow.stageOf(record);
   const stageCol = (sheet) => window.portalCollectiveSheet?.stageOf(sheet) || sheet.stage || "engineer";
   const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
@@ -41,7 +68,8 @@
     if (max <= 0) return { top: 4, step: 1 };
     const raw = max / 4;
     const mag = 10 ** Math.floor(Math.log10(raw));
-    const step = [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+    // Contagem de pessoas/liberações: o passo nunca é menor que 1 (sem "0,5" no eixo).
+    const step = Math.max(1, [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= raw));
     return { top: Math.ceil(max / step) * step, step };
   }
   // Retângulo com o topo arredondado (ponta do dado) e a base reta.
@@ -195,8 +223,12 @@
   const CHARTS = {
     // Liberações criadas por dia no mês (individuais x coletivas).
     perDay({ releases, sheets }) {
+      if (isAll()) return CHARTS.perMonth({ releases, sheets });
       const now = new Date();
-      const days = now.getDate();
+      const [year, month] = monthKey().split("-").map(Number);
+      const isCurrent = year === now.getFullYear() && month === now.getMonth() + 1;
+      // Mês atual: até hoje; mês passado: o mês inteiro.
+      const days = isCurrent ? now.getDate() : new Date(year, month, 0).getDate();
       const ind = new Map();
       const col = new Map();
       releases.filter(createdInMonth).forEach((r) => ind.set(createdDay(r), (ind.get(createdDay(r)) || 0) + 1));
@@ -211,7 +243,7 @@
       const series = [{ name: "Individuais", color: SERIES[0] }, { name: "Coletivas", color: SERIES[1] }];
       return {
         title: "Liberações criadas por dia",
-        subtitle: `${plural(totalInd + totalCol, "liberação criada", "liberações criadas")} no mês`,
+        subtitle: `${plural(totalInd + totalCol, "liberação criada", "liberações criadas")} ${periodPhrase()}`,
         draw(body) {
           const host = html("div", "chart-host");
           body.append(legend(series.map((s, i) => ({ ...s, label: s.name, value: [totalInd, totalCol][i] }))), host,
@@ -238,9 +270,9 @@
       const names = all.map((t) => t.name);
       return {
         title: "Quem mais criou liberações",
-        subtitle: `${plural(all.length, "solicitante", "solicitantes")} no mês · os 8 que mais criaram`,
+        subtitle: `${plural(all.length, "solicitante", "solicitantes")} ${periodPhrase()} · os 8 que mais criaram`,
         draw(body) {
-          if (!top.length) { body.append(html("p", "insight-empty", "Nenhuma liberação criada neste mês.")); return null; }
+          if (!top.length) { body.append(html("p", "insight-empty", "Nenhuma liberação criada no período.")); return null; }
           const list = html("ol", "chart-hbars");
           top.forEach((item) => {
             const total = item.ind + item.col;
@@ -277,10 +309,10 @@
       const total = groups.reduce((a, g) => a + g.value, 0);
       const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
       return {
-        title: "Situação das liberações do mês",
-        subtitle: `${plural(total, "liberação", "liberações")} com data em ${new Date().toLocaleDateString("pt-BR", { month: "long" })}`,
+        title: "Situação das liberações",
+        subtitle: `${plural(total, "liberação", "liberações")} ${periodPhrase()}`,
         draw(body) {
-          if (!total) { body.append(html("p", "insight-empty", "Nenhuma liberação neste mês.")); return null; }
+          if (!total) { body.append(html("p", "insight-empty", "Nenhuma liberação no período.")); return null; }
           const bar = html("div", "chart-stack");
           groups.filter((g) => g.value).forEach((g) => {
             const seg = html("i", "chart-stack-seg");
@@ -290,7 +322,7 @@
             bar.append(seg);
           });
           body.append(bar, legend(groups.map((g) => ({ color: g.color, label: g.label, value: g.value, sub: `${pct(g.value)}%` }))),
-            srTable("Situação das liberações do mês", ["Situação", "Liberações", "%"], groups.map((g) => [g.label, g.value, `${pct(g.value)}%`])));
+            srTable("Situação das liberações", ["Situação", "Liberações", "%"], groups.map((g) => [g.label, g.value, `${pct(g.value)}%`])));
           return null;
         }
       };
@@ -314,11 +346,139 @@
       const peak = points.reduce((best, p) => (p.values[0] > best.values[0] ? p : best), points[0]);
       return {
         title: "Horário das saídas",
-        subtitle: total ? `${plural(total, "pessoa", "pessoas")} no mês · pico às ${peak.label}` : "Nenhuma saída neste mês",
+        subtitle: total ? `${plural(total, "pessoa", "pessoas")} ${periodPhrase()} · pico às ${peak.label}` : "Nenhuma saída no período",
         draw(body) {
           const host = html("div", "chart-host");
           body.append(host, srTable("Horário das saídas", ["Hora", "Pessoas"], points.map((p) => [p.label, p.values[0]])));
           return () => columnChart(host, { points, series: [{ name: "Pessoas", color: SERIES[0] }], tipHeading: (p) => `das ${p.label}`, unit: ["pessoa", "pessoas"] });
+        }
+      };
+    },
+
+    // Evolução mês a mês (no lugar de "por dia" quando o período é "todo o período"): últimos 12 meses com registro.
+    perMonth({ releases, sheets }) {
+      const ind = new Map();
+      const col = new Map();
+      const monthOf = (record) => createdDay(record).slice(0, 7);
+      releases.forEach((r) => { const key = monthOf(r); if (key) ind.set(key, (ind.get(key) || 0) + 1); });
+      sheets.forEach((s) => { const key = monthOf(s); if (key) col.set(key, (col.get(key) || 0) + 1); });
+      const keys = [...new Set([...ind.keys(), ...col.keys()])].sort().slice(-12);
+      const label = (key) => { const [y, m] = key.split("-").map(Number); return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""); };
+      const points = keys.map((key) => ({ label: key, tick: label(key), values: [ind.get(key) || 0, col.get(key) || 0] }));
+      const series = [{ name: "Individuais", color: SERIES[0] }, { name: "Coletivas", color: SERIES[1] }];
+      const total = points.reduce((sum, p) => sum + p.values[0] + p.values[1], 0);
+      return {
+        title: "Liberações por mês",
+        subtitle: `${plural(total, "liberação criada", "liberações criadas")} · ${plural(keys.length, "mês", "meses")}`,
+        draw(body) {
+          if (!points.length) { body.append(html("p", "insight-empty", "Nenhuma liberação registrada.")); return null; }
+          const host = html("div", "chart-host");
+          body.append(legend(series.map((s, i) => ({ ...s, label: s.name, value: points.reduce((sum, p) => sum + p.values[i], 0) }))), host,
+            srTable("Liberações por mês", ["Mês", "Individuais", "Coletivas"], points.map((p) => [p.label.split("-").reverse().join("/"), ...p.values])));
+          return () => columnChart(host, { points, series, tipHeading: (p) => p.label.split("-").reverse().join("/"), unit: ["liberação", "liberações"] });
+        }
+      };
+    },
+
+    // Saídas por dia da semana (pessoas; a coletiva conta cada participante), pela data da liberação.
+    weekday({ releases, sheets }) {
+      const names = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      const full = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+      const count = Array(7).fill(0);
+      const add = (record, n) => {
+        const day = recordDay(record);
+        if (!/^\d{4}-\d{2}-\d{2}/.test(day)) return;
+        const [y, m, d] = day.split("-").map(Number);
+        count[new Date(y, m - 1, d).getDay()] += n;
+      };
+      releases.filter((r) => inMonth(r) && counted(stageInd(r))).forEach((r) => add(r, 1));
+      sheets.filter((s) => inMonth(s) && counted(stageCol(s))).forEach((s) => add(s, (s.participants || []).length));
+      // Segunda a domingo.
+      const order = [1, 2, 3, 4, 5, 6, 0];
+      const points = order.map((i) => ({ label: full[i], tick: names[i], values: [count[i]] }));
+      const total = count.reduce((a, b) => a + b, 0);
+      const peak = points.reduce((best, p) => (p.values[0] > best.values[0] ? p : best), points[0]);
+      return {
+        title: "Saídas por dia da semana",
+        subtitle: total ? `${plural(total, "pessoa", "pessoas")} ${periodPhrase()} · mais na ${peak.label}` : "Nenhuma saída no período",
+        draw(body) {
+          const host = html("div", "chart-host");
+          body.append(host, srTable("Saídas por dia da semana", ["Dia", "Pessoas"], points.map((p) => [p.label, p.values[0]])));
+          return () => columnChart(host, { points, series: [{ name: "Pessoas", color: SERIES[0] }], tipHeading: (p) => p.label, unit: ["pessoa", "pessoas"] });
+        }
+      };
+    },
+
+    // Abonado x não abonado por engenheiro (quem decidiu; o administrador, perfil de teste, fica de fora).
+    engineerBonus({ releases, sheets }) {
+      const map = new Map();
+      [...releases, ...sheets].filter(inMonth).forEach((r) => {
+        if (!["approved", "denied"].includes(r.bonusStatus) || !r.engineer || /administrador/i.test(`${r.engineerRole || ""} ${r.engineer}`)) return;
+        const key = String(r.engineer).trim().replace(/\s+/g, " ");
+        const item = map.get(key.toLowerCase()) || { name: key, yes: 0, no: 0 };
+        item[r.bonusStatus === "approved" ? "yes" : "no"] += 1;
+        map.set(key.toLowerCase(), item);
+      });
+      const all = [...map.values()].sort((a, b) => (b.yes + b.no) - (a.yes + a.no));
+      const names = all.map((item) => item.name);
+      const yes = all.reduce((sum, item) => sum + item.yes, 0);
+      const no = all.reduce((sum, item) => sum + item.no, 0);
+      const series = [{ name: "Abonado", color: SERIES[2] }, { name: "Não abonado", color: SERIES[1] }];
+      return {
+        title: "Abonado × não abonado por engenheiro",
+        subtitle: yes + no ? `${plural(yes + no, "decisão", "decisões")} ${periodPhrase()} · ${Math.round((yes / (yes + no)) * 100)}% abonadas` : "Nenhum abono decidido no período",
+        draw(body) {
+          if (!all.length) { body.append(html("p", "insight-empty", "Nenhum abono decidido no período.")); return null; }
+          const max = Math.max(1, ...all.map((item) => item.yes + item.no));
+          const list = html("ol", "chart-hbars");
+          all.forEach((item) => {
+            const li = html("li");
+            const track = html("span", "chart-hbar-track chart-hbar-stack");
+            [["yes", 0], ["no", 1]].forEach(([field, s]) => {
+              if (!item[field]) return;
+              const bar = html("i", "chart-hbar");
+              bar.style.width = `${(item[field] / max) * 100}%`;
+              bar.style.background = series[s].color;
+              track.append(bar);
+            });
+            track.append(html("b", "chart-hbar-value", `${item.yes} · ${item.no}`));
+            li.append(html("span", "chart-hbar-label", shortName(item.name, names)), track);
+            bindTip(li, item.name, [{ value: item.yes, label: "abonadas", color: series[0].color }, { value: item.no, label: "não abonadas", color: series[1].color }]);
+            list.append(li);
+          });
+          body.append(legend(series.map((serie, i) => ({ color: serie.color, label: serie.name, value: i ? no : yes }))), list,
+            srTable("Abonado × não abonado por engenheiro", ["Engenheiro", "Abonadas", "Não abonadas"], all.map((item) => [item.name, item.yes, item.no])));
+          return null;
+        }
+      };
+    },
+
+    // Tempo médio de cada etapa (só conta quando as duas datas existem e estão em ordem).
+    flowTime({ releases, sheets }) {
+      const steps = [
+        { label: "Pedido → abono do engenheiro", from: (r) => r.requestedAt || r.createdAt, to: (r) => r.engineerDecisionAt },
+        { label: "Abono → autorização do DP", from: (r) => r.engineerDecisionAt, to: (r) => r.dpDecisionAt },
+        { label: "Autorização → saída na portaria", from: (r) => r.dpDecisionAt, to: (r) => r.exitConfirmedAt },
+        { label: "Pedido → saída (total)", from: (r) => r.requestedAt || r.createdAt, to: (r) => r.exitConfirmedAt, total: true }
+      ].map((step) => ({ ...step, sum: 0, n: 0 }));
+      [...releases, ...sheets].filter(inMonth).forEach((r) => steps.forEach((step) => {
+        const a = new Date(step.from(r) || "").getTime();
+        const b = new Date(step.to(r) || "").getTime();
+        if (!Number.isNaN(a) && !Number.isNaN(b) && b >= a) { step.sum += (b - a) / 60000; step.n += 1; }
+      }));
+      const items = steps.filter((step) => step.n).map((step) => ({
+        label: step.label, value: step.sum / step.n, text: duration(step.sum / step.n),
+        color: step.total ? SERIES[3] : SERIES[0],
+        tip: [{ value: duration(step.sum / step.n), label: `média em ${plural(step.n, "liberação", "liberações")}`, color: step.total ? SERIES[3] : SERIES[0] }]
+      }));
+      const slowest = items.filter((item) => !item.label.includes("total")).sort((a, b) => b.value - a.value)[0];
+      return {
+        title: "Tempo de cada etapa",
+        subtitle: items.length ? `média ${periodPhrase()}${slowest ? ` · mais demorada: ${slowest.label.split(" → ")[1]}` : ""}` : "Sem etapas concluídas no período",
+        draw(body) {
+          if (!items.length) { body.append(html("p", "insight-empty", "Sem etapas concluídas no período.")); return null; }
+          hbars(body, items, { caption: "Tempo médio de cada etapa", head: ["Etapa", "Tempo médio"], wide: true });
+          return null;
         }
       };
     }
