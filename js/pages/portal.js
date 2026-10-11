@@ -406,7 +406,7 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${release.time ? `<small class="row-clock">Batida do ponto: <b>${escapeHtml(release.time)}</b></small>` : ""}${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
@@ -458,7 +458,7 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${release.time ? `<small class="row-clock">Batida do ponto: <b>${escapeHtml(release.time)}</b></small>` : ""}${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
