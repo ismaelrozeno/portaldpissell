@@ -225,6 +225,8 @@
       reason: reason === "particular" ? particularReason.value.trim() : `Tarefa: ${particularReason.value.trim()}`,
       targetEngineer: targetEngineer.value,
       requester: existing?.requester || session?.name || "Solicitante",
+      // Conta de quem pediu: o painel dele acha a liberação mesmo se ele mudar o nome no Perfil.
+      ...(existing ? {} : { requesterUid: session?.uid || "" }),
       employeeSignature: null
     };
     try {

@@ -157,6 +157,10 @@
   // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar
   // exatamente como ela vê. Sem pessoa escolhida (ou fora do simulador), é a conta de quem está logado.
   const viewerSession = () => window.portalViewAs || window.portalAuthDemo?.getSession();
+  // "É minha?": pela conta de quem pediu (liberações novas) ou pelo nome, sem diferença de acento, maiúscula ou espaço.
+  const nameKey = (name) => window.normalizeSearchText(name).replace(/\s+/g, " ").trim();
+  const requestedBy = (release, person) => (release.requesterUid && person?.uid ? release.requesterUid === person.uid : false)
+    || (!!nameKey(person?.name) && nameKey(release.requester) === nameKey(person?.name));
 
   function renderForemanSummary(profileKey, employees) {
     const session = viewerSession();
@@ -440,7 +444,7 @@
     // Perfil de encarregado/estagiário/segurança (inclusive quando o administrador o abre para testar):
     // só o que a própria pessoa logada solicitou.
     const profileReleases = foremanRoleValues.includes(profile)
-      ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
+      ? releases.filter((release) => requestedBy(release, session))
       : releases;
     // Ordem: sempre por data de criação, mais recente primeiro (já vem assim do banco), igual para
     // todos os perfis — nada de agrupar "o que precisa de ação" antes, senão uma liberação recente já
@@ -945,7 +949,7 @@
     const allVisible = window.portalReleaseActions.visibleFor(allReleases);
     // Encarregado, estagiário e segurança do trabalho veem (tabela, números e histórico) só o que eles mesmos solicitaram.
     const releases = foremanRoleValues.includes(profileKey)
-      ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
+      ? allVisible.filter((release) => requestedBy(release, session))
       : allVisible;
     // Mesma regra do quadro "Minha equipe": o administrador abrindo o perfil de encarregado não tem equipe própria.
     const foremanTeam = foremanRoleValues.includes(session?.roleValue)
