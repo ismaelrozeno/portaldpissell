@@ -294,6 +294,3 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 /* Encarregado, estagiário, analista e segurança: cartões de informação da obra, sem clique para filtrar. */
 body.info-only .portal-stats .stat-card:not([data-stat="team"]), body.info-only [data-engineer-filter], body.info-only .dash-station-btn { cursor: default; }
 body.info-only .portal-stats .stat-card:not([data-stat="team"]):hover, body.info-only [data-engineer-filter]:hover { transform: none; }
-/* Engenheiro comum: os cartões da obra só informam (o de pendentes, que é dele, continua levando à lista). */
-body.info-partial .portal-stats .stat-card:not([data-stat="team"]):not([data-stat="pending"]), body.info-partial [data-engineer-filter], body.info-partial .dash-station-btn { cursor: default; }
-body.info-partial .portal-stats .stat-card:not([data-stat="team"]):not([data-stat="pending"]):hover, body.info-partial [data-engineer-filter]:hover { transform: none; }

@@ -511,15 +511,11 @@
     if (next !== "all") document.querySelector("#records-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   // Encarregado, estagiário, analista e segurança (body.info-only): cartões, esteira e cartões dos engenheiros só
-  // informam a obra toda; não levam para os filtros (a lista deles só tem o que eles pediram).
+  // informam a obra toda; não levam para os filtros (a lista deles só tem o que eles pediram). DP e engenheiro: clicam.
   document.addEventListener("click", (event) => {
-    const infoOnly = document.body.classList.contains("info-only");
-    const partial = document.body.classList.contains("info-partial");
-    if (!infoOnly && !partial) return;
-    const locked = infoOnly
-      ? ".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]"
-      : ".portal-stats .stat-card:not([data-stat='team']):not([data-stat='pending']), [data-engineer-filter], [data-flow]";
-    if (event.target.closest(locked)) {
+    if (!document.body.classList.contains("info-only")) return;
+    const card = event.target.closest(".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]");
+    if (card) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -988,8 +984,6 @@
     const engineerObra = limitedEngineer(profileKey);
     const obra = isChief || engineerObra ? allReleases : releases;
     document.body.classList.toggle("info-only", isChief);
-    // Engenheiro comum: só "Liberações pendentes" (as dele) e o "Para você agora" levam à lista; o resto só informa.
-    document.body.classList.toggle("info-partial", engineerObra);
     // Individuais de cada cartão; o painel das coletivas soma as dele por cima (writeStats, chamado por refreshStats).
     individualStats = {
       profileKey,
