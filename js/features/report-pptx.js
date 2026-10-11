@@ -99,7 +99,7 @@
     // Situação
     const stageGroups = [
       ["Aguardando engenheiro", ["engineer"]], ["Aguardando DP", ["dp"]], ["Aguardando saída", ["gate"]],
-      ["Saída confirmada", ["exited"]], ["Retroativa registrada", ["registered"]], ["Recusada ou negada", ["foreman", "closed"]]
+      ["Saída confirmada", ["exited"]], ["Retroativa ou só entrada", ["registered", "entered"]], ["Recusada ou negada", ["foreman", "closed"]]
     ].map(([label, keys]) => ({ label, value: all.filter((x) => keys.includes(x.stage)).length }));
 
     // Rankings

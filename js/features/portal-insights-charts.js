@@ -309,7 +309,7 @@
         { key: ["dp"], label: "Aguardando DP" },
         { key: ["gate"], label: "Aguardando saída" },
         { key: ["exited"], label: "Saída confirmada" },
-        { key: ["registered"], label: "Retroativa registrada" },
+        { key: ["registered", "entered"], label: "Retroativa ou só entrada" },
         { key: ["foreman", "closed"], label: "Recusada ou negada" }
       ].map((group, i) => ({ ...group, color: SERIES[i], value: 0 }));
       const put = (stage) => { const group = groups.find((g) => g.key.includes(stage)); if (group) group.value += 1; };

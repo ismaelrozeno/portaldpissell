@@ -74,7 +74,7 @@
     const stage = window.portalReleaseFlow.stageOf(release);
     if (release.bonusStatus === "denied") return "Engenheiro marcou NÃO ABONADO: não há abono para lançar no RM.";
     if (!release.bonusStatus) return "O botão \"Lançar abono\" aparece depois que o engenheiro marcar ABONADO.";
-    if (!["dp", "gate", "exited", "registered"].includes(stage)) return "Esta liberação não está em etapa de lançamento no RM.";
+    if (!["dp", "gate", "exited", "registered", "entered"].includes(stage)) return "Esta liberação não está em etapa de lançamento no RM.";
     if (!isDp()) return "Para lançar no RM, abra esta folha como Departamento Pessoal (em \"Acessar como\").";
     return "";
   }
@@ -84,7 +84,7 @@
     return isDp()
       && release.bonusStatus === "approved"
       && !release.abonoLaunchedAt
-      && ["dp", "gate", "exited", "registered"].includes(stage);
+      && ["dp", "gate", "exited", "registered", "entered"].includes(stage);
   }
 
   // Carrega, só quando precisa, o gerador de PDF (jsPDF + release-pdf.js) que as outras telas não usam.
@@ -204,7 +204,7 @@
   // Valores exibidos na folha. Usado pela tela e pela exportação em imagem, para saírem sempre iguais.
   function sheetFields(release, role) {
     const stage = window.portalReleaseFlow.stageOf(release);
-    const dpDecided = stage === "gate" || stage === "exited" || stage === "closed";
+    const dpDecided = ["gate", "exited", "closed", "entered"].includes(stage);
     const retroactive = window.portalReleaseFlow.isRetroactive(release);
     // Tipo do motivo como no formulário de papel (☒ marcado / ☐ vazio) e o detalhe na observação.
     const legacyText = String(release.reason || "");
@@ -237,7 +237,7 @@
       // Retroativa: não há saída para o DP autorizar nem para a portaria confirmar.
       dp: release.dpSigner || (dpDecided ? "Departamento Pessoal" : retroactive ? "Não se aplica · retroativa" : "Pendente"),
       dpTime: formatDateTime(release.dpDecisionAt),
-      gate: release.exitConfirmedBy || (retroactive ? "Não se aplica · retroativa" : "Pendente"),
+      gate: release.exitConfirmedBy || (retroactive ? "Não se aplica · retroativa" : window.portalReleaseFlow.isEntryOnly(release) ? "Não se aplica · só entrada" : "Pendente"),
       gateTime: formatDateTime(release.exitConfirmedAt),
       launched: !!release.abonoLaunchedAt,
       stampDetail: release.abonoLaunchedAt ? `${new Date(release.abonoLaunchedAt).toLocaleDateString("pt-BR")} · ${release.abonoLaunchedBy || "DP"}` : ""

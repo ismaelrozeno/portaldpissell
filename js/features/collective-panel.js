@@ -59,7 +59,7 @@
       const out = sheetApi().exitedCount(sheet);
       const total = (sheet.participants || []).length;
       chips.push(chip(out ? "info" : "wait", `Portaria: <b>${out} de ${total}</b> ${out === 1 ? "saiu" : "saíram"}`));
-    }
+    } else if (sheetApi().isEntryOnly(sheet) && !retroactive) chips.push(chip("info", "Só entrada · sem portaria"));
     // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
     const people = (sheet.participants || []).length;
     const signedBio = sheetApi().signedCount(sheet);
@@ -79,17 +79,17 @@
       : "";
     // O DP só autoriza ou recusa depois que o engenheiro assinou (mesmo fluxo das individuais).
     const dpButtons = profile === "dp" && stage === "dp" && !retroactive
-      ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}`
+      ? `${btn("row-yes-btn", "authorize", sheetApi().isEntryOnly(sheet) ? "Autorizar entrada" : "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}`
       : "";
     // Coleta das digitais dos colaboradores (leitor Hamster DX), no DP, inclusive depois da saída confirmada na portaria.
-    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "exited", "registered"].includes(stage) && signedBio < people
+    const bioButton = profile === "dp" && window.portalCollectiveBiometric && ["engineer", "dp", "gate", "exited", "registered", "entered"].includes(stage) && signedBio < people
       ? btn("row-bio-btn", "bio", "Assinar com digital")
       : "";
     const gateButtons = profile === "portaria" && stage === "gate" && actions().canConfirmExit()
       ? btn("gate-confirm-btn", "exits", "Confirmar saídas")
       : "";
     // Recusar: só enquanto o engenheiro ainda não decidiu o abono (mesma regra das individuais).
-    const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate", "registered"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
+    const refuseButton = profile === "engenheiro" && !decided && ["engineer", "dp", "gate", "registered", "entered"].includes(stage) ? btn("row-no-btn", "refuse", "Recusar") : "";
     // Folha recusada volta para quem solicitou ajustar e reenviar.
     const mine = sheet.createdByUid === session()?.uid || session()?.roleValue === "administrador-analista";
     const editButton = stage === "foreman" && mine ? `<a class="table-action" href="Liberacao-Coletiva.html?edit=${id}">Editar e reenviar</a>` : "";
@@ -254,7 +254,7 @@
     if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
     else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp");
     else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet)));
-    extra.approved = mine.filter((sheet) => ["gate", "exited"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today);
+    extra.approved = mine.filter((sheet) => ["gate", "exited", "entered"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today);
     if (profile !== "portaria") extra.bonus = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
     // Abono no RM: as coletivas abonadas também são lançadas pelo DP (cartão "Abonos lançados").
     extra.launched = mine.filter((sheet) => !!sheet.abonoLaunchedAt);

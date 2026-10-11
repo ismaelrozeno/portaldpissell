@@ -12,7 +12,7 @@
   }
 
   // Ordem do fluxo: encarregado solicita -> engenheiro decide o abono (ou recusa e devolve ao encarregado)
-  // -> DP autoriza ou nega -> portaria confirma a saída.
+  // -> DP autoriza ou nega -> portaria confirma a saída. Só ENTRADA: o DP autoriza a entrada e acabou (sem portaria).
   window.portalReleaseFlow = Object.freeze({
     stages: Object.freeze({
       engineer: { label: "Aguardando engenheiro", tone: "pending" },
@@ -23,8 +23,15 @@
       closed: { label: "Negada pelo DP", tone: "denied" },
       // Retroativa (data anterior ao dia em que foi criada): o colaborador já saiu, então não há saída para o DP
       // autorizar nem para a portaria confirmar. Depois do engenheiro ela já fica registrada (o DP só lança o abono no RM).
-      registered: { label: "Retroativa · registrada", tone: "approved" }
+      registered: { label: "Retroativa · registrada", tone: "approved" },
+      // Só entrada (o colaborador está chegando): não há saída para a portaria confirmar; o DP autoriza a entrada.
+      entered: { label: "Entrada autorizada", tone: "approved" }
     }),
+    // Só ENTRADA marcada (sem saída).
+    isEntryOnly(record) {
+      const list = record?.movement || [];
+      return list.includes("entrada") && !list.includes("saida");
+    },
     // Retroativa: data da liberação anterior ao dia em que ela foi criada (pelo relógio local de quem vê), ou
     // entrada E saída marcadas juntas (o colaborador não bateu o ponto, então a movimentação já aconteceu).
     isRetroactive(record) {
@@ -56,16 +63,19 @@
     isConcluded(release) {
       const stage = window.portalReleaseFlow.stageOf(release);
       if (stage === "closed") return true;
-      return ["exited", "registered"].includes(stage)
+      return ["exited", "registered", "entered"].includes(stage)
         && !!release.bonusStatus
         && release.employeeSignature?.method === "biometria"
         && (release.bonusStatus !== "approved" || !!release.abonoLaunchedAt);
     },
     // Retroativa que passou do engenheiro (ou que o DP já tinha autorizado) vira "registrada", inclusive as antigas.
+    // Só entrada autorizada pelo DP (gravada como "gate") vira "entrada autorizada": não vai para a portaria.
     stageOf(release) {
+      const flow = window.portalReleaseFlow;
       const stage = release.stage
         || (release.status === "authorized" ? (release.exitConfirmedAt ? "exited" : "gate") : release.status === "denied" ? "closed" : "dp");
-      return ["dp", "gate"].includes(stage) && window.portalReleaseFlow.isRetroactive(release) ? "registered" : stage;
+      if (["dp", "gate"].includes(stage) && flow.isRetroactive(release)) return "registered";
+      return stage === "gate" && flow.isEntryOnly(release) ? "entered" : stage;
     }
   });
 
