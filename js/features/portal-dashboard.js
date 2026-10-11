@@ -304,6 +304,40 @@
     }
   });
 
+  // ---------- Arrastar para trocar de aba (celular) ----------
+  // Arrastar o dedo para a esquerda vai para a próxima aba da barra de baixo; para a direita, a anterior (na ordem em que
+  // aparecem: Individuais, Coletivas, Visão geral, BI Dados, Atalhos). Só conta um arrasto bem horizontal e rápido, e não
+  // começa em campos, listas suspensas, tabelas, gráficos ou janelas abertas (para não atrapalhar rolar e digitar).
+  const SWIPE_IGNORE = "input, textarea, select, button, .table-responsive, .chart-host, .chart-svg, .filter-bar, .modal, .offcanvas, .dash-fab-menu, [data-no-swipe]";
+  let swipe = null;
+  const tabsInOrder = () => [...document.querySelectorAll(".dash-nav-list .dash-nav-item[data-dash-page]")]
+    .filter((item) => item.offsetParent)
+    .sort((a, b) => Number(getComputedStyle(a.parentElement).order) - Number(getComputedStyle(b.parentElement).order))
+    .map((item) => item.dataset.dashPage);
+  document.addEventListener("touchstart", (event) => {
+    swipe = null;
+    if (window.innerWidth >= 992 || event.touches.length !== 1) return;
+    // Nenhuma janela aberta (folha da liberação, confirmações, menu do topo...).
+    const dialogOpen = [...document.querySelectorAll('[aria-modal="true"], .modal.show, .offcanvas.show')].some((el) => el.offsetParent || el.classList.contains("show"));
+    if (event.target.closest(SWIPE_IGNORE) || dialogOpen) return;
+    const touch = event.touches[0];
+    swipe = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  }, { passive: true });
+  document.addEventListener("touchend", (event) => {
+    if (!swipe) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - swipe.x;
+    const dy = touch.clientY - swipe.y;
+    const quick = Date.now() - swipe.t < 700;
+    swipe = null;
+    if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+    const tabs = tabsInOrder();
+    const index = tabs.indexOf(body.dataset.page);
+    if (index < 0) return;
+    const next = tabs[index + (dx < 0 ? 1 : -1)];
+    if (next) go(next);
+  }, { passive: true });
+
   window.portalDashboard = Object.freeze({ update, go, showPage, applyUrlStatus });
   showPage(pageFromHash(), { scroll: false });
   // O portal pode ter montado a barra de filtros antes deste arquivo carregar.
