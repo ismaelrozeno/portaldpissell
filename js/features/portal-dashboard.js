@@ -191,11 +191,19 @@
     const role = roleKey(profileKey);
     const statusFor = STATUS_FOR[role] || {};
     const people = (list) => list.reduce((sum, x) => sum + x.people, 0);
+    // Portaria: pessoas que ainda não saíram (na coletiva, quem da lista ainda não passou) e de quando é a liberação.
+    const waitingPeople = groups.gate.reduce((sum, x) => sum + (x.kind === "col" ? Math.max(0, x.people - (col?.exitedCount(x.r) || 0)) : 1), 0);
+    const gateDay = (x) => String(x.r.date || "").slice(0, 10) || dayOf(x.r.createdAt);
+    const gateToday = groups.gate.filter((x) => gateDay(x) >= today).length;
+    const gateOld = groups.gate.length - gateToday;
     const stations = [
       { key: "foreman", icon: "foreman", name: "Encarregado", sub: "recusadas, para ajustar", list: groups.foreman },
       { key: "engineer", icon: "engineer", name: "Engenheiro", sub: "aguardando o abono", list: groups.engineer },
       { key: "dp", icon: "dp", name: "DP", sub: "aguardando autorização", list: groups.dp },
-      { key: "gate", icon: "gate", name: "Portaria", sub: `aguardando saída · ${plural(people(groups.gate), "pessoa", "pessoas")}`, list: groups.gate },
+      { key: "gate", icon: "gate", name: "Portaria", sub: "liberações autorizadas pelo DP, sem saída confirmada",
+        detail: groups.gate.length
+          ? `${plural(waitingPeople, "pessoa ainda não saiu", "pessoas ainda não saíram")} · ${gateToday} de hoje · ${gateOld} de dias anteriores`
+          : "", list: groups.gate },
       { key: "exited", icon: "done", name: "Saíram hoje", sub: plural(people(groups.exited), "pessoa", "pessoas"), list: groups.exited, done: true }
     ];
     const flowEl = $("#dash-flow");
@@ -206,10 +214,10 @@
         const n = st.list.length;
         const isMine = st.key === mine;
         return `<li class="dash-station${isMine ? " is-mine" : ""}${n ? "" : " is-zero"}${st.done ? " is-done" : ""}">
-          <button type="button" class="dash-station-btn" data-flow="${st.key}" aria-label="${esc(`${st.name}: ${n}, ${st.sub}`)}">
+          <button type="button" class="dash-station-btn" data-flow="${st.key}" aria-label="${esc(`${st.name}: ${n}, ${st.sub}${st.detail ? `. ${st.detail}` : ""}`)}">
             <span class="dash-station-dot">${svg(st.icon)}</span>
             <span class="dash-station-name">${esc(st.name)}${isMine ? '<span class="dash-mine-tag">Sua vez</span>' : ""}</span>
-            <span class="dash-station-sub">${esc(st.sub)}</span>
+            <span class="dash-station-sub">${esc(st.sub)}</span>${st.detail ? `<span class="dash-station-detail">${esc(st.detail)}</span>` : ""}
             <span class="dash-num">${n}</span>
           </button></li>`;
       }).join("");
