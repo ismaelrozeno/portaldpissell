@@ -16,10 +16,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=747024c7">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=dd9fb652">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
-<body class="portal-page dash" data-page="overview">
+<body class="portal-page dash dash-loading" data-page="overview">
   <div data-site-header></div>
   <main class="portal-content">
     <div class="dash-shell">
@@ -88,7 +88,7 @@
 
       <section class="dash-now" id="dash-now" data-dash="overview" aria-labelledby="dash-now-title">
         <h2 id="dash-now-title">Para você agora</h2>
-        <ul class="dash-now-list" id="dash-now-list"><li class="dash-now-empty">Carregando…</li></ul>
+        <ul class="dash-now-list" id="dash-now-list"><li class="dash-now-loading" role="status"><span class="button-spinner" aria-hidden="true"></span>Carregando suas pendências…</li></ul>
       </section>
 
       <section class="foreman-summary" id="foreman-summary" data-dash="equipe" hidden aria-labelledby="foreman-summary-title">
@@ -231,7 +231,7 @@
   <script src="js/features/portal-insights.js?v=0229d63a"></script>
   <script src="js/features/portal-insights-charts.js?v=9fdec0fa"></script>
   <script src="js/pages/portal.js?v=b2125cea"></script>
-  <script src="js/features/portal-dashboard.js?v=283bada1"></script>
+  <script src="js/features/portal-dashboard.js?v=045207e2"></script>
   <script src="js/features/report-pptx.js?v=ec532a07"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>

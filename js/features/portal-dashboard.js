@@ -155,7 +155,12 @@
     url.searchParams.delete("situacao");
     history.replaceState(history.state, "", url.pathname + url.search + url.hash);
   }
+  // Enquanto os números não chegam, a página fica em "carregando" (bolinha e cartões com a barra animada, não "0").
+  // Se algo falhar, depois de 20 s sai do carregando para não ficar girando para sempre.
+  const doneLoading = () => body.classList.remove("dash-loading");
+  setTimeout(doneLoading, 20000);
   function update({ profileKey, releases = [], sheets = [] }) {
+    doneLoading();
     lastProfile = profileKey;
     applyUrlStatus();
     const flow = window.portalReleaseFlow;
