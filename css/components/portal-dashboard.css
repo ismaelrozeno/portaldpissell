@@ -399,8 +399,14 @@ body.dash.dash-loading .portal-stats .stat-detail, body.dash.dash-loading .porta
 body.dash.dash-loading .dash-page-loading { display: flex; align-items: center; justify-content: center; gap: .7rem; margin: .5rem 0 1rem; padding: 2.2rem 1rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); color: var(--d-ink-2); background: var(--d-surface); font-weight: 600; }
 .dash-page-loading .button-spinner { flex: none; width: 1.4rem; height: 1.4rem; margin: 0; color: var(--d-accent); border-width: .18rem; }
 
-/* Arrastar para trocar de aba (celular): a página acompanha o dedo; sem rolagem lateral do corpo durante a animação */
+/* Arrastar para trocar de aba (celular): a página acompanha o dedo.
+   A sobra lateral é cortada só na área do conteúdo (overflow-x: clip, que não mexe na rolagem da página); com
+   overflow-x: hidden no body, o Chrome do Android chegava a sumir com a barra de baixo e o "+" durante o arrasto.
+   Barra e "+" ficam numa camada própria, para não serem redesenhados junto com o conteúdo. */
 @media (max-width: 991.98px) {
-  body.dash { overflow-x: hidden; }
+  body.dash .dash-shell { overflow-x: clip; }
   body.dash .dash-main { touch-action: pan-y pinch-zoom; }
+  body.dash .dash-nav, body.dash .dash-fab, body.dash .dash-fab-menu { transform: translateZ(0); backface-visibility: hidden; }
 }
+/* Navegador antigo sem "overflow: clip": corta com hidden só na área do conteúdo (nunca no body). */
+@supports not (overflow: clip) { @media (max-width: 991.98px) { body.dash .dash-shell { overflow-x: hidden; } } }
