@@ -38,25 +38,33 @@
     byRole(sheets, profileKey) {
       const session = window.portalAuthDemo?.getSession();
       const role = session?.roleValue;
-      const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+      const key = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+      const same = (a, b) => key(a) === key(b);
+      // Do engenheiro: enviada a ele, ou enviada a todos e ainda não assinada/recusada por OUTRO engenheiro
+      // (quem assina primeiro fica com ela; assinatura do Administrador não conta).
+      const forEngineer = (sheet, name) => {
+        if (sheet.targetEngineer) return same(sheet.targetEngineer, name);
+        const by = sheet.bonusStatus ? sheet.engineer : sheet.refusedBy;
+        return !by || /administrador/i.test(`${by} ${sheet.engineerRole || ""}`) || same(by, name);
+      };
       if (role === "administrador-analista" && profileKey) {
         // Simulador: com uma pessoa escolhida (window.portalViewAs), vê exatamente o que ela vê.
         const viewAs = window.portalViewAs;
         if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === (viewAs?.uid || session.uid));
         if (profileKey === "engenheiro" && viewAs) {
-          return (viewAs.privileges || []).includes("gestor") ? sheets : sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, viewAs.name));
+          return (viewAs.privileges || []).includes("gestor") ? sheets : sheets.filter((sheet) => forEngineer(sheet, viewAs.name));
         }
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       }
       // Analista com acesso de engenheiro, no painel do engenheiro: igual ao engenheiro
       // (só o Gestor recebe todas; o comum, o que foi enviado a ele ou a todos — igual ao engenheiro).
       if (role === "analista" && profileKey === "engenheiro" && window.portalAuthDemo?.isEngineerLike?.()) {
-        return window.portalAuthDemo?.isManager?.() ? sheets : sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, session.name));
+        return window.portalAuthDemo?.isManager?.() ? sheets : sheets.filter((sheet) => forEngineer(sheet, session.name));
       }
       if (role === "dp" || role === "administrador-analista" || window.portalAuthDemo?.isDpDelegate?.()) return sheets;
       // Engenheiro Gestor recebe todas as folhas, mesmo as enviadas a outro engenheiro.
       if (role === "engenheiro" && window.portalAuthDemo?.isManager?.()) return sheets;
-      if (role === "engenheiro") return sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, session.name));
+      if (role === "engenheiro") return sheets.filter((sheet) => forEngineer(sheet, session.name));
       // Portaria: só o que o DP autorizou (aguardando saída ou saída já confirmada).
       if (role === "porteiro") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       return sheets.filter((sheet) => sheet.createdByUid === session?.uid);
