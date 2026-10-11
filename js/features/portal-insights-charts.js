@@ -140,7 +140,7 @@
   // points: [{ label, tick, values: [n, n] }]; series: [{ name, color }]
   function columnChart(host, { points, series, height = 190, tipHeading, unit }) {
     const width = Math.max(260, Math.floor(host.clientWidth));
-    const m = { top: 12, right: 6, bottom: 24, left: 30 };
+    const m = { top: 12, right: 8, bottom: 26, left: 34 };
     const plotW = width - m.left - m.right;
     const plotH = height - m.top - m.bottom;
     const totals = points.map((p) => p.values.reduce((a, b) => a + b, 0));
@@ -155,6 +155,8 @@
     }
     const band = plotW / points.length;
     const barW = Math.max(3, Math.min(24, band * 0.68));
+    // Rótulos do eixo de baixo sem encavalar: no celular só cabe um a cada N colunas (ex.: horas de 2 em 2).
+    const tickEvery = Math.max(1, Math.ceil(30 / band));
     points.forEach((point, i) => {
       const x = m.left + band * i + (band - barW) / 2;
       let base = 0;
@@ -176,7 +178,7 @@
       const hit = svgEl("rect", { x: m.left + band * i, y: m.top, width: band, height: plotH, fill: "transparent", class: "chart-hit" });
       group.append(hit);
       svg.append(group);
-      if (point.tick) {
+      if (point.tick && i % tickEvery === 0) {
         const tick = svgEl("text", { x: m.left + band * i + band / 2, y: height - 7, "text-anchor": "middle", class: "chart-tick" });
         tick.textContent = point.tick;
         svg.append(tick);
