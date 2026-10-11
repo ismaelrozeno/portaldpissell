@@ -66,7 +66,7 @@
       { value: "exited", label: "Saída confirmada na portaria", test: (record, stage) => stage === "exited" },
       FLOW.entered,
       { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
-      { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+      { value: "retroactive", label: "Retroativas ou não bateu o ponto", test: (record, stage) => stage === "registered" }
     ],
     sorts: BASIC_SORTS
   };
@@ -89,7 +89,7 @@
         { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
         FLOW.entered,
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
-        { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+        { value: "retroactive", label: "Retroativas ou não bateu o ponto", test: (record, stage) => stage === "registered" }
       ],
       aliases: { bonus: "pending" },
       sorts: [["unbonusedRecent", "Pendentes de abono mais recentes"], ["unbonused", "Pendentes de abono mais antigas"], ["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]],
@@ -128,7 +128,7 @@
         { value: "launched", label: "Abonadas · lançadas no RM", group: "DP", test: (record) => !!record.abonoLaunchedAt },
         { value: "bioPending", label: "Digital pendente", group: "DP", test: RULES.bioPending },
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
-        { value: "retroactive", label: "Retroativas · registradas", group: "DP", test: (record, stage) => stage === "registered" },
+        { value: "retroactive", label: "Retroativas ou não bateu o ponto", group: "DP", test: (record, stage) => stage === "registered" },
         { ...FLOW.entered, group: "DP" },
         { ...FLOW.gate, group: "Portaria" },
         { ...FLOW.exitedToday, group: "Portaria" }

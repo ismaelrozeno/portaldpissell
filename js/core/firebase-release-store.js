@@ -27,6 +27,11 @@
       // Só entrada (o colaborador está chegando): não há saída para a portaria confirmar; o DP autoriza a entrada.
       entered: { label: "Entrada autorizada", tone: "approved" }
     }),
+    // Texto da etapa para esta liberação: entrada e saída juntas (registrada) aparece como "Não bateu o ponto".
+    stageLabel(release, stage = window.portalReleaseFlow.stageOf(release)) {
+      const flow = window.portalReleaseFlow;
+      return stage === "registered" && flow.hasBothMovements(release) ? "Não bateu o ponto · registrada" : flow.stages[stage].label;
+    },
     // Só ENTRADA marcada (sem saída).
     isEntryOnly(record) {
       const list = record?.movement || [];

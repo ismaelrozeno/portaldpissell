@@ -221,7 +221,7 @@
         chips.push(chip(stage === "closed" ? "no" : "yes", `DP <b>${short(release.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`));
       } else if (window.portalReleaseFlow.isRetroactive(release)) {
         // Data anterior ao dia em que foi criada: o colaborador já saiu, não há saída para autorizar nem confirmar.
-        chips.push(chip("info", "Retroativa · sem autorização de saída nem portaria", "A data da liberação é anterior ao dia em que ela foi criada, ou entrada e saída foram marcadas juntas (o colaborador não bateu o ponto). Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
+        chips.push(chip("info", `${window.portalReleaseFlow.hasBothMovements(release) ? "Não bateu o ponto" : "Retroativa"} · sem autorização de saída nem portaria`, "A data da liberação é anterior ao dia em que ela foi criada, ou entrada e saída foram marcadas juntas (o colaborador não bateu o ponto). Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
       } else {
         chips.push(chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
       }
@@ -410,10 +410,10 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
-        <td data-label="Horário" class="col-horario">${release.time ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
-        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
+        <td data-label="Horário" class="col-horario">${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
+        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stageLabel(release, stage)}</span></td>
         <td class="text-end row-actions col-actions" data-label="Ação">
           <button class="row-yes-btn" type="button" data-row-action="restore" data-release-id="${escapeHtml(release.id)}">Restaurar</button>
           <button class="release-view-btn" type="button" data-row-action="view" data-release-id="${escapeHtml(release.id)}">Visualizar liberação</button>
@@ -462,10 +462,10 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small><small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
-        <td data-label="Horário" class="col-horario">${release.time ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
-        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
+        <td data-label="Horário" class="col-horario">${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
+        <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stageLabel(release, stage)}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
         <td class="text-end row-actions col-actions" data-label="Ação">${actionsFor(profile, release, stage)}</td>
       </tr>
     `).join("") : `<tr><td colspan="5" class="empty-state">${filtering || statFilter ? "Nenhum registro encontrado para os filtros." : doneMode ? "Nenhuma liberação concluída ainda." : "Nenhuma pendência: tudo o que foi concluído está em ✅ Concluídas."}</td></tr>`;

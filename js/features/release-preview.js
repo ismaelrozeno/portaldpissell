@@ -206,6 +206,7 @@
     const stage = window.portalReleaseFlow.stageOf(release);
     const dpDecided = ["gate", "exited", "closed", "entered"].includes(stage);
     const retroactive = window.portalReleaseFlow.isRetroactive(release);
+    const retroWord = window.portalReleaseFlow.hasBothMovements(release) ? "não bateu o ponto" : "retroativa";
     // Tipo do motivo como no formulário de papel (☒ marcado / ☐ vazio) e o detalhe na observação.
     const legacyText = String(release.reason || "");
     const type = release.reasonType || (/^tarefa/i.test(legacyText) ? "tarefa" : /^particular/i.test(legacyText) ? "particular" : "");
@@ -216,7 +217,8 @@
       date: formatDate(release.date || release.createdAt?.slice(0, 10)),
       name: release.name || "Não informado",
       role: role || "Não informada",
-      time: release.time || "____:____",
+      // Entrada e saída juntas: o colaborador não bateu o ponto (liberações antigas podem ter horário gravado).
+      time: window.portalReleaseFlow.hasBothMovements(release) ? "Não bateu o ponto" : release.time || "____:____",
       movement: window.portalReleaseFlow.movementLabel(release),
       reason: type ? `${box("tarefa", "Tarefa")}   ${box("particular", "Particular")}` : "Não informado",
       hours: release.hours || "Não informado",
@@ -235,9 +237,9 @@
       engineer: release.engineer || "Pendente",
       engineerTime: formatDateTime(release.engineerDecisionAt),
       // Retroativa: não há saída para o DP autorizar nem para a portaria confirmar.
-      dp: release.dpSigner || (dpDecided ? "Departamento Pessoal" : retroactive ? "Não se aplica · retroativa" : "Pendente"),
+      dp: release.dpSigner || (dpDecided ? "Departamento Pessoal" : retroactive ? `Não se aplica · ${retroWord}` : "Pendente"),
       dpTime: formatDateTime(release.dpDecisionAt),
-      gate: release.exitConfirmedBy || (retroactive ? "Não se aplica · retroativa" : window.portalReleaseFlow.isEntryOnly(release) ? "Não se aplica · só entrada" : "Pendente"),
+      gate: release.exitConfirmedBy || (retroactive ? `Não se aplica · ${retroWord}` : window.portalReleaseFlow.isEntryOnly(release) ? "Não se aplica · só entrada" : "Pendente"),
       gateTime: formatDateTime(release.exitConfirmedAt),
       launched: !!release.abonoLaunchedAt,
       stampDetail: release.abonoLaunchedAt ? `${new Date(release.abonoLaunchedAt).toLocaleDateString("pt-BR")} · ${release.abonoLaunchedBy || "DP"}` : ""
