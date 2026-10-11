@@ -243,7 +243,8 @@
     const me = session();
     const foremanRoles = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
     // Encarregado/estagiário/segurança contam só o que eles mesmos solicitaram.
-    const mine = foremanRoles.includes(profile) ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : sheets;
+    // O administrador abrindo esses perfis vê as da obra toda (ele não pede liberação).
+    const mine = foremanRoles.includes(profile) && me?.roleValue !== "administrador-analista" ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : sheets;
     const open = (sheet) => !["foreman", "closed"].includes(stageOf(sheet));
     const day = (value) => {
       const date = new Date(value);
