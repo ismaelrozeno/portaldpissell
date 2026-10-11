@@ -9,10 +9,10 @@
 
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
   const CARDS_BY_PROFILE = {
-    dp: ["fingerprints", "leaving", "frequent", "tasksByPerson", "particularByPerson", "topTasks", "topParticular", "byRole", "refused", "response", "reasons", "teams", "retroactive", "noClock", "entries"],
-    engenheiro: ["response", "frequent", "tasksByPerson", "topTasks", "reasons", "teams"],
+    dp: ["fingerprints", "leaving", "frequent", "tasksByPerson", "particularByPerson", "topTasks", "topParticular", "byRole", "refused", "response", "reasons", "teams", "retroactive", "noClock", "entries", "lateReasons", "lateByPerson"],
+    engenheiro: ["response", "frequent", "tasksByPerson", "topTasks", "reasons", "teams", "lateReasons", "lateByPerson"],
     portaria: ["leaving"],
-    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "tasksByPerson", "topTasks", "reasons", "retroactive", "noClock", "entries"]]))
+    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "tasksByPerson", "topTasks", "reasons", "retroactive", "noClock", "entries", "lateReasons", "lateByPerson"]]))
   };
 
   // ---------- Datas e textos ----------
@@ -357,6 +357,32 @@
         value: map.size, note: `${map.size === 1 ? "motivo diferente" : "motivos diferentes"} ${inPhrase()} (textos parecidos contam juntos)`,
         rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "vez", "vezes"), raw: row.value })),
         empty: "Nenhuma saída particular no período."
+      };
+    },
+
+    // 12b. Atrasos: liberações só de ENTRADA (o colaborador chegou depois do horário). Motivos mais usados (textos
+    // parecidos contam juntos) e quem mais chega atrasado. Cada pessoa de uma coletiva conta.
+    lateReasons(data) {
+      const people = peopleOf(data).filter((p) => entryOnly(p.record));
+      const map = groupTexts(people.map((p) => ({ text: p.text })));
+      const tarefa = people.filter((p) => p.kind === "tarefa").length;
+      return {
+        icon: "chat", tone: "amber", title: "Motivos de atraso mais usados",
+        value: people.length, note: people.length ? `${plural(people.length, "entrada", "entradas")} ${inPhrase()} · ${plural(map.size, "motivo diferente", "motivos diferentes")}` : "nenhum atraso no período ✓",
+        details: people.length ? [`${tarefa} por tarefa · ${people.length - tarefa} particular${people.length - tarefa === 1 ? "" : "es"} (textos parecidos contam juntos)`] : [],
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "vez", "vezes"), raw: row.value })),
+        empty: "Nenhuma liberação de entrada no período."
+      };
+    },
+    lateByPerson(data) {
+      const map = new Map();
+      peopleOf(data).filter((p) => entryOnly(p.record)).forEach((p) => bump(map, personName(p.name)));
+      const total = [...map.values()].reduce((a, b) => a + b, 0);
+      return {
+        icon: "enter", tone: "amber", title: "Quem mais chega atrasado",
+        value: map.size, note: total ? `${plural(map.size, "colaborador", "colaboradores")} com liberação de entrada ${inPhrase()}` : "nenhum atraso no período ✓",
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "entrada", "entradas"), raw: row.value })),
+        empty: "Nenhuma liberação de entrada no período."
       };
     },
 
