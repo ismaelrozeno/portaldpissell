@@ -109,6 +109,11 @@ window.portalAvatars = (() => {
     }
     target.outerHTML = await response.text();
     document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = "hidden"; });
+    // Bolinha girando no lugar do perfil enquanto o login é confirmado (sai quando a conta é preenchida).
+    const accountSlot = document.querySelector(".site-header [data-account-actions]");
+    if (accountSlot && !document.querySelector(".header-auth-loading")) {
+      accountSlot.insertAdjacentHTML("beforebegin", '<span class="header-auth-loading" role="status" aria-label="Carregando a sua conta"><span class="button-spinner" aria-hidden="true"></span></span>');
+    }
   }));
 
   await window.portalAuthDemo?.ready();
@@ -204,8 +209,9 @@ window.portalAvatars = (() => {
     authenticatedLinks.forEach((link) => { link.hidden = true; });
     adminLinks.forEach((link) => { link.hidden = true; });
   }
-  // Login confirmado: os botões de "Entrar" voltam a valer (escondidos acima se a pessoa está logada).
+  // Login confirmado: os botões de "Entrar" voltam a valer (escondidos acima se a pessoa está logada) e sai a bolinha.
   document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = ""; });
+  document.querySelector(".header-auth-loading")?.remove();
 
 })().catch((error) => {
   console.error("Falha ao carregar os componentes compartilhados.", error);
