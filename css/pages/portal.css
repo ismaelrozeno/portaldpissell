@@ -280,3 +280,6 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .portal-table .col-who small.row-clock b { color:var(--portal-ink); font-weight:700; }
 @container (max-width:560px) { .portal-table .col-who small.row-clock { display:block; margin-top:.05rem; } }
 @media (max-width:760px) { .portal-table .col-who small.row-clock { display:block; margin-top:.05rem; } }
+/* "Data da liberação: 10/10/2026" (a data escolhida no pedido), sempre visível. */
+.portal-table .col-who small.row-date { display:block; margin-top:.05rem; color:var(--portal-muted); font-size:.74rem; font-weight:500; }
+.portal-table .col-who small.row-date b { color:var(--portal-ink); font-weight:700; }
