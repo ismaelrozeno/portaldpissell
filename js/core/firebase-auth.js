@@ -145,6 +145,16 @@
 
   window.portalAuthDemo = Object.freeze({
     ready: () => readyPromise,
+    // Última sessão guardada no aparelho (só para mostrar o cabeçalho na hora, antes do login ser confirmado; quem
+    // decide o acesso continua sendo getSession() depois de ready()).
+    cachedSession: () => {
+      try {
+        const cached = JSON.parse(localStorage.getItem(sessionCacheKey));
+        return cached && cached.status === "approved" && cached.name ? cached : null;
+      } catch (error) {
+        return null;
+      }
+    },
     getSession: () => currentSession,
     // Engenheiro Gestor recebe todas as liberações, mesmo as enviadas a outro engenheiro.
     isManager: () => currentSession?.roleValue === "engenheiro" && (currentSession.privileges || []).includes("gestor"),
