@@ -1036,9 +1036,17 @@
     });
   }
 
-  // Administrador: nos perfis de pessoa (encarregado, estagiário, analista, segurança do trabalho e engenheiro), escolhe
-  // QUEM simular; a tela fica igual à dessa pessoa (só as liberações dela, a equipe dela, o que foi enviado a ela).
-  const PERSON_PROFILES = [...foremanRoleValues, "engenheiro"];
+  // Administrador: em todos os perfis escolhe QUEM simular; a tela fica igual à dessa pessoa (só as liberações dela,
+  // a equipe dela, o que foi enviado a ela). O analista é o perfil coringa: com acesso de DP aparece na lista do DP;
+  // com acesso de engenheiro/segurança (sem DP), na desses perfis; sem acesso nenhum, na de Analista.
+  const PERSON_PROFILES = [...foremanRoleValues, "engenheiro", "dp", "portaria"];
+  const profilesOf = (user) => {
+    if (user.roleValue === "porteiro") return ["portaria"];
+    if (user.roleValue !== "analista") return [user.roleValue];
+    const access = (user.privileges || []).filter((key) => ["dp", "engenheiro", "seguranca_trabalho"].includes(key));
+    if (access.includes("dp")) return ["dp"];
+    return access.length ? access : ["analista"];
+  };
   const personKey = (profile) => `issellPortalAdminPerson:${profile}`;
   let peopleCache = null;
   async function choosePerson(profile) {
@@ -1054,13 +1062,15 @@
       console.warn("Não foi possível carregar as pessoas para o simulador.", error);
       peopleCache = [];
     }
-    const people = peopleCache.filter((user) => user.roleValue === profile && user.status === "approved" && user.name)
+    const people = peopleCache.filter((user) => user.status === "approved" && user.name && profilesOf(user).includes(profile))
       .sort((a, b) => a.name.localeCompare(b.name));
+    // Analista transformado aparece com a marca, para saber que é um analista com acesso.
+    const label = (user) => (user.roleValue === "analista" && profile !== "analista" ? `${user.name} (analista)` : user.name);
     let saved = "";
     try { saved = localStorage.getItem(personKey(profile)) || ""; } catch (error) { /* armazenamento indisponível */ }
     const chosen = people.find((user) => user.id === saved) || people[0] || null;
     select.innerHTML = people.length
-      ? people.map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)}</option>`).join("")
+      ? people.map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(label(user))}</option>`).join("")
       : '<option value="">Ninguém cadastrado neste perfil</option>';
     select.value = chosen?.id || "";
     select.hidden = false;
