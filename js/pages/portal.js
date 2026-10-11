@@ -1040,9 +1040,27 @@
   // a equipe dela, o que foi enviado a ela). O analista é o perfil coringa: com acesso de DP aparece na lista do DP;
   // com acesso de engenheiro/segurança (sem DP), na desses perfis; sem acesso nenhum, na de Analista.
   const PERSON_PROFILES = [...foremanRoleValues, "engenheiro", "dp", "portaria"];
+  // Perfil da conta pelo código (roleValue) ou, em contas antigas/criadas de outro jeito, pelo nome do perfil escrito.
+  const ROLE_ALIASES = {
+    dp: ["dp", "departamento pessoal"], encarregado: ["encarregado"], analista: ["analista"],
+    estagiario_engenharia: ["estagiario_engenharia", "estagiario de engenharia", "estagiario"],
+    seguranca_trabalho: ["seguranca_trabalho", "seguranca do trabalho", "seguranca", "tecnico de seguranca", "tecnico de seguranca do trabalho"],
+    engenheiro: ["engenheiro", "engenheiro responsavel"], porteiro: ["porteiro", "portaria"]
+  };
+  const roleOf = (user) => {
+    for (const text of [user.roleValue, user.role]) {
+      const key = window.normalizeSearchText(text).trim();
+      const found = Object.keys(ROLE_ALIASES).find((role) => ROLE_ALIASES[role].includes(key));
+      if (found) return found;
+    }
+    return user.roleValue || "";
+  };
+  // Conta liberada: aprovada, ou sem situação gravada (as que não passam por aprovação). Fora: pendente ou reprovada.
+  const isActive = (user) => !user.status || user.status === "approved";
   const profilesOf = (user) => {
-    if (user.roleValue === "porteiro") return ["portaria"];
-    if (user.roleValue !== "analista") return [user.roleValue];
+    const role = roleOf(user);
+    if (role === "porteiro") return ["portaria"];
+    if (role !== "analista") return [role];
     const access = (user.privileges || []).filter((key) => ["dp", "engenheiro", "seguranca_trabalho"].includes(key));
     if (access.includes("dp")) return ["dp"];
     return access.length ? access : ["analista"];
@@ -1062,10 +1080,10 @@
       console.warn("Não foi possível carregar as pessoas para o simulador.", error);
       peopleCache = [];
     }
-    const people = peopleCache.filter((user) => user.status === "approved" && user.name && profilesOf(user).includes(profile))
+    const people = peopleCache.filter((user) => isActive(user) && user.name && profilesOf(user).includes(profile))
       .sort((a, b) => a.name.localeCompare(b.name));
     // Analista transformado aparece com a marca, para saber que é um analista com acesso.
-    const label = (user) => (user.roleValue === "analista" && profile !== "analista" ? `${user.name} (analista)` : user.name);
+    const label = (user) => (roleOf(user) === "analista" && profile !== "analista" ? `${user.name} (analista)` : user.name);
     let saved = "";
     try { saved = localStorage.getItem(personKey(profile)) || ""; } catch (error) { /* armazenamento indisponível */ }
     const chosen = people.find((user) => user.id === saved) || people[0] || null;
@@ -1075,8 +1093,8 @@
     select.value = chosen?.id || "";
     select.hidden = false;
     window.portalViewAs = chosen ? {
-      uid: chosen.id, name: chosen.name, email: chosen.email || "", role: chosen.role || "", roleValue: chosen.roleValue,
-      especialidade: chosen.especialidade || "", linkedForeman: chosen.linkedForeman || "",
+      uid: chosen.id, name: chosen.name, email: chosen.email || "", role: chosen.role || "",
+      roleValue: roleOf(chosen), especialidade: chosen.especialidade || "", linkedForeman: chosen.linkedForeman || "",
       privileges: Array.isArray(chosen.privileges) ? chosen.privileges : []
     } : null;
   }
