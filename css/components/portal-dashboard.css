@@ -394,3 +394,7 @@ body.dash.dash-loading .portal-stats .stat-card strong { display: block; align-s
 body.dash.dash-loading .portal-stats .stat-detail, body.dash.dash-loading .portal-stats .stat-progress { visibility: hidden; }
 @keyframes dash-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { body.dash.dash-loading .portal-stats .stat-card strong { animation: none; } }
+/* Carregando nas outras abas (Coletivas, BI Dados, Atalhos): a mesma bolinha do "Para você agora" */
+.dash-page-loading { display: none; }
+body.dash.dash-loading .dash-page-loading { display: flex; align-items: center; justify-content: center; gap: .7rem; margin: .5rem 0 1rem; padding: 2.2rem 1rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); color: var(--d-ink-2); background: var(--d-surface); font-weight: 600; }
+.dash-page-loading .button-spinner { flex: none; width: 1.4rem; height: 1.4rem; margin: 0; color: var(--d-accent); border-width: .18rem; }
