@@ -208,7 +208,7 @@
             <span class="dash-num">${n}</span>
           </button></li>`;
       }).join("");
-      flowEl.querySelector("#dash-flow-note").textContent = `${plural(all.filter((x) => live(x.stage) && x.stage !== "exited" && x.stage !== "registered").length, "liberação em andamento", "liberações em andamento")}`;
+      flowEl.querySelector("#dash-flow-note").textContent = `${plural(all.filter((x) => live(x.stage) && !["exited", "registered", "entered"].includes(x.stage)).length, "liberação em andamento", "liberações em andamento")}`;
     }
 
     // Para você agora: o que esse perfil precisa fazer (até 3 itens)

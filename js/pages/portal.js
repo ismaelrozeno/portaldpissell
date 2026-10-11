@@ -232,6 +232,9 @@
         chips.push(chip("info", `Portaria <b>${short(release.exitConfirmedBy)}</b> · assinou`));
       } else if (stage === "gate") {
         chips.push(chip("wait", "Portaria: aguardando saída"));
+      } else if (window.portalReleaseFlow.isEntryOnly(release) && !window.portalReleaseFlow.isRetroactive(release)) {
+        // Só entrada: o colaborador está chegando, não há saída para a portaria assinar.
+        chips.push(chip("info", "Só entrada · sem portaria", "O colaborador está chegando: o DP autoriza a entrada e não há saída para a portaria confirmar."));
       }
       // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
       if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", `Colaborador <b>${short(release.employeeSignature.nome || release.name)}</b> · assinou por digital`));
@@ -260,7 +263,7 @@
     }
     if (profile === "dp") {
       const sign = actions.canSignBiometric(release) ? btn("row-bio-btn", "sign-bio", "Assinar com digital") : "";
-      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}` : "";
+      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", window.portalReleaseFlow.isEntryOnly(release) ? "Autorizar entrada" : "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}` : "";
       // O lançamento do abono no RM é feito só na folha de liberação ("Visualizar liberação").
       return `${sign}${decide}${view}${del}`;
     }
@@ -299,7 +302,8 @@
       // mesmo quando a liberação já passou para "dp"/"gate"/"exited".
       pending: profileKey === "engenheiro" ? awaitingBonus : (release) => pendingStages.includes(stageOf(release)),
       // "Autorizadas hoje": só as que o DP autorizou hoje (data local), não todas as já autorizadas.
-      approved: (release) => ["gate", "exited"].includes(stageOf(release))
+      // A portaria não vê as de só entrada (não passam por ela).
+      approved: (release) => (profileKey === "portaria" ? ["gate", "exited"] : ["gate", "exited", "entered"]).includes(stageOf(release))
         && (release.dpDecisionAt ? localDay(release.dpDecisionAt) : release.date) === today,
       bonus: awaitingBonus,
       launched: (release) => !!release.abonoLaunchedAt,
@@ -852,13 +856,15 @@
     document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento (engenheiro ou DP)";
     detail("stat-pending-detail", isPortaria ? [] : [splitLabel(pending, col.pending), waitingLabel([...pending, ...col.pending])]);
 
-    const exited = approved.filter((release) => window.portalReleaseFlow.stageOf(release) === "exited").length
-      + col.approved.filter((sheet) => col.stageOf(sheet) === "exited").length;
+    const stageCount = (stage) => approved.filter((release) => window.portalReleaseFlow.stageOf(release) === stage).length
+      + col.approved.filter((sheet) => col.stageOf(sheet) === stage).length;
+    const exited = stageCount("exited");
+    const entered = stageCount("entered");
     const approvedTotal = approved.length + col.approved.length;
     elements.approved.textContent = approvedTotal;
     document.querySelector("#stat-approved-note").textContent = "autorizadas pelo DP hoje";
     detail("stat-approved-detail", [
-      approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited} aguardando portaria` : "",
+      approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited - entered} aguardando portaria${entered ? ` · ${plural(entered, "entrada", "entradas")}` : ""}` : "",
       splitLabel(approved, col.approved)
     ]);
 
@@ -964,7 +970,7 @@
     window.portalCollectivePanel?.render(profileKey);
     const recent = releases.slice(0, 3);
     elements.activity.innerHTML = recent.length ? recent.map((release) => `
-      <li><span class="activity-dot ${["gate", "exited", "registered"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
+      <li><span class="activity-dot ${["gate", "exited", "registered", "entered"].includes(stageOf(release)) ? "is-success" : ["engineer", "dp"].includes(stageOf(release)) ? "is-warning" : ""}"></span><div><strong>${escapeHtml(window.portalReleaseFlow.stages[stageOf(release)].label)}</strong><small>${escapeHtml(release.name)} · ${escapeHtml(release.time)}</small></div></li>
     `).join("") : "<li><div><strong>Nenhuma atividade local</strong><small>Cadastre colaboradores e registre liberações para começar.</small></div></li>";
   }
 

@@ -43,10 +43,14 @@
     }
     const update = () => {
       const pastDate = !!input.value && input.value < today();
-      hint.hidden = !pastDate && !both();
+      const marked = [...document.querySelectorAll('input[name="movement"]:checked')].map((box) => box.value);
+      const entryOnly = marked.includes("entrada") && !marked.includes("saida");
+      hint.hidden = !pastDate && !both() && !entryOnly;
       hint.innerHTML = both()
         ? `<b>Entrada e saída marcadas:</b> o colaborador não bateu o ponto. ${after}`
-        : `<b>Data retroativa:</b> o colaborador já saiu. ${after}`;
+        : pastDate
+          ? `<b>Data retroativa:</b> o colaborador já saiu. ${after}`
+          : "<b>Só entrada:</b> depois do engenheiro, o DP <b>autoriza a entrada</b>. Não passa pela portaria (não há saída).";
       if (timeInput) {
         const off = both();
         if (off && timeInput.value) { savedTime = timeInput.value; timeInput.value = ""; }

@@ -83,7 +83,7 @@
   function engineerCanRefuse(release) {
     const stage = flow().stageOf(release);
     if (release.abonoLaunchedAt || release.bonusStatus) return false;
-    return ["engineer", "dp", "gate", "registered"].includes(stage);
+    return ["engineer", "dp", "gate", "registered", "entered"].includes(stage);
   }
 
   // O engenheiro (e o analista com acesso de engenheiro) assina direto; o Administrador Analista precisa do código
@@ -315,7 +315,7 @@
   // Assinatura do colaborador com a digital (leitor Hamster DX), feita no DP. Como na coletiva, vale também depois de
   // autorizada (aguardando saída): o colaborador costuma assinar quando passa no DP para sair.
   // O colaborador pode assinar com a digital mesmo depois que a portaria confirmou a saída (exited).
-  const canSignBiometric = (release) => ["engineer", "dp", "gate", "exited", "registered"].includes(flow().stageOf(release)) && release.employeeSignature?.method !== "biometria";
+  const canSignBiometric = (release) => ["engineer", "dp", "gate", "exited", "registered", "entered"].includes(flow().stageOf(release)) && release.employeeSignature?.method !== "biometria";
 
   async function signBiometric(release) {
     const reader = window.portalBiometricReader;
@@ -341,7 +341,7 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   // Abono aprovado pelo engenheiro que o DP ainda precisa lançar no RM.
   const needsLaunch = (release) => release.bonusStatus === "approved"
     && !release.abonoLaunchedAt
-    && ["dp", "gate", "exited", "registered"].includes(flow().stageOf(release));
+    && ["dp", "gate", "exited", "registered", "entered"].includes(flow().stageOf(release));
 
   // ---------- Portaria ----------
 

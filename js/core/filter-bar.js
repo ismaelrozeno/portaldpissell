@@ -31,7 +31,7 @@
   // defaultStatus: Situação com que a lista abre e para a qual o "Limpar filtros" volta (sem ela, "Todas").
   const today = () => iso(new Date());
   const RULES = {
-    approvedToday: (record, stage) => ["gate", "exited"].includes(stage)
+    approvedToday: (record, stage) => ["gate", "exited", "entered"].includes(stage)
       && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === today(),
     awaitingBonus: (record, stage) => !record.bonusStatus && !["foreman", "closed"].includes(stage),
     exitedToday: (record, stage) => stage === "exited" && localDay(record.exitConfirmedAt) === today(),
@@ -45,7 +45,9 @@
     refused: { value: "refused", label: "Recusadas · com o encarregado", test: (record, stage) => stage === "foreman" },
     waitDp: { value: "waitDp", label: "Aguardando DP", test: (record, stage) => stage === "dp" },
     gate: { value: "gate", label: "Aguardando saída", test: (record, stage) => stage === "gate" },
-    exitedToday: { value: "exitedToday", label: "Saíram hoje", test: RULES.exitedToday }
+    exitedToday: { value: "exitedToday", label: "Saíram hoje", test: RULES.exitedToday },
+    // Só entrada: o DP autorizou a entrada e acabou (não passa pela portaria).
+    entered: { value: "entered", label: "Entradas autorizadas", test: (record, stage) => stage === "entered" }
   };
   const BASIC_SORTS = [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]];
   // Encarregado, analista, estagiário e segurança do trabalho: acompanham o que eles mesmos pediram.
@@ -62,6 +64,7 @@
       FLOW.gate,
       FLOW.exitedToday,
       { value: "exited", label: "Saída confirmada na portaria", test: (record, stage) => stage === "exited" },
+      FLOW.entered,
       { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
       { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
     ],
@@ -84,6 +87,7 @@
         FLOW.gate,
         FLOW.exitedToday,
         { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
+        FLOW.entered,
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
         { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
       ],
@@ -95,7 +99,7 @@
       statuses: [
         { value: "all", label: "Todas" },
         { value: "gate", label: "Aguardando saída", test: (record, stage) => stage === "gate" },
-        { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
+        { value: "approved", label: "Autorizadas hoje", test: (record, stage) => stage !== "entered" && RULES.approvedToday(record, stage) },
         FLOW.exitedToday,
         { value: "exited", label: "Saída confirmada", test: (record, stage) => stage === "exited" }
       ],
@@ -118,13 +122,14 @@
         { value: "bonusYes", label: "Abonadas · todas", group: "Engenheiro", test: (record) => record.bonusStatus === "approved" },
         { value: "bonusNo", label: "Não abonadas", group: "Engenheiro", test: (record) => record.bonusStatus === "denied" || record.hours === "Não abonado" },
         { value: "pending", label: "Pendentes · aguardando DP", group: "DP", test: (record, stage) => stage === "dp" },
-        { value: "approved", label: "Autorizadas hoje", group: "DP", test: (record, stage) => ["gate", "exited"].includes(stage)
+        { value: "approved", label: "Autorizadas hoje", group: "DP", test: (record, stage) => ["gate", "exited", "entered"].includes(stage)
           && (record.dpDecisionAt ? localDay(record.dpDecisionAt) : record.date) === iso(new Date()) },
         { value: "toLaunch", label: "Abonadas · por lançar no RM", group: "DP", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
         { value: "launched", label: "Abonadas · lançadas no RM", group: "DP", test: (record) => !!record.abonoLaunchedAt },
         { value: "bioPending", label: "Digital pendente", group: "DP", test: RULES.bioPending },
         // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
         { value: "retroactive", label: "Retroativas · registradas", group: "DP", test: (record, stage) => stage === "registered" },
+        { ...FLOW.entered, group: "DP" },
         { ...FLOW.gate, group: "Portaria" },
         { ...FLOW.exitedToday, group: "Portaria" }
       ],

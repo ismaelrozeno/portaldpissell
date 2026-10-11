@@ -28,8 +28,11 @@
     exited: { label: "Saída confirmada", tone: "approved" },
     closed: { label: "Negada pelo DP", tone: "denied" },
     // Retroativa: mesma regra da individual (portalReleaseFlow em js/core/firebase-release-store.js).
-    registered: { label: "Retroativa · registrada", tone: "approved" }
+    registered: { label: "Retroativa · registrada", tone: "approved" },
+    // Só entrada: o DP autoriza a entrada e acabou (sem portaria). Mesma regra da individual.
+    entered: { label: "Entrada autorizada", tone: "approved" }
   };
+  const isEntryOnly = (sheet) => (sheet?.movement || []).includes("entrada") && !(sheet?.movement || []).includes("saida");
   // Mesma conta do portalReleaseFlow.isRetroactive (esta tela também abre sem ele, em Liberacao-Coletiva.html).
   // Entrada e saída marcadas juntas também é retroativa (o colaborador não bateu o ponto).
   const isRetroactive = (sheet) => {
@@ -43,7 +46,8 @@
   // Retroativa que passou do engenheiro (ou que o DP já tinha autorizado) vira "registrada", inclusive as antigas.
   const stageOf = (sheet) => {
     const stage = sheet.stage === "decided" ? "dp" : (STAGES[sheet.stage] ? sheet.stage : "engineer");
-    return ["dp", "gate"].includes(stage) && isRetroactive(sheet) ? "registered" : stage;
+    if (["dp", "gate"].includes(stage) && isRetroactive(sheet)) return "registered";
+    return stage === "gate" && isEntryOnly(sheet) ? "entered" : stage;
   };
   // Concluída (caixa "Concluídas"): mesma regra da individual (portalReleaseFlow.isConcluded), com a digital de
   // TODOS os participantes e, se ABONADO, abono já lançado no RM.
@@ -51,7 +55,7 @@
     const stage = stageOf(sheet);
     if (stage === "closed") return true;
     const people = sheet.participants || [];
-    return ["exited", "registered"].includes(stage) && !!sheet.bonusStatus
+    return ["exited", "registered", "entered"].includes(stage) && !!sheet.bonusStatus
       && people.length > 0 && people.every((person) => signatureOf(sheet, person))
       && (sheet.bonusStatus !== "approved" || !!sheet.abonoLaunchedAt);
   };
@@ -95,7 +99,7 @@
       engineerSigner: eng.name, engineerTime: eng.time,
       dp: sheet.dpSigner || (stage === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""),
       dpSigner: dp.name, dpTime: dp.time,
-      gate: sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : ""),
+      gate: sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""),
       gateSigner: gate.name, gateTime: gate.time,
       hours: sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro",
       hoursTone: sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait",
@@ -137,7 +141,7 @@
         <tr><th>Encarregado</th><td>${esc(sheet.foreman || "")}</td><th>Assinatura</th><td class="cs-esign">${esc(sheet.requester || "")}<small>${esc(formatDateTime(sheet.createdAt))}</small></td></tr>
         <tr><th>Engenheiro</th><td>${esc(sheet.engineer || sheet.targetEngineer || "")}</td><th>Assinatura</th><td class="cs-esign">${sheet.bonusStatus && sheet.engineer ? `${esc(sheet.engineer)}<small>${esc(formatDateTime(sheet.engineerDecisionAt))}</small>` : ""}</td></tr>
         <tr><th>DP</th><td>${esc(sheet.dpSigner || (stageOf(sheet) === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.dpSigner ? `${esc(sheet.dpSigner)}<small>${esc(formatDateTime(sheet.dpDecisionAt))}</small>` : ""}</td></tr>
-        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
+        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
         <tr><th>Horas</th><td colspan="3" class="cs-bonus cs-bonus-${sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait"}">${sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro"}</td></tr>
       </table>
       <table class="cs-list">
@@ -164,13 +168,13 @@
   const dpLike = () => ["dp", "administrador-analista"].includes(role()) || !!window.portalAuthDemo?.isDpDelegate?.();
   const isDp = () => role() === "dp" || (dpLike() && dpContext);
   const canLaunch = (sheet) => isDp() && sheet.bonusStatus === "approved" && !sheet.abonoLaunchedAt
-    && ["dp", "gate", "exited", "registered"].includes(stageOf(sheet));
+    && ["dp", "gate", "exited", "registered", "entered"].includes(stageOf(sheet));
   // Por que o "Lançar abono" não aparece (só para o DP e o administrador, para o botão nunca sumir sem explicação).
   function launchHint(sheet) {
     if (!dpLike() || sheet.abonoLaunchedAt || canLaunch(sheet)) return "";
     if (sheet.bonusStatus === "denied") return "Engenheiro marcou NÃO ABONADO: não há abono para lançar no RM.";
     if (!sheet.bonusStatus) return "O botão \"Lançar abono\" aparece depois que o engenheiro marcar ABONADO.";
-    if (!["dp", "gate", "exited", "registered"].includes(stageOf(sheet))) return "Esta liberação coletiva não está em etapa de lançamento no RM.";
+    if (!["dp", "gate", "exited", "registered", "entered"].includes(stageOf(sheet))) return "Esta liberação coletiva não está em etapa de lançamento no RM.";
     if (!isDp()) return "Para lançar no RM, abra esta folha como Departamento Pessoal (em \"Acessar como\").";
     return "";
   }
@@ -358,5 +362,5 @@ O carimbo será removido.`)) return;
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isEntryOnly, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
 })();
