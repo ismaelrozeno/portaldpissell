@@ -461,6 +461,36 @@ Deseja continuar?`;
     return ask({ title, message: rest.join("\n").trim(), okText });
   }
 
+  // Bloqueio do administrador ("Acessar como"): ele está operando o acesso de outra pessoa, então os botões que
+  // ASSINAM ou MUDAM a liberação (abonar, não abonar, recusar, autorizar, confirmar saída, digital, lançar abono)
+  // pedem a senha antes. Liberada uma vez, vale até recarregar a página (e serve também para assinar como engenheiro).
+  const LOCKED = [
+    '[data-row-action="approved"]', '[data-row-action="denied"]', '[data-row-action="refuse"]',
+    '[data-row-action="authorize"]', '[data-row-action="dp-refuse"]', '[data-row-action="confirm-exit"]', '[data-row-action="sign-bio"]',
+    '[data-collective="approved"]', '[data-collective="denied"]', '[data-collective="refuse"]', '[data-collective="authorize"]',
+    '[data-collective="dp-refuse"]', '[data-collective="exits"]', '[data-collective="bio"]',
+    "#launch-release-preview", "#undo-launch-release-preview", "#cs-launch", "#cs-undo-launch", "[data-exit-mark]", "#collective-exit-all"
+  ].join(", ");
+  document.addEventListener("click", async (event) => {
+    if (session()?.roleValue !== "administrador-analista" || adminSignatureUnlocked) return;
+    const button = event.target.closest?.(LOCKED);
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const code = await ask({
+      title: "Botão bloqueado",
+      message: "Não é possível mexer neste botão em outro acesso.\nDigite a senha para mexer:",
+      input: true, okText: "Liberar"
+    });
+    if (code === null) return;
+    if (code.trim() !== adminPhysicalCode) {
+      await ask({ title: "Senha incorreta", message: "O botão continua bloqueado.", okText: "OK", cancelText: null });
+      return;
+    }
+    adminSignatureUnlocked = true;
+    button.click();
+  }, true);
+
   window.portalReleaseActions = Object.freeze({
     ask,
     confirmText,
