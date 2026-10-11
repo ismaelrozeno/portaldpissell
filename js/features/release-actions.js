@@ -367,7 +367,6 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   // Só no perfil do DP se apaga de verdade no banco: o próprio DP, ou o Administrador com o painel do DP aberto.
   // Nos demais perfis (mesmo o administrador operando-os) "apagar da lixeira" só some do histórico de quem apagou.
   const isDpDelegate = () => session()?.roleValue === "analista" && (session()?.privileges || []).includes("dp");
-  const isManager = () => session()?.roleValue === "engenheiro" && (session()?.privileges || []).includes("gestor");
   const canHardDelete = (dpContext) => {
     const role = session()?.roleValue;
     return role === "dp" || ((role === "administrador-analista" || isDpDelegate()) && !!dpContext);
@@ -386,7 +385,11 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   // O engenheiro Gestor recebe todas, mesmo as enviadas a outro engenheiro.
   // No simulador do administrador (window.portalViewAs), vale a conta da pessoa simulada.
   const viewer = () => window.portalViewAs || session();
-  const sentToOtherEngineer = (release) => viewer()?.roleValue === "engenheiro" && !(viewer().privileges || []).includes("gestor")
+  // Engenheiro comum: só o que foi enviado a ele (ou a todos). Vale também para o analista que virou engenheiro
+  // (acesso de engenheiro, sem o de DP). O Gestor recebe todas.
+  const actsAsEngineer = (user) => user?.roleValue === "engenheiro"
+    || (user?.roleValue === "analista" && (user.privileges || []).includes("engenheiro") && !(user.privileges || []).includes("dp"));
+  const sentToOtherEngineer = (release) => actsAsEngineer(viewer()) && !(viewer().privileges || []).includes("gestor")
     && !!release.targetEngineer && !sameName(release.targetEngineer, viewer().name);
   const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor) && !sentToOtherEngineer(release));
   const trashFor = (releases) => releases.filter(isTrashed);

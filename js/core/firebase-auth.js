@@ -157,7 +157,10 @@
     },
     getSession: () => currentSession,
     // Engenheiro Gestor recebe todas as liberações, mesmo as enviadas a outro engenheiro.
-    isManager: () => currentSession?.roleValue === "engenheiro" && (currentSession.privileges || []).includes("gestor"),
+    // Engenheiro Gestor (recebe todas as liberações): engenheiro, ou analista com acesso de engenheiro, com "gestor".
+    isManager: () => (currentSession?.roleValue === "engenheiro"
+      || (currentSession?.roleValue === "analista" && (currentSession.privileges || []).includes("engenheiro")))
+      && (currentSession.privileges || []).includes("gestor"),
     // Analista com acesso de DP: opera o portal do DP como o Administrador Analista faz.
     isDpDelegate: () => currentSession?.roleValue === "analista" && (currentSession.privileges || []).includes("dp"),
     // Analista é o perfil "curinga": por padrão é um chefe de equipe (como o encarregado) e o administrador pode dar

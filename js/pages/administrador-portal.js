@@ -134,15 +134,16 @@
       : `<p class="text-muted mb-0">${query ? "Nenhum resultado para a busca." : "Nenhum cadastro de porteiro recebido."}</p>`;
   }
 
-  // Privilégios que o administrador pode dar, por perfil. O analista é o perfil "curinga": pode ganhar acesso a
-  // vários portais ao mesmo tempo e alterna entre eles no Meu portal.
+  // Privilégios que o administrador pode dar, por perfil. O analista é o perfil "curinga": com um acesso ele VIRA
+  // aquele perfil no Meu portal (DP tem prioridade; com engenheiro + segurança, alterna entre os dois).
   const PRIVILEGES = {
     engenheiro: [
       { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Recebe TODAS as liberações, individuais e coletivas." }
     ],
     analista: [
-      { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Opera o portal do DP, continuando analista." },
-      { key: "engenheiro", label: "Acesso de engenheiro", grant: "Dar acesso de engenheiro", revoke: "Revogar acesso de engenheiro", note: "Abre o painel do engenheiro: decide abono e recusa liberações." },
+      { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Vira DP: abre direto no painel do DP." },
+      { key: "engenheiro", label: "Acesso de engenheiro", grant: "Dar acesso de engenheiro", revoke: "Revogar acesso de engenheiro", note: "Vira engenheiro: recebe só o que for enviado a ele (ou a todos)." },
+      { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Com acesso de engenheiro: recebe TODAS as liberações, como o engenheiro Gestor." },
       { key: "seguranca_trabalho", label: "Acesso de segurança do trabalho", grant: "Dar acesso de segurança do trabalho", revoke: "Revogar acesso de segurança do trabalho", note: "Abre o painel da segurança do trabalho." }
     ]
   };
