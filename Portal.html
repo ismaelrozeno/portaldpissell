@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=dd9fb652">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=2b105fa2">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="portal-page dash dash-loading" data-page="overview">
@@ -111,6 +111,9 @@
         <button class="stat-card" type="button" data-stat="bonus"><span>Pendências de abono</span><strong id="stat-bonus">0</strong><small>aguardando engenheiro</small><small class="stat-detail" id="stat-bonus-detail"></small></button>
         <button class="stat-card stat-card-launch" type="button" data-stat="launched"><span>Abonos lançados</span><strong id="stat-launched">0</strong><small id="stat-launched-note">carimbados pelo DP</small><small class="stat-detail" id="stat-launched-detail"></small><i class="stat-progress" id="stat-launched-progress" aria-hidden="true"><b id="stat-launched-bar"></b></i></button>
       </section>
+
+      <!-- Carregando (só enquanto body.dash-loading): nas abas cujo conteúdo só aparece depois que os dados chegam. -->
+      <div class="dash-page-loading" data-dash="coletivas indicadores equipe" role="status"><span class="button-spinner" aria-hidden="true"></span>Carregando…</div>
 
       <section class="dash-export" id="dash-export" data-dash="indicadores" aria-labelledby="dash-export-title" hidden>
         <div class="dash-export-text">
