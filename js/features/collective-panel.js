@@ -249,15 +249,17 @@
     // Encarregado/estagiário/analista/segurança: a lista mostra só o que eles solicitaram, mas os cartões de
     // informação (números, esteira, BI) mostram a obra toda. "own" fica com as deles (para o "Para você agora").
     const isChief = foremanRoles.includes(profile);
-    const mine = isChief ? allSheets : sheets;
+    // Engenheiro comum (não Gestor): informações da obra toda; "Liberações pendentes" só as que esperam o abono dele.
+    const engineerObra = profile === "engenheiro" && !!me && me.roleValue !== "administrador-analista" && !(me.privileges || []).includes("gestor");
+    const mine = isChief || engineerObra ? allSheets : sheets;
     const open = (sheet) => !["foreman", "closed"].includes(stageOf(sheet));
     const day = (value) => {
       const date = new Date(value);
       return Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     };
     const today = day(Date.now());
-    const extra = { pending: [], approved: [], bonus: [], stageOf, all: mine, own: isChief ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : null };
-    if (profile === "engenheiro") extra.pending = mine.filter((sheet) => !sheet.bonusStatus && open(sheet));
+    const extra = { pending: [], approved: [], bonus: [], stageOf, all: mine, own: isChief ? sheets.filter((sheet) => sheet.createdByUid === me?.uid) : engineerObra ? sheets : null };
+    if (profile === "engenheiro") extra.pending = (engineerObra ? sheets : mine).filter((sheet) => !sheet.bonusStatus && open(sheet));
     else if (profile === "dp") extra.pending = mine.filter((sheet) => stageOf(sheet) === "dp");
     else if (profile !== "portaria") extra.pending = mine.filter((sheet) => ["engineer", "foreman", "dp"].includes(stageOf(sheet)));
     extra.approved = mine.filter((sheet) => ["gate", "exited", "entered"].includes(stageOf(sheet)) && day(sheet.dpDecisionAt) === today);
