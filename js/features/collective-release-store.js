@@ -34,12 +34,13 @@
     // Quem vê o quê: o engenheiro, só o que foi enviado a ele (ou a "todos"); DP e administrador, tudo;
     // encarregado e demais solicitantes, só o que eles mesmos enviaram.
     // profileKey: perfil aberto no Meu portal. O administrador troca de perfil e, como nas individuais, vê pelo perfil
-    // aberto: como portaria, só o autorizado; como encarregado/estagiário/analista/segurança, a obra toda (ele não pede liberação).
+    // aberto: como encarregado/estagiário/analista/segurança, só o que ele mesmo enviou; como portaria, só o autorizado.
     byRole(sheets, profileKey) {
       const session = window.portalAuthDemo?.getSession();
       const role = session?.roleValue;
       const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
       if (role === "administrador-analista" && profileKey) {
+        if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === session.uid);
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       }
       // Analista com acesso de engenheiro, no painel do engenheiro: recebe todas as folhas (como o engenheiro Gestor).

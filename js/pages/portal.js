@@ -434,8 +434,7 @@
 
     // Perfil de encarregado/estagiário/segurança (inclusive quando o administrador o abre para testar):
     // só o que a própria pessoa logada solicitou.
-    // O administrador abrindo esses perfis (ele não pede liberação) vê as da obra toda.
-    const profileReleases = foremanRoleValues.includes(profile) && session?.roleValue !== "administrador-analista"
+    const profileReleases = foremanRoleValues.includes(profile)
       ? releases.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : releases;
     // Ordem: sempre por data de criação, mais recente primeiro (já vem assim do banco), igual para
@@ -940,8 +939,7 @@
     const allReleases = await window.portalDemoStore?.getReleases() || [];
     const allVisible = window.portalReleaseActions.visibleFor(allReleases);
     // Encarregado, estagiário e segurança do trabalho veem (tabela, números e histórico) só o que eles mesmos solicitaram.
-    // O administrador abrindo esses perfis (ele não pede liberação) vê as da obra toda.
-    const releases = foremanRoleValues.includes(profileKey) && session?.roleValue !== "administrador-analista"
+    const releases = foremanRoleValues.includes(profileKey)
       ? allVisible.filter((release) => release.requester?.trim().toLowerCase() === session.name?.trim().toLowerCase())
       : allVisible;
     // Mesma regra do quadro "Minha equipe": o administrador abrindo o perfil de encarregado não tem equipe própria.
