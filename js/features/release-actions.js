@@ -381,7 +381,14 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   const isTrashed = (release) => has(release.hiddenFor) && !has(release.purgedFor);
   // Liberações que o usuário vê (fora da lixeira e não apagadas de vez). O 2º argumento existe só por compatibilidade.
   // Liberação enviada a um engenheiro específico ("targetEngineer") só aparece no portal dele; sem destino, vai para todos.
-  const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  const nameKey = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const sameName = (a, b) => nameKey(a) === nameKey(b);
+  // Liberação de outro engenheiro: enviada a outro, ou enviada a todos mas já assinada/recusada por outro engenheiro
+  // (quem assina primeiro fica com ela). Assinatura do Administrador não conta como de outro engenheiro.
+  const decidedByOther = (release, name) => {
+    const by = release.bonusStatus ? release.engineer : release.refusedBy;
+    return !!by && !/administrador/i.test(`${by} ${release.engineerRole || ""}`) && !sameName(by, name);
+  };
   // O engenheiro Gestor recebe todas, mesmo as enviadas a outro engenheiro.
   // No simulador do administrador (window.portalViewAs), vale a conta da pessoa simulada.
   const viewer = () => window.portalViewAs || session();
@@ -390,7 +397,7 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   const actsAsEngineer = (user) => user?.roleValue === "engenheiro"
     || (user?.roleValue === "analista" && (user.privileges || []).includes("engenheiro") && !(user.privileges || []).includes("dp"));
   const sentToOtherEngineer = (release) => actsAsEngineer(viewer()) && !(viewer().privileges || []).includes("gestor")
-    && !!release.targetEngineer && !sameName(release.targetEngineer, viewer().name);
+    && (release.targetEngineer ? !sameName(release.targetEngineer, viewer().name) : decidedByOther(release, viewer().name));
   const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor) && !sentToOtherEngineer(release));
   const trashFor = (releases) => releases.filter(isTrashed);
 
