@@ -225,6 +225,9 @@
       } else {
         chips.push(chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
       }
+      // Lançamento do abono no RM (igual à coletiva): quem lançou; para o DP, o que ainda falta lançar.
+      if (release.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${short(release.abonoLaunchedBy || "DP")}</b>`));
+      else if (release.bonusStatus === "approved" && activeProfileKey === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
       if (release.exitConfirmedBy) {
         chips.push(chip("info", `Portaria <b>${short(release.exitConfirmedBy)}</b> · assinou`));
       } else if (stage === "gate") {
