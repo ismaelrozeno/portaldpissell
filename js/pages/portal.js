@@ -519,7 +519,15 @@
     const locked = infoOnly
       ? ".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]"
       : ".portal-stats .stat-card:not([data-stat='team']):not([data-stat='pending']), [data-engineer-filter], [data-flow]";
-    if (event.target.closest(locked)) {
+    const card = event.target.closest(locked);
+    // Engenheiro comum: o cartão "Aguardando abono" DELE e o de "todos os engenheiros" são pendências dele, então
+    // continuam levando à lista; os dos outros engenheiros só informam.
+    if (card && partial && card.matches("[data-engineer-filter]")) {
+      const mine = card.dataset.engineerKey;
+      const nameKey = (value) => window.normalizeSearchText(value).replace(/\s+/g, " ").trim();
+      if (!mine || nameKey(mine) === nameKey(viewerSession()?.name)) return;
+    }
+    if (card) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -871,7 +879,9 @@
       const total = waiting + done;
       const both = { ind: (item.pending?.ind || 0) + (item.approved?.ind || 0), col: (item.pending?.col || 0) + (item.approved?.col || 0) };
       const totalLine = item.key ? `<span class="stat-engineer-total"><b>Total ${total}</b>${total ? ` <small>· ${escapeHtml(splitOf(both))}</small>` : ""}</span>` : "";
-      return `<button class="stat-card stat-card-engineer" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}">
+      const mineKey = window.normalizeSearchText(viewerSession()?.name).replace(/\s+/g, " ").trim();
+      const isMine = !item.key || window.normalizeSearchText(item.key).replace(/\s+/g, " ").trim() === mineKey;
+      return `<button class="stat-card stat-card-engineer${isMine ? " is-mine" : ""}" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}" data-engineer-key="${escapeHtml(item.key || "")}">
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}${managerNames.has(item.key) ? ' <em class="stat-engineer-tag">Gestor</em>' : ""}</b>
           <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small>${approvedLine}${totalLine}</button>`;
     }).join("");
