@@ -291,3 +291,6 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 .demo-switcher { flex-wrap: wrap; }
 .demo-switcher #admin-person-select { flex: 1 1 100%; }
 .demo-switcher #admin-person-select[hidden] { display: none; }
+/* Encarregado, estagiário, analista e segurança: cartões de informação da obra, sem clique para filtrar. */
+body.info-only .portal-stats .stat-card:not([data-stat="team"]), body.info-only [data-engineer-filter], body.info-only .dash-station-btn { cursor: default; }
+body.info-only .portal-stats .stat-card:not([data-stat="team"]):hover, body.info-only [data-engineer-filter]:hover { transform: none; }
