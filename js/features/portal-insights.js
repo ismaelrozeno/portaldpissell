@@ -483,7 +483,7 @@
     return [
       tile("Liberações registradas", String(now.releases), "individuais e coletivas", "releases"),
       tile("Pessoas que saíram", String(now.exited), "saída confirmada na portaria", "exited"),
-      tile("Colaboradores diferentes", String(now.people), "com liberação no período", "people"),
+      tile("Pessoas liberadas", String(now.people), "cada colaborador conta uma vez", "people"),
       tile("Abonadas", pctText(now.bonusPct), "das decididas pelo engenheiro", "bonusPct", true),
       tile("Particulares", pctText(now.particularPct), "das saídas (o resto é tarefa)", "particularPct", true)
     ].join("");
