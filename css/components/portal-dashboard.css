@@ -385,3 +385,12 @@ body.dash .portal-stats .stat-card-engineer .stat-engineer-approved small,
 body.dash .portal-stats .stat-card-engineer .stat-engineer-total small { display: inline; margin: 0; padding: 0; border: 0; color: var(--d-muted, #66768a); font-size: inherit; }
 /* Etiqueta "Gestor" ao lado do nome do engenheiro gestor */
 .stat-engineer-tag { display: inline-block; margin-left: .3rem; padding: .05rem .45rem; border-radius: 999px; color: var(--d-ink-2, #3b4d63); background: #e8edf2; font: 600 .68rem/1.5 "Barlow", sans-serif; font-style: normal; vertical-align: 2px; }
+
+/* Carregando (body.dash-loading até chegarem os números; js/features/portal-dashboard.js): bolinha girando no
+   "Para você agora" e, nos cartões, uma barra animada no lugar do número (em vez de "0", que parecia dado real). */
+.dash-now-loading { display: flex; align-items: center; gap: .7rem; padding: .9rem 1rem; border: 1px solid var(--d-line); border-radius: var(--d-radius); color: var(--d-ink-2); background: var(--d-surface); font-weight: 600; }
+.dash-now-loading .button-spinner { flex: none; width: 1.3rem; height: 1.3rem; margin: 0; color: var(--d-accent); border-width: .18rem; }
+body.dash.dash-loading .portal-stats .stat-card strong { display: block; align-self: flex-start; width: 3.6rem; min-height: 2rem; border-radius: 8px; color: transparent !important; background: linear-gradient(90deg, #e6ebf0 25%, #f4f6f9 50%, #e6ebf0 75%); background-size: 200% 100%; animation: dash-shimmer 1.2s ease-in-out infinite; }
+body.dash.dash-loading .portal-stats .stat-detail, body.dash.dash-loading .portal-stats .stat-progress { visibility: hidden; }
+@keyframes dash-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { body.dash.dash-loading .portal-stats .stat-card strong { animation: none; } }
