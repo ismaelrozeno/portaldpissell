@@ -398,3 +398,9 @@ body.dash.dash-loading .portal-stats .stat-detail, body.dash.dash-loading .porta
 .dash-page-loading { display: none; }
 body.dash.dash-loading .dash-page-loading { display: flex; align-items: center; justify-content: center; gap: .7rem; margin: .5rem 0 1rem; padding: 2.2rem 1rem; border: 1px solid var(--d-line); border-radius: var(--d-radius-lg); color: var(--d-ink-2); background: var(--d-surface); font-weight: 600; }
 .dash-page-loading .button-spinner { flex: none; width: 1.4rem; height: 1.4rem; margin: 0; color: var(--d-accent); border-width: .18rem; }
+
+/* Arrastar para trocar de aba (celular): a página acompanha o dedo; sem rolagem lateral do corpo durante a animação */
+@media (max-width: 991.98px) {
+  body.dash { overflow-x: hidden; }
+  body.dash .dash-main { touch-action: pan-y pinch-zoom; }
+}
