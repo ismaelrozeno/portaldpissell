@@ -349,6 +349,15 @@
     }
   }
 
+  // Tipo (Tarefa/Particular), motivo escrito e movimentação (Entrada/Saída) da liberação individual.
+  function reasonLine(release) {
+    const text = String(release.reason || "");
+    const type = release.reasonType || (/^tarefa/i.test(text) ? "tarefa" : /^particular/i.test(text) ? "particular" : "");
+    const detail = String(release.reasonDetail ?? text.replace(/^(tarefa|particular):?\s*/i, "")).trim();
+    const tag = type ? `<span class="reason-tag reason-${type}">${type === "tarefa" ? "Tarefa" : "Particular"}</span>` : "";
+    return `<small class="row-reason">${tag}<span>${detail ? escapeHtml(detail) : "Motivo não informado"}</span><span class="row-movement">Movimentação: <b>${escapeHtml(window.portalReleaseFlow.movementLabel(release))}</b></span></small>`;
+  }
+
   // "Criada 05/10/2026 · 10:44": quando a liberação foi enviada (o engenheiro abona pela ordem de chegada).
   function createdLabel(value) {
     const date = value ? new Date(value) : null;
@@ -397,7 +406,7 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span></td>
@@ -449,7 +458,7 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small><small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}${release.time ? ` · ${escapeHtml(release.time)}` : ""}</small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${escapeHtml(release.time)}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stages[stage].label}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
