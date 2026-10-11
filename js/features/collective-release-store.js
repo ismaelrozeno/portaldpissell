@@ -40,7 +40,12 @@
       const role = session?.roleValue;
       const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
       if (role === "administrador-analista" && profileKey) {
-        if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === session.uid);
+        // Simulador: com uma pessoa escolhida (window.portalViewAs), vê exatamente o que ela vê.
+        const viewAs = window.portalViewAs;
+        if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(profileKey)) return sheets.filter((sheet) => sheet.createdByUid === (viewAs?.uid || session.uid));
+        if (profileKey === "engenheiro" && viewAs) {
+          return (viewAs.privileges || []).includes("gestor") ? sheets : sheets.filter((sheet) => !sheet.targetEngineer || same(sheet.targetEngineer, viewAs.name));
+        }
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       }
       // Analista com acesso de engenheiro, no painel do engenheiro: recebe todas as folhas (como o engenheiro Gestor).

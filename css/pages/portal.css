@@ -288,3 +288,6 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
   .portal-table td.col-who > small:has(+ small.row-created)::after { content:""; display:block; height:2px; margin-top:.6rem; border-radius:2px; background:var(--portal-orange); }
   .portal-table td.col-who small.row-created { margin-top:.6rem; }
 }
+.demo-switcher { flex-wrap: wrap; }
+.demo-switcher #admin-person-select { flex: 1 1 100%; }
+.demo-switcher #admin-person-select[hidden] { display: none; }

@@ -107,6 +107,7 @@
   const elements = {
     adminSwitcher: document.querySelector("#admin-portal-switcher"),
     adminProfile: document.querySelector("#admin-profile-select"),
+    adminPerson: document.querySelector("#admin-person-select"),
     title: document.querySelector("#portal-title"),
     description: document.querySelector("#portal-description"),
     eyebrow: document.querySelector("#table-eyebrow"),
@@ -153,8 +154,12 @@
   // Perfis que trabalham na equipe do encarregado a quem estão vinculados. O analista não: ele é chefe da própria equipe.
   const linkedRoleValues = ["estagiario_engenharia"];
 
+  // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar
+  // exatamente como ela vê. Sem pessoa escolhida (ou fora do simulador), é a conta de quem está logado.
+  const viewerSession = () => window.portalViewAs || window.portalAuthDemo?.getSession();
+
   function renderForemanSummary(profileKey, employees) {
-    const session = window.portalAuthDemo?.getSession();
+    const session = viewerSession();
     const isForeman = foremanRoleValues.includes(profileKey);
     elements.foremanSummary.hidden = !isForeman;
     if (!isForeman) return;
@@ -391,7 +396,7 @@
   async function renderRecords(profile, prefetched) {
     // Engenheiro: por padrão, pendentes de abono primeiro (a mais recente no topo). Os outros perfis: mais recentes.
     window.portalSortFilter.setDefault(elements.recordsSearch, profile === "engenheiro" ? "unbonusedRecent" : "recent");
-    const session = window.portalAuthDemo?.getSession();
+    const session = viewerSession();
     const actions = window.portalReleaseActions;
     const allReleases = prefetched || await window.portalDemoStore?.getReleases() || [];
     releaseById = new Map(allReleases.map((release) => [release.id, release]));
@@ -935,7 +940,7 @@
     const bioLink = document.querySelector("#dp-bio-link");
     if (bioLink) bioLink.hidden = profileKey !== "dp";
     const employees = await employeesQuick();
-    const session = window.portalAuthDemo?.getSession();
+    const session = viewerSession();
     const allReleases = await window.portalDemoStore?.getReleases() || [];
     const allVisible = window.portalReleaseActions.visibleFor(allReleases);
     // Encarregado, estagiário e segurança do trabalho veem (tabela, números e histórico) só o que eles mesmos solicitaram.
@@ -1021,9 +1026,52 @@
       doneMode = false;
       statFilter = null;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
-      renderProfile(event.target.value);
+      if (isAdministrator) choosePerson(event.target.value).then(() => renderProfile(event.target.value));
+      else renderProfile(event.target.value);
+    });
+  }
+
+  // Administrador: nos perfis de pessoa (encarregado, estagiário, analista, segurança do trabalho e engenheiro), escolhe
+  // QUEM simular; a tela fica igual à dessa pessoa (só as liberações dela, a equipe dela, o que foi enviado a ela).
+  const PERSON_PROFILES = [...foremanRoleValues, "engenheiro"];
+  const personKey = (profile) => `issellPortalAdminPerson:${profile}`;
+  let peopleCache = null;
+  async function choosePerson(profile) {
+    const select = elements.adminPerson;
+    if (!select || !PERSON_PROFILES.includes(profile)) {
+      window.portalViewAs = null;
+      if (select) select.hidden = true;
+      return;
+    }
+    try {
+      peopleCache = peopleCache || await window.portalAuthDemo.getAllUsers();
+    } catch (error) {
+      console.warn("Não foi possível carregar as pessoas para o simulador.", error);
+      peopleCache = [];
+    }
+    const people = peopleCache.filter((user) => user.roleValue === profile && user.status === "approved" && user.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    let saved = "";
+    try { saved = localStorage.getItem(personKey(profile)) || ""; } catch (error) { /* armazenamento indisponível */ }
+    const chosen = people.find((user) => user.id === saved) || people[0] || null;
+    select.innerHTML = people.length
+      ? people.map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)}</option>`).join("")
+      : '<option value="">Ninguém cadastrado neste perfil</option>';
+    select.value = chosen?.id || "";
+    select.hidden = false;
+    window.portalViewAs = chosen ? {
+      uid: chosen.id, name: chosen.name, email: chosen.email || "", role: chosen.role || "", roleValue: chosen.roleValue,
+      especialidade: chosen.especialidade || "", linkedForeman: chosen.linkedForeman || "",
+      privileges: Array.isArray(chosen.privileges) ? chosen.privileges : []
+    } : null;
+  }
+  if (isAdministrator && elements.adminPerson) {
+    elements.adminPerson.addEventListener("change", (event) => {
+      try { localStorage.setItem(personKey(activeProfileKey), event.target.value); } catch (error) { /* armazenamento indisponível */ }
+      choosePerson(activeProfileKey).then(() => renderProfile(activeProfileKey));
     });
   }
   elements.recordsSearch?.addEventListener("input", () => renderRecords(activeProfileKey));
-  renderProfile(initialProfile);
+  if (isAdministrator) choosePerson(initialProfile).then(() => renderProfile(initialProfile));
+  else renderProfile(initialProfile);
 })();

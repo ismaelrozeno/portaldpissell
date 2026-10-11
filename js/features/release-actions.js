@@ -384,7 +384,10 @@ Clique em Iniciar e aguarde a leitura.`, okText: "Iniciar" });
   // Liberação enviada a um engenheiro específico ("targetEngineer") só aparece no portal dele; sem destino, vai para todos.
   const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
   // O engenheiro Gestor recebe todas, mesmo as enviadas a outro engenheiro.
-  const sentToOtherEngineer = (release) => session()?.roleValue === "engenheiro" && !isManager() && !!release.targetEngineer && !sameName(release.targetEngineer, session().name);
+  // No simulador do administrador (window.portalViewAs), vale a conta da pessoa simulada.
+  const viewer = () => window.portalViewAs || session();
+  const sentToOtherEngineer = (release) => viewer()?.roleValue === "engenheiro" && !(viewer().privileges || []).includes("gestor")
+    && !!release.targetEngineer && !sameName(release.targetEngineer, viewer().name);
   const visibleFor = (releases) => releases.filter((release) => !has(release.hiddenFor) && !has(release.purgedFor) && !sentToOtherEngineer(release));
   const trashFor = (releases) => releases.filter(isTrashed);
 
