@@ -98,6 +98,10 @@
     }
   });
   renderAvatar(session);
+  // Dados no lugar: sai o "Carregando seu perfil…".
+  const card = document.querySelector(".profile-card");
+  card?.classList.remove("is-loading");
+  card?.removeAttribute("aria-busy");
   const changePassword = document.querySelector("#change-password");
   if (isFixedAdministrator) {
     changePassword.hidden = true;
