@@ -9,10 +9,10 @@
 
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
   const CARDS_BY_PROFILE = {
-    dp: ["fingerprints", "leaving", "frequent", "refused", "response", "reasons", "teams", "retroactive"],
-    engenheiro: ["response", "frequent", "reasons", "teams"],
+    dp: ["fingerprints", "leaving", "frequent", "tasksByPerson", "particularByPerson", "topTasks", "topParticular", "byRole", "refused", "response", "reasons", "teams", "retroactive"],
+    engenheiro: ["response", "frequent", "tasksByPerson", "topTasks", "reasons", "teams"],
     portaria: ["leaving"],
-    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "reasons", "retroactive"]]))
+    ...Object.fromEntries(CHIEFS.map((role) => [role, ["refused", "frequent", "tasksByPerson", "topTasks", "reasons", "retroactive"]]))
   };
 
   // ---------- Datas e textos ----------
@@ -23,10 +23,23 @@
   };
   const monthKey = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   const recordDay = (record) => String(record.date || "").slice(0, 10) || dayOf(record.createdAt);
-  const inMonth = (record) => recordDay(record).startsWith(monthKey());
-  // "Outubro de 2026" no título da seção; nas frases dos cartões, só "outubro" (o ano já está no título).
-  const monthTitle = () => { const text = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }); return text.charAt(0).toUpperCase() + text.slice(1); };
-  const monthName = () => new Date().toLocaleDateString("pt-BR", { month: "long" });
+
+  // ---------- Período escolhido no topo da BI Dados: um mês ("AAAA-MM") ou "all" (todo o período) ----------
+  // Os cartões de "agora" (digitais pendentes, aguardando saída, recusadas) não dependem do período.
+  let period = monthKey();
+  const isAll = () => period === "all";
+  const inKey = (key) => (record) => key === "all" || recordDay(record).startsWith(key);
+  const inPeriod = (record) => inKey(period)(record);
+  const prevMonthKey = (key) => { const [y, m] = key.split("-").map(Number); return monthKey(new Date(y, m - 2, 1)); };
+  const monthLabel = (key, withYear = false) => {
+    const [y, m] = key.split("-").map(Number);
+    const text = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", withYear ? { month: "long", year: "numeric" } : { month: "long" });
+    return withYear ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+  };
+  // "Outubro de 2026" / "Todo o período" no título; nas frases, "em outubro" / "no período todo".
+  const periodTitle = () => (isAll() ? "Todo o período" : monthLabel(period, true));
+  const inPhrase = () => (isAll() ? "no período todo" : `em ${monthLabel(period)}`);
+  const ofPhrase = () => (isAll() ? "do período" : `de ${monthLabel(period)}`);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const title = (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   // Colaborador: primeiro nome + o próximo sobrenome que não seja "da/de/do/dos/das/e" ("Daniel Silva"), sem maiúsculas.
@@ -69,6 +82,44 @@
   }
   const bump = (map, key, by = 1) => map.set(key, (map.get(key) || 0) + by);
 
+  // Pessoas de cada liberação do período (individual = 1 pessoa; coletiva = cada participante), com o motivo e a função.
+  // reasonText: o texto escrito ("Tarefa: limpeza bloco 5" vira "limpeza bloco 5"; na coletiva, o motivo da folha).
+  function peopleOf({ releases, sheets }, test = inPeriod) {
+    const list = [];
+    releases.filter((r) => test(r) && counted(stageInd(r))).forEach((r) => list.push({
+      name: r.name, role: r.role, kind: reasonOf(r), record: r,
+      text: String(r.reason || "").replace(/^\s*(tarefa|particular)\s*:\s*/i, "")
+    }));
+    sheets.filter((s) => test(s) && counted(stageCol(s))).forEach((s) => (s.participants || []).forEach((p) => list.push({
+      name: p.nome, role: p.funcao, kind: "tarefa", record: s, text: String(s.motive || "")
+    })));
+    return list;
+  }
+  // Textos parecidos viram um só: sem acento, maiúsculas, pontuação e palavras curtas ("de", "do", "no"...).
+  // "Limpeza do Bloco 5" e "limpeza bloco 5" contam juntos; o rótulo é o jeito de escrever que mais apareceu.
+  const STOP = new Set(["a", "o", "as", "os", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "para", "pra", "com", "por", "um", "uma", "ao", "aos"]);
+  const textKey = (text) => String(text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((word) => word && !STOP.has(word)).join(" ");
+  function groupTexts(items) {
+    const groups = new Map();
+    items.forEach(({ text, by = 1 }) => {
+      const key = textKey(text);
+      if (!key) return;
+      const group = groups.get(key) || { count: 0, labels: new Map() };
+      group.count += by;
+      const label = String(text).trim().replace(/\s+/g, " ");
+      group.labels.set(label, (group.labels.get(label) || 0) + 1);
+      groups.set(key, group);
+    });
+    const map = new Map();
+    groups.forEach((group) => {
+      const label = [...group.labels.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      const nice = label.charAt(0).toUpperCase() + label.slice(1);
+      map.set(nice.length > 60 ? `${nice.slice(0, 57)}…` : nice, group.count);
+    });
+    return map;
+  }
+
   // ---------- Cartões ----------
   const CARDS = {
     // 1. Digitais pendentes: o que mais segura a liberação de ficar "Concluída".
@@ -110,14 +161,14 @@
     // 3. Quem mais sai no mês (cada pessoa de uma coletiva conta como uma saída).
     frequent({ releases, sheets }) {
       const map = new Map();
-      releases.filter((r) => inMonth(r) && counted(stageInd(r))).forEach((r) => bump(map, personName(r.name)));
-      sheets.filter((s) => inMonth(s) && counted(stageCol(s))).forEach((s) => (s.participants || []).forEach((p) => bump(map, personName(p.nome))));
+      releases.filter((r) => inPeriod(r) && counted(stageInd(r))).forEach((r) => bump(map, personName(r.name)));
+      sheets.filter((s) => inPeriod(s) && counted(stageCol(s))).forEach((s) => (s.participants || []).forEach((p) => bump(map, personName(p.nome))));
       const total = [...map.values()].reduce((a, b) => a + b, 0);
       return {
-        icon: "repeat", tone: "orange", title: "Quem mais sai no mês",
-        value: total, note: `saídas em ${monthName()} · ${plural(map.size, "colaborador", "colaboradores")}`,
+        icon: "repeat", tone: "orange", title: "Quem mais sai",
+        value: total, note: `saídas ${inPhrase()} · ${plural(map.size, "colaborador", "colaboradores")}`,
         rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "saída", "saídas"), raw: row.value })),
-        empty: "Nenhuma saída neste mês."
+        empty: "Nenhuma saída no período."
       };
     },
 
@@ -140,7 +191,8 @@
     response({ releases, sheets }) {
       const per = new Map();
       [...releases, ...sheets].forEach((r) => {
-        if (!r.engineerDecisionAt || !r.engineer || !dayOf(r.engineerDecisionAt).startsWith(monthKey())) return;
+        if (!r.engineerDecisionAt || !r.engineer || /administrador/i.test(`${r.engineerRole || ""} ${r.engineer}`)) return;
+        if (!isAll() && !dayOf(r.engineerDecisionAt).startsWith(period)) return;
         const minutes = (new Date(r.engineerDecisionAt) - new Date(r.requestedAt || r.createdAt)) / 60000;
         if (!(minutes >= 0)) return;
         const key = String(r.engineer).trim().replace(/\s+/g, " ");
@@ -158,7 +210,7 @@
       return {
         icon: "clock", tone: "blue", title: "Tempo de resposta do abono",
         value: all.n ? duration(all.sum / all.n) : "—",
-        note: all.n ? `média em ${plural(all.n, "decisão", "decisões")} de ${monthName()}` : "nenhum abono decidido neste mês",
+        note: all.n ? `média em ${plural(all.n, "decisão", "decisões")} ${ofPhrase()}` : "nenhum abono decidido no período",
         rows, rowsTitle: rows.length ? "Por engenheiro (mais rápido primeiro)" : ""
       };
     },
@@ -167,17 +219,17 @@
     reasons({ releases, sheets }) {
       let tarefa = 0;
       let particular = 0;
-      releases.filter((r) => inMonth(r) && counted(stageInd(r))).forEach((r) => {
+      releases.filter((r) => inPeriod(r) && counted(stageInd(r))).forEach((r) => {
         const reason = reasonOf(r);
         if (reason === "tarefa") tarefa += 1; else if (reason === "particular") particular += 1;
       });
-      sheets.filter((s) => inMonth(s) && counted(stageCol(s))).forEach((s) => { tarefa += (s.participants || []).length; });
+      sheets.filter((s) => inPeriod(s) && counted(stageCol(s))).forEach((s) => { tarefa += (s.participants || []).length; });
       const total = tarefa + particular;
       const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
       return {
         icon: "split", tone: "teal", title: "Tarefa x Particular",
         value: total ? `${pct(particular)}%` : "—",
-        note: total ? `das saídas de ${monthName()} foram particulares` : "nenhuma saída neste mês",
+        note: total ? `das saídas ${ofPhrase()} foram particulares` : "nenhuma saída no período",
         split: total ? [{ label: "Tarefa", value: tarefa, pct: pct(tarefa), tone: "a" }, { label: "Particular", value: particular, pct: pct(particular), tone: "b" }] : null
       };
     },
@@ -185,32 +237,93 @@
     // 7. Por solicitante: quem (encarregado/equipe) mais pede liberação no mês.
     teams({ releases, sheets }) {
       const map = new Map();
-      releases.filter((r) => inMonth(r) && counted(stageInd(r))).forEach((r) => bump(map, String(r.requester || "Sem solicitante").trim()));
-      sheets.filter((s) => inMonth(s) && counted(stageCol(s))).forEach((s) => bump(map, String(s.foreman || s.requester || "Sem solicitante").trim(), (s.participants || []).length));
+      releases.filter((r) => inPeriod(r) && counted(stageInd(r))).forEach((r) => bump(map, String(r.requester || "Sem solicitante").trim()));
+      sheets.filter((s) => inPeriod(s) && counted(stageCol(s))).forEach((s) => bump(map, String(s.foreman || s.requester || "Sem solicitante").trim(), (s.participants || []).length));
       const short = shortNames([...map.keys()]);
       return {
         icon: "team", tone: "indigo", title: "Saídas por equipe",
-        value: map.size, note: `${map.size === 1 ? "solicitante pediu" : "solicitantes pediram"} liberação em ${monthName()}`,
+        value: map.size, note: `${map.size === 1 ? "solicitante pediu" : "solicitantes pediram"} liberação ${inPhrase()}`,
         rows: rank(map).map((row) => ({ label: short(row.label), value: plural(row.value, "pessoa", "pessoas"), raw: row.value })),
-        empty: "Nenhuma liberação neste mês."
+        empty: "Nenhuma liberação no período."
       };
     },
 
     // 8. Retroativas no mês: registradas depois do dia, ou com entrada e saída juntas (não bateu o ponto).
     retroactive({ releases, sheets }) {
-      const ind = releases.filter((r) => inMonth(r) && flow().isRetroactive(r));
-      const cols = sheets.filter((s) => inMonth(s) && collective()?.isRetroactive(s));
+      const ind = releases.filter((r) => inPeriod(r) && flow().isRetroactive(r));
+      const cols = sheets.filter((s) => inPeriod(s) && collective()?.isRetroactive(s));
       const map = new Map();
       ind.forEach((r) => bump(map, String(r.requester || "Sem solicitante").trim()));
       cols.forEach((s) => bump(map, String(s.requester || "Sem solicitante").trim()));
-      const monthTotal = releases.filter(inMonth).length + sheets.filter(inMonth).length;
+      const monthTotal = releases.filter(inPeriod).length + sheets.filter(inPeriod).length;
       const total = ind.length + cols.length;
       const short = shortNames([...map.keys()]);
       return {
-        icon: "back", tone: "amber", title: "Retroativas no mês",
+        icon: "back", tone: "amber", title: "Retroativas",
         value: total,
-        note: total ? `${monthTotal ? Math.round((total / monthTotal) * 100) : 0}% das liberações de ${monthName()} foram retroativas` : "nenhuma retroativa ✓",
+        note: total ? `${monthTotal ? Math.round((total / monthTotal) * 100) : 0}% das liberações ${ofPhrase()} foram retroativas` : "nenhuma retroativa ✓",
         rows: rank(map, 4).map((row) => ({ ...row, label: short(row.label), raw: row.value })), rowsTitle: total ? "Quem mais registrou retroativas" : ""
+      };
+    },
+
+    // 9. Mais saídas por tarefa (colaboradores; cada pessoa de uma coletiva conta).
+    tasksByPerson(data) {
+      const map = new Map();
+      peopleOf(data).filter((p) => p.kind === "tarefa").forEach((p) => bump(map, personName(p.name)));
+      const total = [...map.values()].reduce((a, b) => a + b, 0);
+      return {
+        icon: "task", tone: "teal", title: "Mais saídas por tarefa",
+        value: total, note: `saídas por tarefa ${inPhrase()} · ${plural(map.size, "colaborador", "colaboradores")}`,
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "saída", "saídas"), raw: row.value })),
+        empty: "Nenhuma saída por tarefa no período."
+      };
+    },
+
+    // 10. Mais saídas particulares (colaboradores).
+    particularByPerson(data) {
+      const map = new Map();
+      peopleOf(data).filter((p) => p.kind === "particular").forEach((p) => bump(map, personName(p.name)));
+      const total = [...map.values()].reduce((a, b) => a + b, 0);
+      return {
+        icon: "person", tone: "orange", title: "Mais saídas particulares",
+        value: total, note: `saídas particulares ${inPhrase()} · ${plural(map.size, "colaborador", "colaboradores")}`,
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "saída", "saídas"), raw: row.value })),
+        empty: "Nenhuma saída particular no período."
+      };
+    },
+
+    // 11. Tarefas mais repetidas: o texto da tarefa (individual) e o motivo da coletiva, agrupando os parecidos.
+    // Conta pessoas (a coletiva conta cada participante).
+    topTasks(data) {
+      const map = groupTexts(peopleOf(data).filter((p) => p.kind === "tarefa").map((p) => ({ text: p.text })));
+      return {
+        icon: "list", tone: "indigo", title: "Tarefas mais repetidas",
+        value: map.size, note: `${map.size === 1 ? "tarefa diferente" : "tarefas diferentes"} ${inPhrase()} (textos parecidos contam juntos)`,
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "pessoa", "pessoas"), raw: row.value })),
+        empty: "Nenhuma tarefa no período."
+      };
+    },
+
+    // 12. Motivos particulares mais comuns (o texto escrito no pedido, agrupando os parecidos).
+    topParticular(data) {
+      const map = groupTexts(peopleOf(data).filter((p) => p.kind === "particular").map((p) => ({ text: p.text })));
+      return {
+        icon: "chat", tone: "red", title: "Motivos particulares mais comuns",
+        value: map.size, note: `${map.size === 1 ? "motivo diferente" : "motivos diferentes"} ${inPhrase()} (textos parecidos contam juntos)`,
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "vez", "vezes"), raw: row.value })),
+        empty: "Nenhuma saída particular no período."
+      };
+    },
+
+    // 13. Saídas por função (pessoas).
+    byRole(data) {
+      const map = new Map();
+      peopleOf(data).forEach((p) => bump(map, p.role ? String(p.role).trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()) : "Função não informada"));
+      return {
+        icon: "badge", tone: "blue", title: "Saídas por função",
+        value: map.size, note: `${map.size === 1 ? "função" : "funções"} com saídas ${inPhrase()}`,
+        rows: rank(map).map((row) => ({ ...row, value: plural(row.value, "saída", "saídas"), raw: row.value })),
+        empty: "Nenhuma saída no período."
       };
     }
   };
@@ -224,7 +337,12 @@
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     split: '<path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18"/><circle cx="12" cy="12" r="9"/>',
     team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/>',
-    back: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M14 16h-5l2-2m-2 2l2 2"/>'
+    back: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M14 16h-5l2-2m-2 2l2 2"/>',
+    task: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+    person: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+    badge: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17a4 4 0 0 1 8 0"/>'
   };
   const icon = (name) => `<svg class="insight-icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`;
 
@@ -250,14 +368,73 @@
     </article>`;
   }
 
+  // ---------- Placar do topo: os números principais do período, com a comparação com o mês anterior ----------
+  function kpisFor(key, data) {
+    const test = inKey(key);
+    const records = [...data.releases.filter(test), ...data.sheets.filter(test)];
+    const people = peopleOf(data, test);
+    // Pessoas que saíram: individual com a saída confirmada na portaria; coletiva, cada participante que passou.
+    const exited = data.releases.filter((r) => test(r) && stageInd(r) === "exited").length
+      + data.sheets.filter(test).reduce((sum, s) => sum + (collective()?.exitedCount(s) || 0), 0);
+    const names = new Set(people.map((p) => textKey(p.name)).filter(Boolean));
+    const decided = records.filter((r) => r.bonusStatus === "approved" || r.bonusStatus === "denied");
+    const approved = decided.filter((r) => r.bonusStatus === "approved").length;
+    const particular = people.filter((p) => p.kind === "particular").length;
+    const withReason = people.filter((p) => p.kind === "particular" || p.kind === "tarefa").length;
+    return {
+      releases: records.length,
+      exited,
+      people: names.size,
+      bonusPct: decided.length ? Math.round((approved / decided.length) * 100) : null,
+      particularPct: withReason ? Math.round((particular / withReason) * 100) : null
+    };
+  }
+  function kpisHtml(data) {
+    const now = kpisFor(period, data);
+    const prevKey = isAll() ? null : prevMonthKey(period);
+    const before = prevKey ? kpisFor(prevKey, data) : null;
+    const prevName = prevKey ? monthLabel(prevKey) : "";
+    // Diferença para o mês anterior: em % nos totais e em pontos percentuais nas porcentagens.
+    const delta = (key, isPct) => {
+      if (!before || now[key] == null || before[key] == null) return "";
+      if (isPct) {
+        const diff = now[key] - before[key];
+        return diff ? `${diff > 0 ? "↑" : "↓"} ${Math.abs(diff)} p.p. vs ${prevName}` : `= igual a ${prevName}`;
+      }
+      if (!before[key]) return now[key] ? `novo · ${prevName} sem registro` : "";
+      const pct = Math.round(((now[key] - before[key]) / before[key]) * 100);
+      return pct ? `${pct > 0 ? "↑" : "↓"} ${Math.abs(pct)}% vs ${prevName}` : `= igual a ${prevName}`;
+    };
+    const tile = (label, value, sub, key, isPct) => `<div class="insights-kpi"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(sub)}</small>${delta(key, isPct) ? `<em>${esc(delta(key, isPct))}</em>` : ""}</div>`;
+    const pctText = (n) => (n == null ? "—" : `${n}%`);
+    return [
+      tile("Liberações registradas", String(now.releases), "individuais e coletivas", "releases"),
+      tile("Pessoas que saíram", String(now.exited), "saída confirmada na portaria", "exited"),
+      tile("Colaboradores diferentes", String(now.people), "com liberação no período", "people"),
+      tile("Abonadas", pctText(now.bonusPct), "das decididas pelo engenheiro", "bonusPct", true),
+      tile("Particulares", pctText(now.particularPct), "das saídas (o resto é tarefa)", "particularPct", true)
+    ].join("");
+  }
+  // Meses com registro (mais recente primeiro) + "Todo o período", para o seletor.
+  function periodOptions(data) {
+    const months = new Set([monthKey()]);
+    [...data.releases, ...data.sheets].forEach((r) => { const day = recordDay(r); if (/^\d{4}-\d{2}/.test(day)) months.add(day.slice(0, 7)); });
+    const list = [...months].sort().reverse();
+    return list.map((key) => `<option value="${key}">${esc(monthLabel(key, true))}${key === monthKey() ? " (mês atual)" : ""}</option>`).join("")
+      + '<option value="all">Todo o período</option>';
+  }
+
   let section = null;
+  let lastArgs = null;
   function ensureSection() {
     if (section) return section;
     const stats = document.querySelector("#engineer-stats") || document.querySelector(".portal-stats");
     if (!stats) return null;
     stats.insertAdjacentHTML("afterend", `
       <details class="portal-insights" id="portal-insights" hidden>
-        <summary><span class="portal-insights-title">Indicadores do mês</span><small id="portal-insights-month"></small><span class="portal-insights-toggle" aria-hidden="true"></span></summary>
+        <summary><span class="portal-insights-title">Indicadores</span><small id="portal-insights-month"></small><span class="portal-insights-toggle" aria-hidden="true"></span></summary>
+        <div class="insights-toolbar"><label for="insights-period">Período</label><select id="insights-period"></select></div>
+        <div class="insights-kpis" id="insights-kpis" aria-label="Números do período"></div>
         <div class="insights-grid" id="insights-grid"></div>
         <div class="insights-charts" id="insights-charts"></div>
       </details>`);
@@ -265,6 +442,11 @@
     section = document.querySelector("#portal-insights");
     // Os gráficos de colunas precisam da largura real: redesenha ao abrir.
     section.addEventListener("toggle", () => { if (section.open) window.portalInsightCharts?.redraw(); });
+    // Trocar o período redesenha tudo (placar, cartões e gráficos) com os mesmos dados.
+    section.querySelector("#insights-period").addEventListener("change", (event) => {
+      period = event.target.value;
+      if (lastArgs) render(lastArgs);
+    });
     return section;
   }
 
@@ -274,8 +456,14 @@
     const keys = CARDS_BY_PROFILE[profileKey] || [];
     el.hidden = !keys.length;
     if (!keys.length) return;
+    lastArgs = { profileKey, releases, sheets };
     const data = { releases, sheets };
-    el.querySelector("#portal-insights-month").textContent = monthTitle();
+    const select = el.querySelector("#insights-period");
+    select.innerHTML = periodOptions(data);
+    if (![...select.options].some((option) => option.value === period)) period = monthKey();
+    select.value = period;
+    el.querySelector("#portal-insights-month").textContent = periodTitle();
+    el.querySelector("#insights-kpis").innerHTML = kpisHtml(data);
     el.querySelector("#insights-grid").innerHTML = keys.map((key) => {
       try { return cardHtml(CARDS[key](data)); } catch (error) { console.warn(`Indicador "${key}" indisponível.`, error); return ""; }
     }).join("");
@@ -285,5 +473,10 @@
     else charts.hidden = true;
   }
 
+  // Os gráficos (portal-insights-charts.js) usam o mesmo período.
+  window.portalInsightsPeriod = Object.freeze({
+    get: () => period, isAll, inPeriod, monthKey, monthLabel, inPhrase, ofPhrase,
+    createdInPeriod: (record) => isAll() || (dayOf(record.createdAt) || String(record.date || "").slice(0, 10)).startsWith(period)
+  });
   window.portalInsights = Object.freeze({ render, CARDS_BY_PROFILE });
 })();
