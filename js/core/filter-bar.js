@@ -49,6 +49,16 @@
     // Só entrada: o DP autorizou a entrada e acabou (não passa pela portaria).
     entered: { value: "entered", label: "Entradas autorizadas", test: (record, stage) => stage === "entered" }
   };
+  // Tipos de liberação fora do fluxo de saída (os mesmos cartões da BI Dados), para ver quem foi:
+  // retroativa (data anterior ao pedido), não bateu o ponto (entrada e saída juntas) e entrada (só entrada, qualquer etapa).
+  const moves = (record) => record.movement || [];
+  const both = (record) => moves(record).includes("entrada") && moves(record).includes("saida");
+  const KIND = [
+    { value: "retroactive", label: "Retroativas", test: (record, stage) => stage === "registered" && !both(record) },
+    { value: "noClock", label: "Não bateu o ponto", test: (record, stage) => both(record) && !["foreman", "closed"].includes(stage) },
+    { value: "entries", label: "Entradas · todas", test: (record, stage) => moves(record).includes("entrada") && !moves(record).includes("saida") && !["foreman", "closed"].includes(stage) },
+    FLOW.entered
+  ];
   const BASIC_SORTS = [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]];
   // Encarregado, analista, estagiário e segurança do trabalho: acompanham o que eles mesmos pediram.
   const CHIEF = {
@@ -64,9 +74,8 @@
       FLOW.gate,
       FLOW.exitedToday,
       { value: "exited", label: "Saída confirmada na portaria", test: (record, stage) => stage === "exited" },
-      FLOW.entered,
       { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
-      { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+      ...KIND
     ],
     sorts: BASIC_SORTS
   };
@@ -87,9 +96,8 @@
         FLOW.gate,
         FLOW.exitedToday,
         { value: "approved", label: "Autorizadas hoje", test: RULES.approvedToday },
-        FLOW.entered,
         { value: "launched", label: "Abono · lançado no RM", test: (record) => !!record.abonoLaunchedAt },
-        { value: "retroactive", label: "Retroativas · registradas", test: (record, stage) => stage === "registered" }
+        ...KIND
       ],
       aliases: { bonus: "pending" },
       sorts: [["unbonusedRecent", "Pendentes de abono mais recentes"], ["unbonused", "Pendentes de abono mais antigas"], ["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]],
@@ -127,11 +135,10 @@
         { value: "toLaunch", label: "Abonadas · por lançar no RM", group: "DP", test: (record) => record.bonusStatus === "approved" && !record.abonoLaunchedAt },
         { value: "launched", label: "Abonadas · lançadas no RM", group: "DP", test: (record) => !!record.abonoLaunchedAt },
         { value: "bioPending", label: "Digital pendente", group: "DP", test: RULES.bioPending },
-        // Data anterior ao dia em que foi criada: sem autorização de saída nem portaria (não tem cartão próprio).
-        { value: "retroactive", label: "Retroativas · registradas", group: "DP", test: (record, stage) => stage === "registered" },
-        { ...FLOW.entered, group: "DP" },
         { ...FLOW.gate, group: "Portaria" },
-        { ...FLOW.exitedToday, group: "Portaria" }
+        { ...FLOW.exitedToday, group: "Portaria" },
+        // Retroativas, não bateu o ponto e entradas (os cartões da BI Dados), para ver quem foi.
+        ...KIND.map((item) => ({ ...item, group: "Tipo de liberação" }))
       ],
       sorts: [["recent", "Mais recentes"], ["old", "Mais antigos"], ["name", "Nome (A–Z)"]]
     }

@@ -6,6 +6,8 @@
 (() => {
   // Paleta categórica validada (ordem fixa, nunca reciclada).
   const SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"];
+  // Situação das liberações (8 grupos): as 6 cores acima + duas.
+  const STAGE_COLORS = [...SERIES.slice(0, 4), "#13877f", "#b7791f", "#c8414c", "#8a94a6"];
   const INK = { primary: "#0b0b0b", secondary: "#52514e", muted: "#898781", grid: "#e9e8e2", axis: "#c3c2b7" };
 
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
@@ -309,12 +311,20 @@
         { key: ["dp"], label: "Aguardando DP" },
         { key: ["gate"], label: "Aguardando saída" },
         { key: ["exited"], label: "Saída confirmada" },
-        { key: ["registered", "entered"], label: "Retroativa ou só entrada" },
+        { key: ["entered"], label: "Entrada autorizada" },
+        { key: ["registered"], label: "Retroativa" },
+        { key: ["noclock"], label: "Não bateu o ponto" },
         { key: ["foreman", "closed"], label: "Recusada ou negada" }
-      ].map((group, i) => ({ ...group, color: SERIES[i], value: 0 }));
-      const put = (stage) => { const group = groups.find((g) => g.key.includes(stage)); if (group) group.value += 1; };
-      releases.filter(inMonth).forEach((r) => put(stageInd(r)));
-      sheets.filter(inMonth).forEach((s) => put(stageCol(s)));
+      ].map((group, i) => ({ ...group, color: STAGE_COLORS[i], value: 0 }));
+      // Registrada com entrada e saída juntas = "Não bateu o ponto" (separada da retroativa por data).
+      const both = (record) => (record.movement || []).includes("entrada") && (record.movement || []).includes("saida");
+      const put = (record, stage) => {
+        const key = stage === "registered" && both(record) ? "noclock" : stage;
+        const group = groups.find((g) => g.key.includes(key));
+        if (group) group.value += 1;
+      };
+      releases.filter(inMonth).forEach((r) => put(r, stageInd(r)));
+      sheets.filter(inMonth).forEach((s) => put(s, stageCol(s)));
       const total = groups.reduce((a, g) => a + g.value, 0);
       const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
       return {

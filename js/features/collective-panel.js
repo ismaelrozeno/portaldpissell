@@ -50,7 +50,7 @@
       : chip("wait", `Engenheiro: aguardando${sheet.targetEngineer ? ` (${esc(sheet.targetEngineer)})` : ""}`));
     chips.push(sheet.dpSigner
       ? chip(stage === "closed" ? "no" : "yes", `DP <b>${esc(sheet.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`)
-      : retroactive ? chip("info", "Retroativa · sem autorização de saída nem portaria") : chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
+      : retroactive ? chip("info", `${(sheet.movement || []).length > 1 ? "Não bateu o ponto" : "Retroativa"} · sem autorização de saída nem portaria`) : chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
     if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${esc(sheet.abonoLaunchedBy || "DP")}</b>`));
     else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
     if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
@@ -101,7 +101,7 @@
       <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-meta">${esc(dateLabel(sheet.date))}</small>${window.portalCreatedLabel?.(sheet.createdAt) || ""}<div class="sig-chips">${chips.join("")}</div></td>
       <td data-label="Frente" class="col-frente">Coletiva</td>
       <td data-label="Horário" class="col-horario">${esc(sheet.time || "—")}</td>
-      <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(stageInfo.label)}</span>${!isDoneMode() && sheetApi().isConcluded(sheet) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
+      <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(sheetApi().stageLabel(sheet, stage))}</span>${!isDoneMode() && sheetApi().isConcluded(sheet) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
       <td class="text-end row-actions col-actions" data-label="Ação">${buttons}</td>
     </tr>`;
   }

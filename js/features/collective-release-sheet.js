@@ -32,6 +32,9 @@
     // Só entrada: o DP autoriza a entrada e acabou (sem portaria). Mesma regra da individual.
     entered: { label: "Entrada autorizada", tone: "approved" }
   };
+  const hasBoth = (sheet) => (sheet?.movement || []).includes("entrada") && (sheet?.movement || []).includes("saida");
+  // "Não se aplica" de DP/portaria: entrada e saída juntas = não bateu o ponto; senão, data retroativa.
+  const notApplicable = (sheet) => `Não se aplica · ${hasBoth(sheet) ? "não bateu o ponto" : "retroativa"}`;
   const isEntryOnly = (sheet) => (sheet?.movement || []).includes("entrada") && !(sheet?.movement || []).includes("saida");
   // Mesma conta do portalReleaseFlow.isRetroactive (esta tela também abre sem ele, em Liberacao-Coletiva.html).
   // Entrada e saída marcadas juntas também é retroativa (o colaborador não bateu o ponto).
@@ -59,13 +62,15 @@
       && people.length > 0 && people.every((person) => signatureOf(sheet, person))
       && (sheet.bonusStatus !== "approved" || !!sheet.abonoLaunchedAt);
   };
+  // Texto da etapa: entrada e saída juntas (registrada) aparece como "Não bateu o ponto".
+  const stageLabel = (sheet, stage = stageOf(sheet)) => (stage === "registered" && hasBoth(sheet) ? "Não bateu o ponto · registrada" : STAGES[stage].label);
   const statusLabel = (sheet) => {
     const stage = stageOf(sheet);
     const abono = sheet.bonusStatus ? ` · ${sheet.bonusStatus === "approved" ? "Abonado" : "Não abonado"} por ${sheet.engineer || "engenheiro"}` : "";
     if (stage === "foreman") return `Recusada por ${sheet.refusedBy || "engenheiro"}${sheet.refusalReason ? `: ${sheet.refusalReason}` : ""}`;
     return stage === "engineer"
       ? `Aguardando engenheiro${sheet.targetEngineer ? ` (${sheet.targetEngineer})` : ""}`
-      : `${STAGES[stage].label}${abono}`;
+      : `${stageLabel(sheet, stage)}${abono}`;
   };
 
   // Assinatura por digital de cada participante (gravada pelo DP no leitor Hamster DX), por matrícula.
@@ -97,15 +102,15 @@
       requesterTime: formatDateTime(sheet.createdAt),
       engineer: sheet.engineer || sheet.targetEngineer || "",
       engineerSigner: eng.name, engineerTime: eng.time,
-      dp: sheet.dpSigner || (stage === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""),
+      dp: sheet.dpSigner || (stage === "closed" ? "Negou a saída" : isRetroactive(sheet) ? notApplicable(sheet) : ""),
       dpSigner: dp.name, dpTime: dp.time,
-      gate: sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""),
+      gate: sheet.exitConfirmedBy || (isRetroactive(sheet) ? notApplicable(sheet) : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""),
       gateSigner: gate.name, gateTime: gate.time,
       hours: sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro",
       hoursTone: sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait",
       launched: !!sheet.abonoLaunchedAt,
       stampDetail: stampDetail(sheet),
-      footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time ? ` a partir das ${sheet.time} hs` : ""}`,
+      footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time && !hasBoth(sheet) ? ` a partir das ${sheet.time} hs` : hasBoth(sheet) ? " · não bateu o ponto" : ""}`,
       // Uma por linha da lista (null = sem digital, fica em branco para assinar à mão).
       participantBio: (sheet.participants || []).map((person) => {
         const signature = signatureOf(sheet, person);
@@ -140,8 +145,8 @@
       <table class="cs-sign">
         <tr><th>Encarregado</th><td>${esc(sheet.foreman || "")}</td><th>Assinatura</th><td class="cs-esign">${esc(sheet.requester || "")}<small>${esc(formatDateTime(sheet.createdAt))}</small></td></tr>
         <tr><th>Engenheiro</th><td>${esc(sheet.engineer || sheet.targetEngineer || "")}</td><th>Assinatura</th><td class="cs-esign">${sheet.bonusStatus && sheet.engineer ? `${esc(sheet.engineer)}<small>${esc(formatDateTime(sheet.engineerDecisionAt))}</small>` : ""}</td></tr>
-        <tr><th>DP</th><td>${esc(sheet.dpSigner || (stageOf(sheet) === "closed" ? "Negou a saída" : isRetroactive(sheet) ? "Não se aplica · retroativa" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.dpSigner ? `${esc(sheet.dpSigner)}<small>${esc(formatDateTime(sheet.dpDecisionAt))}</small>` : ""}</td></tr>
-        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || (isRetroactive(sheet) ? "Não se aplica · retroativa" : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
+        <tr><th>DP</th><td>${esc(sheet.dpSigner || (stageOf(sheet) === "closed" ? "Negou a saída" : isRetroactive(sheet) ? notApplicable(sheet) : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.dpSigner ? `${esc(sheet.dpSigner)}<small>${esc(formatDateTime(sheet.dpDecisionAt))}</small>` : ""}</td></tr>
+        <tr><th>Portaria</th><td>${esc(sheet.exitConfirmedBy || (isRetroactive(sheet) ? notApplicable(sheet) : isEntryOnly(sheet) ? "Não se aplica · só entrada" : ""))}</td><th>Assinatura</th><td class="cs-esign">${sheet.exitConfirmedBy ? `${esc(sheet.exitConfirmedBy)}<small>${esc(formatDateTime(sheet.exitConfirmedAt))}</small>` : ""}</td></tr>
         <tr><th>Horas</th><td colspan="3" class="cs-bonus cs-bonus-${sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait"}">${sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro"}</td></tr>
       </table>
       <table class="cs-list">
@@ -151,7 +156,7 @@
         </thead>
         <tbody>${body}</tbody>
       </table>
-      <p class="cs-foot">Obra 369 · ${esc(movementLabel(sheet))}${sheet.time ? ` a partir das ${esc(sheet.time)} hs` : ""}</p>
+      <p class="cs-foot">Obra 369 · ${esc(movementLabel(sheet))}${sheet.time && !hasBoth(sheet) ? ` a partir das ${esc(sheet.time)} hs` : hasBoth(sheet) ? " · não bateu o ponto" : ""}</p>
       ${sheet.abonoLaunchedAt ? `<div class="cs-stamp" aria-label="Abono lançado no RM"><strong>LANÇADO</strong><span>NO RM</span><small>${esc(stampDetail(sheet))}</small></div>` : ""}`;
   }
 
@@ -362,5 +367,5 @@ O carimbo será removido.`)) return;
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, isRetroactive, isEntryOnly, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, stageLabel, isRetroactive, isEntryOnly, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
 })();
