@@ -91,6 +91,26 @@ window.portalAvatars = (() => {
     "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html", "Backup.html", "Equipes.html", "Biometria.html"
   ]);
   const currentPage = window.location.pathname.split("/").pop();
+
+  // Cabeçalho e rodapé começam a baixar JÁ, junto com a confirmação do login (antes esperavam o login, que pode levar
+  // alguns segundos, e o topo ficava vazio). Entram na página assim que chegam; a parte da conta (nome, avatar, sair)
+  // é preenchida depois do login. Os botões de "Entrar" ficam invisíveis até lá, para não piscarem para quem já está
+  // logado. A versão (?v=) vem do tools/versionar.js, então o navegador pode reaproveitar a cópia guardada.
+  const components = [
+    ["[data-site-header]", "partials/header.html?v=951c9816"],
+    ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
+  ];
+  const partialsReady = Promise.all(components.map(async ([selector, file]) => {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    const response = await fetch(file);
+    if (!response.ok) {
+      throw new Error(`Não foi possível carregar ${file}: ${response.status}`);
+    }
+    target.outerHTML = await response.text();
+    document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = "hidden"; });
+  }));
+
   await window.portalAuthDemo?.ready();
   const currentSession = window.portalAuthDemo?.getSession();
   if (protectedPages.has(currentPage) && !currentSession) {
@@ -107,23 +127,7 @@ window.portalAvatars = (() => {
     return;
   }
 
-  const components = [
-    ["[data-site-header]", "partials/header.html?v=951c9816"],
-    ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
-  ];
-
-  await Promise.all(components.map(async ([selector, file]) => {
-    const target = document.querySelector(selector);
-    if (!target) return;
-
-    // A versão (?v=) vem do tools/versionar.js; "no-store" garante o cabeçalho/rodapé mais novo.
-    const response = await fetch(file, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Não foi possível carregar ${file}: ${response.status}`);
-    }
-
-    target.outerHTML = await response.text();
-  }));
+  await partialsReady;
 
   const currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
   document.querySelectorAll(".site-header .navbar-nav a.nav-link").forEach((link) => {
@@ -200,6 +204,8 @@ window.portalAvatars = (() => {
     authenticatedLinks.forEach((link) => { link.hidden = true; });
     adminLinks.forEach((link) => { link.hidden = true; });
   }
+  // Login confirmado: os botões de "Entrar" voltam a valer (escondidos acima se a pessoa está logada).
+  document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = ""; });
 
 })().catch((error) => {
   console.error("Falha ao carregar os componentes compartilhados.", error);
