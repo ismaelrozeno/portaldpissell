@@ -108,6 +108,7 @@ input[type="password"]::-ms-clear {
 @media (max-width: 767.98px) {
   .site-header > .container-fluid { flex-wrap: nowrap; }
   .site-header .account-actions { order: 1; min-width: 0; margin-left: auto; margin-right: .6rem; gap: .5rem; }
+  .site-header .header-auth-loading { order: 1; margin-left: auto; margin-right: .6rem; }
   .site-header .navbar-toggler { order: 2; flex: 0 0 auto; }
 }
 @media (max-width: 374.98px) {
@@ -196,3 +197,7 @@ input[type="password"]::-ms-clear {
 /* Ordenacao padrao ao lado da busca (js/core/sort-filter.js) */
 .sort-filter { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; color: #5b6678; font-weight: 600; }
 .sort-filter-select { padding: .4rem .55rem; border: 1px solid #c9d3e0; border-radius: .45rem; font-size: .82rem; color: #16283d; background: #fff; cursor: pointer; }
+
+/* Cabeçalho: bolinha no lugar do perfil enquanto o login é confirmado (js/core/shared-components.js) */
+.site-header .header-auth-loading { display: inline-grid; flex: 0 0 auto; place-items: center; width: 2.4rem; height: 2.4rem; margin-left: 1.25rem; border-radius: 50%; background: rgba(255, 255, 255, .08); }
+.site-header .header-auth-loading .button-spinner { width: 1.15rem; height: 1.15rem; margin: 0; color: #f5820a; border-width: .17rem; }
