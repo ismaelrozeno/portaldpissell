@@ -45,7 +45,7 @@
       return;
     }
     const has = enrolled.has(selected.matricula);
-    selectedText.textContent = `${selected.nome} · Matrícula ${selected.matricula} — ${has ? "digital cadastrada" : "sem digital"}`;
+    selectedText.textContent = `${selected.nome} · Matrícula ${selected.matricula} · ${has ? "digital cadastrada" : "sem digital"}`;
     enrollButton.textContent = has ? "Cadastrar de novo" : "Cadastrar digital";
     enrollButton.disabled = !readerReady || !consent.checked;
     testButton.hidden = !has;

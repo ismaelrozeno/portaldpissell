@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
   <link rel="stylesheet" href="css/components/portal-dashboard.css?v=01be5af4">
-  <link rel="stylesheet" href="css/components/portal-theme.css?v=eebbc050">
+  <link rel="stylesheet" href="css/components/portal-theme.css?v=5168ef8a">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="backup-page" data-dash-shell="backup">
@@ -48,8 +48,8 @@
             <p class="backup-summary" id="import-summary-text"></p>
             <fieldset class="backup-modes">
               <legend>Como restaurar?</legend>
-              <label><input type="radio" name="import-mode" value="missing" checked> <strong>Só o que está faltando</strong> — não mexe no que já existe (mais seguro)</label>
-              <label><input type="radio" name="import-mode" value="overwrite"> <strong>Tudo do arquivo</strong> — sobrescreve o que existe com a versão do backup</label>
+              <label><input type="radio" name="import-mode" value="missing" checked> <strong>Só o que está faltando</strong>: não mexe no que já existe (mais seguro)</label>
+              <label><input type="radio" name="import-mode" value="overwrite"> <strong>Tudo do arquivo</strong>: sobrescreve o que existe com a versão do backup</label>
             </fieldset>
             <div id="import-scope"></div>
             <button class="backup-button backup-button-warn" id="import-run" type="button">Restaurar backup</button>
@@ -82,13 +82,13 @@
           </div>
           <fieldset class="backup-modes">
             <legend>Formato</legend>
-            <label><input type="radio" name="images-format" value="pdf" checked> <strong>PDF</strong> — duas folhas por página A4, texto de verdade (bem pequeno, nítido e pesquisável; o melhor para arquivar e imprimir)</label>
-            <label><input type="radio" name="images-format" value="png"> <strong>Imagens PNG</strong> — uma imagem por folha (arquivos bem maiores)</label>
+            <label><input type="radio" name="images-format" value="pdf" checked> <strong>PDF</strong>: duas folhas por página A4, texto de verdade (bem pequeno, nítido e pesquisável; o melhor para arquivar e imprimir)</label>
+            <label><input type="radio" name="images-format" value="png"> <strong>Imagens PNG</strong>: uma imagem por folha (arquivos bem maiores)</label>
           </fieldset>
           <fieldset class="backup-modes">
             <legend>Como salvar?</legend>
-            <label id="images-mode-folder-label"><input type="radio" name="images-mode" value="folder"> <strong>Direto numa pasta</strong> — você escolhe uma pasta e o sistema cria uma subpasta por dia com as imagens (melhor para muitas; funciona no Chrome e no Edge)</label>
-            <label><input type="radio" name="images-mode" value="zip" checked> <strong>Baixar arquivos</strong> — um por dia (PDF, ou ZIP no caso das imagens); dias muito cheios são divididos em partes</label>
+            <label id="images-mode-folder-label"><input type="radio" name="images-mode" value="folder"> <strong>Direto numa pasta</strong>: você escolhe uma pasta e o sistema cria uma subpasta por dia com as imagens (melhor para muitas; funciona no Chrome e no Edge)</label>
+            <label><input type="radio" name="images-mode" value="zip" checked> <strong>Baixar arquivos</strong>: um por dia (PDF, ou ZIP no caso das imagens); dias muito cheios são divididos em partes</label>
           </fieldset>
           <div class="backup-filters" id="images-pdf-options">
             <label for="images-per-pdf">Folhas por PDF</label>

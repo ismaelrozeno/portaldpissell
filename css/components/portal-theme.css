@@ -89,8 +89,8 @@ body.dash h1, body.dash h2, body.dash h3 { text-wrap: balance; }
 
 /* ---------- Barra de abas (celular) ---------- */
 @media (max-width: 991.98px) {
-  body.dash .dash-nav { background: rgba(10, 22, 38, .97); border-top: 1px solid rgba(255, 255, 255, .06); box-shadow: 0 -10px 30px -12px rgba(10, 22, 38, .5); }
-  @supports (backdrop-filter: blur(1px)) { body.dash .dash-nav { background: rgba(10, 22, 38, .9); backdrop-filter: saturate(140%) blur(14px); } }
+  /* Sólida, no mesmo azul do cabeçalho (semitransparente ela ficava acinzentada sobre o fundo claro e parecia sumir) */
+  body.dash .dash-nav { background: var(--site-bar, #0a1626); box-shadow: 0 -8px 24px -12px rgba(10, 22, 38, .45); }
   body.dash .dash-nav-item { color: #8597ad; }
   body.dash .dash-nav-item svg { padding: 3px 14px; width: 50px; height: 28px; border-radius: 999px; transition: background .2s var(--d-ease), color .2s var(--d-ease); box-sizing: border-box; }
   body.dash .dash-nav-item.is-active::before { display: none; }
@@ -107,14 +107,12 @@ body.dash h1, body.dash h2, body.dash h3 { text-wrap: balance; }
 body.dash .portal-heading { margin: .2rem 0 1.4rem; }
 body.dash .portal-heading h1 { font-size: clamp(1.6rem, 4.6vw, 2.35rem); letter-spacing: -.02em; }
 body.dash .portal-heading p { color: var(--d-muted); }
-body.dash .portal-context { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .8rem .4rem .65rem; border-color: var(--d-line); box-shadow: var(--d-shadow-sm); }
-body.dash .portal-context::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #22a861; box-shadow: 0 0 0 3px rgba(34, 168, 97, .18); }
-body.dash .portal-subtle-link { color: var(--d-ink-2); border-bottom-style: solid; border-bottom-color: var(--d-line-strong); transition: color .2s, border-color .2s; }
+body.dash .portal-context { display: inline-flex; align-items: center; padding: .4rem .8rem; border-color: var(--d-line); box-shadow: var(--d-shadow-sm); }
+body.dash .portal-subtle-link { color: var(--d-ink-2); text-wrap: pretty; border-bottom-style: solid; border-bottom-color: var(--d-line-strong); transition: color .2s, border-color .2s; }
 body.dash .portal-subtle-link:hover { color: var(--d-accent-hover); border-bottom-color: var(--d-accent); }
 
 /* "Acessar como": ferramenta do administrador, com cara de ferramenta (borda tracejada), não de conteúdo */
 body.dash .demo-switcher { border: 1px dashed var(--d-line-strong); background: var(--d-surface-2); box-shadow: none; }
-body.dash .demo-label::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: .5rem; border-radius: 2px; background: var(--d-accent); vertical-align: 1px; }
 
 /* ---------- Esteira do fluxo ---------- */
 body.dash .dash-flow { position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, .05); background: radial-gradient(120% 160% at 0% 0%, #172c47 0%, var(--d-nav) 55%), var(--d-nav); box-shadow: var(--d-shadow-lg); }
@@ -198,17 +196,42 @@ body.dash .portal-table tbody tr:first-child td { border-top: 0; }
 }
 body.dash .portal-table .col-who strong { font-size: .95rem; letter-spacing: -.005em; }
 
-/* Situação: etiqueta com bolinha */
-body.dash .status-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .32rem .65rem .32rem .55rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
-body.dash .status-badge::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+/* Situação: etiqueta clara (a cor já diz a situação) */
+body.dash .status-badge { display: inline-flex; align-items: center; padding: .32rem .65rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
 
-/* Assinaturas: mais leves, para a linha não virar um mosaico */
-@media (min-width: 761px) {
-  body.dash .sig-chips { gap: .3rem; margin-top: .55rem; }
-  body.dash .sig-chip { padding: .14rem .5rem; border-radius: 6px; font-size: .68rem; }
-  body.dash .sig-wait { color: #7b8798; background: transparent; border-color: var(--d-line); border-style: dashed; }
-}
+/* ---------- Cartão da liberação (coluna Colaborador) ----------
+   Antes: seis "comprimidos" de cores diferentes (roxo, laranja, azul, verde, tracejado) e caixa-alta. Agora a cor
+   só aparece onde significa algo (✓ assinou, ✕ recusou); o resto é texto em dois tons, como numa ficha. */
+/* Tarefa / Particular: palavra em negrito antes do motivo, sem etiqueta colorida */
+body.dash .reason-tag { padding: 0; border-radius: 0; color: var(--d-ink); background: none; font-size: .8rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+body.dash .reason-tag::after { content: " ·"; color: var(--d-muted); font-weight: 400; }
+body.dash .portal-table .col-who small.row-reason { margin-top: .35rem; color: var(--d-ink-2); font-size: .8rem; font-weight: 500; }
+/* Linhas de detalhe: todas no mesmo tom (rótulo cinza, valor escuro) */
+body.dash .portal-table .col-who :is(small.row-role, small.row-who, small.row-date, small.row-clock, .row-movement) { color: var(--d-muted); font-size: .76rem; font-weight: 500; }
+body.dash .portal-table .col-who :is(small.row-date, small.row-clock, .row-movement) b { color: var(--d-ink-2); font-weight: 600; }
+body.dash .portal-table .col-who small.row-role { margin-top: .1rem; }
+/* "Criada" continua na caixa laranja com relógio (portal.css): precisa ser achada num relance */
 body.dash .portal-table .col-who small.row-created { border-radius: 6px; }
+/* Acompanhamento das assinaturas (computador): "Etapa: situação", cada item com a bolinha da situação, igual ao
+   celular (portal.css): verde assinou/concluiu, vermelha recusou/negou, cinza aguardando, azul informação,
+   amarela aviso. Rótulo cinza e situação escura; recusa/devolução em vermelho. */
+@media (min-width: 761px) {
+  body.dash .sig-chips { gap: .35rem 1.3rem; margin-top: .7rem; padding-top: .65rem; border-top: 1px solid var(--d-line); }
+  body.dash .sig-chip { position: relative; padding: 0 0 0 .95rem; border: 0; border-radius: 0; color: var(--d-muted); background: none; font-size: .78rem; font-weight: 500; line-height: 1.35; }
+  body.dash .sig-chip::before { content: ""; position: absolute; left: 0; top: .38em; width: .55rem; height: .55rem; border-radius: 50%; background: #c2ccd8; }
+  body.dash .sig-yes::before { background: #1e9e5a; }
+  body.dash .sig-no::before { background: #d33a46; }
+  body.dash .sig-info::before { background: #1769aa; }
+  body.dash .sig-off::before { background: #d99a1e; }
+  body.dash .sig-chip b { color: var(--d-ink); font-weight: 600; }
+  body.dash .sig-no, body.dash .sig-no b { color: #a3343e; }
+}
+/* Dados de cima no padrão rótulo cinza / valor escuro; o aviso "Não bateu o ponto" / "Só entrada" junto deles */
+body.dash .portal-table .col-who :is(small.row-who, small.row-flag) { display: block; color: var(--d-muted); font-size: .76rem; font-weight: 500; }
+body.dash .portal-table .col-who :is(small.row-who, small.row-flag) b { color: var(--d-ink-2); font-weight: 600; }
+@media (min-width: 761px) { body.dash .portal-table .col-who > strong { font-size: 1.02rem; } }
+/* "Batida do ponto" sempre visível (computador e celular), junto da data da liberação */
+body.dash .portal-table .col-who small.row-clock { display: block; }
 
 /* Botões de ação da linha */
 body.dash .row-actions button, body.dash .row-actions .table-action, body.dash .gate-confirm-btn { border-radius: 8px; transition: background .18s, border-color .18s, color .18s, box-shadow .18s, transform .12s; }
@@ -251,8 +274,6 @@ body.dash.release-page .release-back:hover { color: var(--d-ink); background: #e
 body.dash .release-card { border-color: var(--d-line); border-radius: 18px; box-shadow: var(--d-shadow-lg); }
 body.dash .release-heading h1 { letter-spacing: -.02em; }
 body.dash .release-kicker { color: var(--d-muted); letter-spacing: .08em; }
-body.dash .release-stage { display: inline-flex; align-items: center; gap: .4rem; }
-body.dash .release-stage::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 body.dash .release-notice { border: 1px solid #f6dcbc; border-left: 4px solid var(--d-accent); border-radius: 10px; background: linear-gradient(135deg, #fff8ee, #fffcf8); }
 body.dash .release-field label, body.dash .release-field legend { color: var(--d-ink); font-weight: 600; }
 body.dash .release-field :is(input[type="date"], input[type="time"], input[type="text"], input[type="search"], select, textarea) { min-height: 46px; border-color: var(--d-line-strong); border-radius: 10px; transition: border-color .2s, box-shadow .2s; }
@@ -301,8 +322,7 @@ body.dash.import-page .import-heading { margin-bottom: 1.4rem; }
 body.dash.import-page .import-heading h1 { color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-weight: 700; letter-spacing: -.02em; }
 body.dash.import-page .import-kicker, body.dash.import-page .import-eyebrow { color: var(--d-muted); letter-spacing: .08em; }
 body.dash.import-page .import-heading p { color: var(--d-muted); }
-body.dash.import-page .import-security { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; }
-body.dash.import-page .import-security::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.dash.import-page .import-security { font-weight: 700; }
 
 body.dash .import-card { padding: 1.4rem 1.5rem; border-color: var(--d-line); border-radius: var(--d-radius-lg); box-shadow: var(--d-shadow); }
 body.dash .import-card h2 { color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; }
@@ -310,8 +330,7 @@ body.dash .import-card .text-muted { color: var(--d-muted) !important; }
 body.dash .import-policy { border-top: 1px solid var(--d-line); }
 
 /* Selos (pendentes, cadastrados, Aprovado...): pílula clara com bolinha, no lugar dos blocos coloridos do Bootstrap */
-body.dash.import-page .badge { display: inline-flex; align-self: flex-start; align-items: center; gap: .4rem; padding: .32rem .65rem .32rem .55rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
-body.dash.import-page .badge::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+body.dash.import-page .badge { display: inline-flex; align-self: flex-start; align-items: center; padding: .32rem .65rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
 body.dash.import-page .badge.text-bg-success { color: #17613b !important; background: #e3f5ea !important; }
 body.dash.import-page .badge.text-bg-warning { color: #8a5300 !important; background: #fff1d6 !important; }
 body.dash.import-page .badge.text-bg-danger { color: #8b2930 !important; background: #fde5e6 !important; }
@@ -378,3 +397,15 @@ body.dash.import-page .pager-btn { border: 1px solid var(--d-line); border-radiu
 body.dash.import-page .pager-btn:disabled:not(.is-current) { opacity: .45; cursor: default; }
 body.dash.import-page .pager-btn.is-current { border-color: var(--d-ink); cursor: default; }
 @media (max-width: 600px) { body.dash.import-page .pager { flex-direction: column; align-items: stretch; } body.dash.import-page .pager-buttons { justify-content: center; } }
+
+/* Celular: cada liberação é um cartão (portal.css). O espaçamento das células da tabela do computador não vale aqui
+   (deixava um vão entre a situação e o nome), e a borda fica visível para fechar o cartão. */
+@media (max-width: 760px) {
+  body.dash .portal-table td { padding: 0; border-top: 0; }
+  body.dash .portal-table td.col-status { margin-bottom: .5rem; }
+  body.dash .portal-table td.col-actions { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--d-line); }
+  body.dash .portal-table tbody tr { margin-bottom: .8rem; border: 1px solid var(--d-line-strong); border-radius: 14px; background: #fff; box-shadow: var(--d-shadow-sm); }
+}
+/* Motivo: o texto continua na mesma linha do "Tarefa ·" / "Particular ·" (antes, motivo comprido descia inteiro) */
+body.dash .portal-table .col-who small.row-reason { display: block; }
+body.dash .portal-table .col-who small.row-reason .row-movement { display: block; margin-top: .1rem; }
