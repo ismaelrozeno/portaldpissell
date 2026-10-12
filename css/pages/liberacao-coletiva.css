@@ -81,7 +81,7 @@
 .cs-stamp { position: absolute; right: 120px; top: 292px; display: grid; justify-items: center; gap: .05rem; padding: .45rem 1.4rem .7rem; border: 4px double #c62835; border-radius: .5rem; color: #c62835; font-family: Impact, "Arial Black", Arial, sans-serif; letter-spacing: .14em; text-align: center; transform: rotate(-14deg); mix-blend-mode: multiply; opacity: .88; pointer-events: none; user-select: none; }
 .cs-stamp strong { font-size: 2.1rem; line-height: 1; }
 .cs-stamp span { font-size: 1.25rem; line-height: 1; }
-.cs-stamp small { margin-top: .4rem; white-space: nowrap; line-height: 1.2; font: 700 .62rem Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.cs-stamp small { max-width: 13rem; margin-top: .4rem; white-space: pre-line; line-height: 1.2; font: 700 .62rem Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
 .cs-stamp.is-stamping { animation: cs-stamp-in .55s cubic-bezier(.2, .9, .3, 1.1) both; }
 @keyframes cs-stamp-in {
   0% { transform: rotate(-32deg) scale(3); opacity: 0; filter: blur(3px); }

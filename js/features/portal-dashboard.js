@@ -4,7 +4,9 @@
 // "Para você agora" e o botão "+" de nova liberação no celular. Não muda nenhuma regra: só organiza e mostra.
 // Recebe os dados de writeStats (js/pages/portal.js): window.portalDashboard.update({ profileKey, releases, sheets }).
 (() => {
-  const PAGES = ["overview", "individuais", "coletivas", "indicadores", "equipe"];
+  const PAGES = ["overview", "individuais", "coletivas", "indicadores", "equipe", "lixeira", "concluidas"];
+  // Lixeira e Concluídas (menu lateral, só no computador): as mesmas listas, no modo lixeira/concluídas do portal.
+  const LIST_MODE = { lixeira: "trash", concluidas: "done" };
   const CHIEFS = ["encarregado", "analista", "estagiario_engenharia", "seguranca_trabalho"];
   const body = document.body;
   if (!body.classList.contains("dash")) return;
@@ -61,7 +63,12 @@
   if (toolbarEl) new MutationObserver(() => syncTrash()).observe(toolbarEl, { childList: true });
 
   function showPage(page, { scroll = true } = {}) {
+    const previous = body.dataset.page;
     body.dataset.page = page;
+    // Entrou na Lixeira/Concluídas: liga o modo. Saiu delas: volta às pendências. (No celular, o botão da barra
+    // continua ligando o modo dentro de Individuais, como antes: trocar entre as outras abas não mexe nele.)
+    if (LIST_MODE[page]) window.portalSetListMode?.(LIST_MODE[page]);
+    else if (LIST_MODE[previous]) window.portalSetListMode?.("");
     syncTrash();
     document.querySelectorAll("[data-dash-page]").forEach((item) => {
       const active = item.dataset.dashPage === page;

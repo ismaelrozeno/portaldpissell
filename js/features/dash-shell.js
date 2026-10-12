@@ -15,6 +15,8 @@
     equipes: '<circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3.5 18a4.5 4.5 0 0 1 9 0"/><path d="M11.5 18a4.5 4.5 0 0 1 9 0"/>',
     app: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/>',
     admin: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    concluidas: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
+    lixeira: '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/>',
     plus: '<path d="M12 5v14M5 12h14"/>'
   };
   const svg = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -29,9 +31,11 @@
       ${item("overview", "Portal.html", "Visão geral")}
       ${item("individuais", "Portal.html#individuais", "Individuais")}
       ${item("coletivas", "Portal.html#coletivas", "Coletivas")}
+      ${item("concluidas", "Portal.html#concluidas", "Concluídas", "dash-nav-desktop")}
       ${item("indicadores", "Portal.html#indicadores", "BI Dados")}
       ${item("equipe", "Portal.html#equipe", "Atalhos")}
       ${item("equipes", "Equipes.html", "Equipes", "dash-nav-desktop")}
+      ${item("lixeira", "Portal.html#lixeira", "Lixeira", "dash-nav-desktop")}
     </ul>
     <ul class="dash-nav-more" aria-label="Outras áreas do site">
       ${item("app", "App.html", "Aplicativo")}

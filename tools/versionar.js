@@ -22,7 +22,8 @@ const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true
 });
 const files = walk("").filter((f) => /\.(html|js|css)$/.test(f));
 const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
-const hash = (text) => crypto.createHash("sha1").update(text).digest("hex").slice(0, 8);
+// Quebra de linha CRLF (Windows com core.autocrlf) conta como LF: o código sai igual em qualquer máquina.
+const hash = (text) => crypto.createHash("sha1").update(text.replace(/\r\n/g, "\n")).digest("hex").slice(0, 8);
 
 const content = Object.fromEntries(files.map((f) => [f, read(f)]));
 const missing = new Set();

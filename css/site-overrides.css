@@ -1,3 +1,6 @@
+/* Fonte do cabeçalho e do rodapé (as mesmas em todas as páginas; ver "Cabeçalho e rodapé únicos" no fim) */
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap");
+
 :root {
   --issell-navy: #00142d;
   --issell-orange: #f5820a;
@@ -201,3 +204,22 @@ input[type="password"]::-ms-clear {
 /* Cabeçalho: bolinha no lugar do perfil enquanto o login é confirmado (js/core/shared-components.js) */
 .site-header .header-auth-loading { display: inline-grid; flex: 0 0 auto; place-items: center; width: 2.4rem; height: 2.4rem; margin-left: 1.25rem; border-radius: 50%; background: rgba(255, 255, 255, .08); }
 .site-header .header-auth-loading .button-spinner { width: 1.15rem; height: 1.15rem; margin: 0; color: #f5820a; border-width: .17rem; }
+
+/* ===== Cabeçalho e rodapé únicos: o mesmo visual em todas as páginas (Página Inicial, Ferramentas, portal...).
+   Antes cada página tinha o seu (altura, fonte, cor e perfil diferentes) e o topo "pulava" ao trocar de página.
+   Cada página ainda decide só se o cabeçalho fica por cima do conteúdo (absolute) ou empurra (relative). ===== */
+:root { --site-bar: #0a1626; --site-bar-text: #fff; }
+body .site-header.navbar { background: var(--site-bar) !important; font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif; }
+body .site-header > .container-fluid { min-height: 64px; }
+.site-header .navbar-brand img { width: 40px; height: 40px; }
+.site-header .nav-link { padding-inline: .7rem !important; color: var(--site-bar-text); font-size: .93rem; font-weight: 500; transition: color .2s ease; }
+.site-header .nav-link:hover, .site-header .nav-link:focus-visible, .site-header .nav-link.is-active { color: #fff; }
+.site-header .profile-link { padding: .25rem .7rem .25rem .25rem; border-radius: 999px; background: rgba(255, 255, 255, .06); transition: background .2s ease; }
+.site-header .profile-link:hover { background: rgba(255, 255, 255, .11); }
+.site-header .profile-avatar:not(.has-image) { color: #fff; background: var(--issell-orange); }
+.site-header .logout-button { border-color: rgba(255, 107, 107, .45); }
+.site-header .btn-light { font-weight: 600; }
+.site-header .offcanvas { background-color: var(--site-bar) !important; }
+body .site-footer { color: #d6dfeb; background: var(--site-bar); font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif; }
+.site-footer img { width: 40px; height: 40px; }
+@media (max-width: 767.98px) { body .site-header > .container-fluid { min-height: 60px; } }

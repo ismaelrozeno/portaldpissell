@@ -176,22 +176,28 @@
     // Carimbo "lançado no RM"
     if (fields.launched) {
       ctx.save();
-      ctx.translate(640, 358);
+      ctx.translate(640, 334); // no espaço vazio à direita do motivo, sem cobrir a assinatura do colaborador
       ctx.rotate((-14 * Math.PI) / 180);
       ctx.strokeStyle = "#c62835";
       ctx.fillStyle = "#c62835";
       ctx.globalAlpha = 0.88;
       ctx.lineWidth = 3;
-      ctx.strokeRect(-92, -38, 184, 76);
+      ctx.strokeRect(-92, -47, 184, 94);
       ctx.lineWidth = 1;
-      ctx.strokeRect(-88, -34, 176, 68);
+      ctx.strokeRect(-88, -43, 176, 86);
       ctx.textAlign = "center";
-      ctx.font = "34px Impact, 'Arial Black', Arial, sans-serif";
-      ctx.fillText("LANÇADO", 0, 0);
-      ctx.font = "20px Impact, 'Arial Black', Arial, sans-serif";
-      ctx.fillText("NO RM", 0, 20);
-      ctx.font = `700 9px ${SANS}`;
-      ctx.fillText(String(fields.stampDetail || "").toUpperCase(), 0, 31);
+      ctx.font = "32px Impact, 'Arial Black', Arial, sans-serif";
+      ctx.fillText("LANÇADO", 0, -8);
+      ctx.font = "19px Impact, 'Arial Black', Arial, sans-serif";
+      ctx.fillText("NO RM", 0, 15);
+      // Data numa linha e quem lançou na outra; a letra diminui até caber dentro da borda.
+      const [launchDay, launchBy = ""] = String(fields.stampDetail || "").toUpperCase().split(" · ");
+      const fit = (value, size, y) => {
+        do { ctx.font = `700 ${size}px ${SANS}`; size -= 0.5; } while (size > 5 && ctx.measureText(value).width > 156);
+        ctx.fillText(value, 0, y);
+      };
+      fit(launchDay, 9, 28);
+      fit(launchBy, 8.5, 38);
       ctx.restore();
     }
     return canvas;

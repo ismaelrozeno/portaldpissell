@@ -2,8 +2,11 @@
   min-height: calc(100vh - 110px);
   padding: 140px 24px 80px;
   color: #fff;
-  background: #07111f;
+  background: var(--site-bar, #0a1626);
 }
+
+/* Fundo da página no mesmo azul do cabeçalho e do rodapé (css/site-overrides.css), sem faixas de tons diferentes */
+body { background: var(--site-bar, #0a1626); }
 
 .hero__shell {
   position: relative;

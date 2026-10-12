@@ -6,17 +6,18 @@
   <meta name="description" content="Portal operacional da Obra 369.">
   <title>Portal | Obra 369</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/site-overrides.css?v=e085f28a">
+  <link rel="stylesheet" href="css/site-overrides.css?v=16cde341">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
   <link rel="stylesheet" href="css/pages/portal.css?v=bc723a56">
-  <link rel="stylesheet" href="css/pages/liberacao-coletiva.css?v=18c6d4d9">
+  <link rel="stylesheet" href="css/pages/liberacao-coletiva.css?v=1edfb089">
   <link rel="stylesheet" href="css/components/collective-panel.css?v=a2dc236f">
   <link rel="stylesheet" href="css/components/portal-insights.css?v=38c1642a">
-  <link rel="stylesheet" href="css/components/release-preview.css?v=44b8242f">
+  <link rel="stylesheet" href="css/components/release-preview.css?v=c8c517d3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=88404807">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=01be5af4">
+  <link rel="stylesheet" href="css/components/portal-theme.css?v=eebbc050">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="portal-page dash dash-loading" data-page="overview">
@@ -29,9 +30,11 @@
           <li><a class="dash-nav-item is-active" href="#" data-dash-page="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/></svg><span>Visão geral</span></a></li>
           <li><a class="dash-nav-item" href="#individuais" data-dash-page="individuais"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Individuais</span><b class="dash-badge" hidden></b></a></li>
           <li><a class="dash-nav-item" href="#coletivas" data-dash-page="coletivas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 6a3 3 0 0 1 0 6"/><path d="M17 14.2a5.5 5.5 0 0 1 3.5 4.8"/></svg><span>Coletivas</span><b class="dash-badge" hidden></b></a></li>
+          <li class="dash-nav-desktop"><a class="dash-nav-item" href="#concluidas" data-dash-page="concluidas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/></svg><span>Concluídas</span><b class="dash-badge dash-badge-muted" hidden></b></a></li>
           <li><a class="dash-nav-item" href="#indicadores" data-dash-page="indicadores"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></svg><span>BI Dados</span></a></li>
           <li><a class="dash-nav-item" href="#equipe" data-dash-page="equipe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg><span>Atalhos</span></a></li>
           <li class="dash-nav-desktop" id="dash-nav-equipes"><a class="dash-nav-item" href="Equipes.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3.5 18a4.5 4.5 0 0 1 9 0"/><path d="M11.5 18a4.5 4.5 0 0 1 9 0"/></svg><span>Equipes</span></a></li>
+          <li class="dash-nav-desktop"><a class="dash-nav-item" href="#lixeira" data-dash-page="lixeira"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/></svg><span>Lixeira</span><b class="dash-badge dash-badge-muted" hidden></b></a></li>
         </ul>
         <ul class="dash-nav-more" aria-label="Outras áreas do site">
           <li><a class="dash-nav-item" href="App.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/></svg><span>Aplicativo</span></a></li>
@@ -138,7 +141,7 @@
       </div>
 
       <section class="portal-grid" id="portal-grid" data-collective-host="portal" data-view="individual">
-        <article class="portal-card portal-card-wide" id="records-section" data-dash="individuais">
+        <article class="portal-card portal-card-wide" id="records-section" data-dash="individuais lixeira concluidas">
           <div class="card-heading">
             <div>
               <span class="card-eyebrow" id="table-eyebrow">Minha equipe</span>
@@ -163,7 +166,7 @@
           <p class="empty-state" id="table-empty" hidden>Nenhum registro encontrado para este perfil.</p>
         </article>
 
-        <article class="portal-card portal-card-wide" id="collective-section" data-dash="coletivas" hidden>
+        <article class="portal-card portal-card-wide" id="collective-section" data-dash="coletivas concluidas" hidden>
           <div class="card-heading">
             <div>
               <span class="card-eyebrow" id="collective-eyebrow">Assinaturas pendentes</span>
@@ -218,25 +221,25 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="js/core/firebase-config.js?v=5f86e13f"></script>
-<script src="js/core/firebase-init.js?v=351c556d"></script>
-<script src="js/core/firebase-schema.js?v=c6f95036"></script>
+<script src="js/core/firebase-init.js?v=ed313212"></script>
+<script src="js/core/firebase-schema.js?v=a72de791"></script>
 <script src="js/core/firebase-auth.js?v=efc4f34a"></script>
   <script src="js/core/shared-components.js?v=cb8fe54f"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="js/core/firebase-release-store.js?v=7a5a797e"></script>
   <script src="js/features/release-actions.js?v=ea03374c"></script>
-  <script src="js/features/biometric-reader.js?v=4af31862"></script>
+  <script src="js/features/biometric-reader.js?v=7a4d8ad2"></script>
   <script src="js/features/fingerprint-art.js?v=58448265"></script>
-  <script src="js/features/release-preview.js?v=10634e84"></script>
+  <script src="js/features/release-preview.js?v=53ffbd74"></script>
   <script src="js/features/collective-release-store.js?v=2f832b81"></script>
-  <script src="js/features/collective-release-sheet.js?v=e76f3eed"></script>
+  <script src="js/features/collective-release-sheet.js?v=1ab2690c"></script>
   <script src="js/features/collective-biometric.js?v=3b49b515"></script>
   <script src="js/features/collective-exit.js?v=e976927a"></script>
   <script src="js/features/collective-panel.js?v=90a0dd8a"></script>
   <script src="js/features/portal-insights.js?v=98edff1a"></script>
   <script src="js/features/portal-insights-charts.js?v=34fd2164"></script>
-  <script src="js/pages/portal.js?v=0b4a1d5c"></script>
-  <script src="js/features/portal-dashboard.js?v=88552392"></script>
+  <script src="js/pages/portal.js?v=950c37b5"></script>
+  <script src="js/features/portal-dashboard.js?v=5f334586"></script>
   <script src="js/features/report-pptx.js?v=f70305bc"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>

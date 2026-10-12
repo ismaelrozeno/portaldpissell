@@ -289,11 +289,25 @@
   }
 
   // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
-  let trashMode = false;
+  // No computador, Lixeira e Concluídas também são páginas do menu lateral (Portal.html#lixeira / #concluidas,
+  // js/features/portal-dashboard.js): aberto direto nelas, já começa no modo certo.
+  const PAGE_MODE = { lixeira: "trash", concluidas: "done" };
+  const pageMode = () => PAGE_MODE[document.body.dataset.page] || PAGE_MODE[location.hash.replace("#", "")] || "";
+  let trashMode = pageMode() === "trash";
   window.portalIsTrashMode = () => trashMode;
   // Caixa "Concluídas": as liberações com todas as assinaturas (portalReleaseFlow.isConcluded), fora das pendências.
-  let doneMode = false;
+  let doneMode = pageMode() === "done";
   window.portalIsDoneMode = () => doneMode;
+  // Página Lixeira/Concluídas do menu: troca o modo das duas listas ("trash" | "done" | "" = pendências).
+  window.portalSetListMode = async (mode) => {
+    if ((mode === "trash") === trashMode && (mode === "done") === doneMode) return;
+    trashMode = mode === "trash";
+    doneMode = mode === "done";
+    pager().reset();
+    if (!activeProfileKey) return;
+    await renderRecords(activeProfileKey);
+    window.portalCollectivePanel?.render(activeProfileKey);
+  };
   // Últimos números da barra, para a barra recalcular quando as liberações coletivas terminarem de carregar.
   let lastToolbarCounts = [0, 0, 0];
   window.portalToolbarRefresh = () => renderToolbar(...lastToolbarCounts);
@@ -340,6 +354,16 @@
     const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
     const notice = document.querySelector("#trash-notice");
     const toolbar = document.querySelector("#records-toolbar");
+    // Quantas há na Lixeira e em Concluídas, ao lado do nome no menu lateral.
+    const setNavCount = (page, n) => document.querySelectorAll(`[data-dash-page="${page}"] .dash-badge`).forEach((badge) => {
+      badge.textContent = n > 999 ? "999+" : String(n);
+      badge.hidden = !n;
+    });
+    setNavCount("lixeira", trashCount);
+    setNavCount("concluidas", doneCount);
+    // Título da lista diz onde a pessoa está (Lixeira / Concluídas são páginas no computador).
+    const title = document.querySelector("#table-title");
+    if (title) title.textContent = trashMode ? "Lixeira" : doneMode ? "Concluídas · individuais" : profiles[activeProfileKey]?.tableTitle || title.textContent;
     if (doneMode) {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às pendências</button>
@@ -567,6 +591,11 @@
       return refresh();
     }
     if (kind === "open-trash" || kind === "open-done" || kind === "back") {
+      // Computador: Lixeira e Concluídas são páginas do menu; "Voltar" leva às Individuais.
+      if (window.portalDashboard && window.matchMedia("(min-width: 992px)").matches) {
+        window.portalDashboard.go(kind === "open-trash" ? "lixeira" : kind === "open-done" ? "concluidas" : "individuais");
+        return;
+      }
       trashMode = kind === "open-trash";
       doneMode = kind === "open-done";
       pager().reset();
@@ -1055,8 +1084,9 @@
     elements.adminSwitcher.hidden = isDpDelegate && delegateProfiles.length < 2;
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
-      trashMode = false;
-      doneMode = false;
+      // Na página Lixeira/Concluídas do menu, continua nela com o perfil novo.
+      trashMode = pageMode() === "trash";
+      doneMode = pageMode() === "done";
       statFilter = null;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
       if (isAdministrator) choosePerson(event.target.value).then(() => renderProfile(event.target.value));
