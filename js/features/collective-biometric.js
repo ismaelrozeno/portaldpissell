@@ -13,6 +13,7 @@
   let signing = "";          // matrícula que está com o dedo no leitor agora (um leitor só, uma pessoa por vez)
   let readerReady = false;
   const errors = new Map();  // matrícula -> mensagem do último erro
+  let term = "";             // busca por nome, matrícula ou função (a numeração continua a da folha)
 
   const formatTime = (value) => {
     const date = value ? new Date(value) : null;
@@ -26,6 +27,8 @@
         <h2 id="collective-bio-title">Assinaturas por digital</h2>
         <p id="collective-bio-sub" class="collective-bio-sub"></p>
         <p id="collective-bio-notice" class="collective-bio-notice" hidden></p>
+        <label class="visually-hidden" for="collective-bio-search">Buscar colaborador</label>
+        <input type="search" id="collective-bio-search" class="collective-bio-search" placeholder="Buscar por nome ou matrícula..." autocomplete="off">
         <ul id="collective-bio-list" class="collective-bio-list"></ul>
         <div class="refuse-buttons"><button type="button" id="collective-bio-close" class="bonus-yes">Fechar</button></div>
       </dialog>`);
@@ -35,6 +38,10 @@
     dialog.addEventListener("cancel", (event) => { if (signing) event.preventDefault(); });
     dialog.addEventListener("close", () => {
       if (changed) onClose?.();
+    });
+    dialog.querySelector("#collective-bio-search").addEventListener("input", (event) => {
+      term = window.normalizeSearchText(event.target.value).trim();
+      draw();
     });
     dialog.querySelector("#collective-bio-list").addEventListener("click", (event) => {
       const button = event.target.closest("[data-bio-sign]");
@@ -48,7 +55,9 @@
     const signed = sheetApi().signedCount(current);
     dialog.querySelector("#collective-bio-sub").textContent = `${current.motive || "Liberação coletiva"} · ${signed} de ${people.length} ${people.length === 1 ? "assinou" : "assinaram"}`;
     dialog.querySelector("#collective-bio-close").disabled = !!signing;
-    dialog.querySelector("#collective-bio-list").innerHTML = people.map((person, index) => {
+    const matches = (person) => !term || window.normalizeSearchText(`${person.nome} ${person.matricula} ${person.funcao || ""}`).includes(term);
+    const rows = people.map((person, index) => ({ person, index })).filter(({ person }) => matches(person));
+    dialog.querySelector("#collective-bio-list").innerHTML = rows.length ? rows.map(({ person, index }) => {
       const signature = sheetApi().signatureOf(current, person);
       const error = errors.get(person.matricula);
       const action = signature
@@ -58,7 +67,7 @@
         <span class="collective-bio-who"><strong>${index + 1}. ${esc(person.nome)}</strong><small>${esc(person.funcao || "")}${person.funcao ? " · " : ""}Matrícula ${esc(person.matricula)}</small>${error ? `<small class="collective-bio-error">${esc(error)}</small>` : ""}</span>
         ${action}
       </li>`;
-    }).join("");
+    }).join("") : '<li class="collective-bio-empty">Nenhum colaborador encontrado.</li>';
   }
 
   async function sign(matricula) {
@@ -100,6 +109,8 @@
     changed = false;
     errors.clear();
     readerReady = false;
+    term = "";
+    dialog.querySelector("#collective-bio-search").value = "";
     draw();
     dialog.showModal();
     await checkReader();

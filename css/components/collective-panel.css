@@ -92,6 +92,10 @@
 .collective-bio-sub { margin: 0 0 .6rem; color: #617188; font-size: .85rem; }
 .collective-bio-notice { margin: 0 0 .6rem; padding: .6rem .75rem; border-radius: .5rem; color: #8b5515; background: #fff2d9; font-size: .82rem; }
 .collective-bio-notice[hidden] { display: none; }
+/* Busca na lista de assinaturas por digital */
+.collective-bio-search { display: block; width: 100%; margin: 0 0 .6rem; padding: .55rem .75rem; border: 1px solid #c9d3e0; border-radius: .5rem; font: inherit; font-size: .9rem; }
+.collective-bio-search:focus { outline: 2px solid rgba(245, 130, 13, .45); outline-offset: 1px; }
+.collective-bio-empty { padding: .6rem .2rem; color: #66768a; font-size: .85rem; }
 .collective-bio-list { display: grid; gap: .4rem; max-height: 55vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
 .collective-bio-list li { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .55rem .7rem; border: 1px solid #dfe7f0; border-radius: .5rem; }
 .collective-bio-who { display: grid; gap: .1rem; min-width: 0; }
