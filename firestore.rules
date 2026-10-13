@@ -68,9 +68,12 @@ service cloud.firestore {
       allow list: if isAdmin() ||
         ((isDp() || isForeman() || isLinker()) && resource.data.roleValue in ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]);
       allow create: if request.auth != null && request.auth.uid == userId;
-      // A própria conta não pode mudar o próprio perfil nem os próprios privilégios (só o administrador).
+      // A própria conta não pode mudar o próprio perfil, os próprios privilégios nem as fotos premium ganhas (só o
+      // administrador), e só usa uma foto premium ("premium-...") que tenha ganho de presente.
       allow update: if request.auth != null && ((request.auth.uid == userId &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges"])) || isAdmin() ||
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges", "premiumAvatars"]) &&
+          (!request.resource.data.get("avatar", "").matches("premium-.*") ||
+            request.resource.data.get("avatar", "") in resource.data.get("premiumAvatars", []))) || isAdmin() ||
         // O DP só pode vincular estagiário/engenheiro a um encarregado (campo "linkedForeman"), nada além disso.
         (isDp() && resource.data.roleValue in ["estagiario_engenharia", "engenheiro"] &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "updatedAt"])) ||

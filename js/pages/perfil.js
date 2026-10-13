@@ -70,7 +70,15 @@ document.querySelector("#profile-back")?.addEventListener("click", (event) => {
     grid.innerHTML = initialsOption + avatars.list.map((item) => `
       <button type="button" class="avatar-option${item.id === chosen ? " is-selected" : ""}" role="radio" aria-checked="${item.id === chosen}" data-avatar="${item.id}" title="${item.label}">
         <img src="${avatars.url(item.id)}" alt="${item.label}" loading="lazy">
-      </button>`).join("");
+      </button>`).join("")
+      // Premium: com cadeado até o administrador presentear; ganhas ficam com a etiqueta "Premium".
+      + avatars.premium.map((item) => {
+        const owned = avatars.owns(session, item.id);
+        return `<button type="button" class="avatar-option avatar-option-premium${owned ? "" : " is-locked"}${item.id === chosen ? " is-selected" : ""}" role="radio" aria-checked="${item.id === chosen}" data-avatar="${item.id}"${owned ? "" : ' data-locked="1"'} title="${item.label} · ${owned ? "foto premium (presente)" : "foto premium bloqueada: só o administrador pode presentear"}">
+          <img src="${avatars.url(item.id)}" alt="${item.label}" loading="lazy">
+          <span class="avatar-premium-tag" aria-hidden="true">${owned ? "★" : "🔒"}</span>
+        </button>`;
+      }).join("");
   }
   function setPickerOpen(open) {
     picker.hidden = !open;
@@ -90,6 +98,10 @@ document.querySelector("#profile-back")?.addEventListener("click", (event) => {
   grid.addEventListener("click", async (event) => {
     const option = event.target.closest("[data-avatar]");
     if (!option || option.dataset.avatar === chosen) return;
+    if (option.dataset.locked) {
+      showMessage("Foto premium bloqueada: só o administrador pode presentear.");
+      return;
+    }
     const previous = chosen;
     chosen = option.dataset.avatar;
     renderGrid();
@@ -107,6 +119,14 @@ document.querySelector("#profile-back")?.addEventListener("click", (event) => {
     }
   });
   renderAvatar(session);
+  // "Usar agora" no aviso de presente: o círculo do perfil já mostra a foto nova.
+  document.addEventListener("portal:avatar-changed", (event) => {
+    if (!event.detail) return;
+    Object.assign(session, event.detail);
+    chosen = session.avatar || "";
+    renderAvatar(session);
+    if (!picker.hidden) renderGrid();
+  });
   // Dados no lugar: sai o "Carregando seu perfil…".
   const card = document.querySelector(".profile-card");
   card?.classList.remove("is-loading");

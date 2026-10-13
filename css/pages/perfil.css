@@ -27,3 +27,11 @@ body.profile-page { background:#f4f7fb; color:#16283d; }.profile-page .site-head
 .profile-content > .container { max-width:520px; }
 .profile-content > .container .profile-back { margin-left:0; }
 .profile-content { padding-top:2rem; }
+
+/* Fotos premium: cadeado até o administrador presentear; ganhas com estrela */
+.avatar-option-premium { position: relative; }
+.avatar-option-premium img { border-radius: 50%; }
+.avatar-option-premium.is-locked img { filter: grayscale(.85) brightness(.85); opacity: .55; }
+.avatar-option-premium.is-locked { cursor: not-allowed; }
+.avatar-premium-tag { position: absolute; right: .15rem; bottom: .15rem; display: grid; width: 1.45rem; height: 1.45rem; place-items: center; border-radius: 50%; color: #fff; background: #ef6c00; font-size: .72rem; line-height: 1; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+.avatar-option-premium.is-locked .avatar-premium-tag { background: #29415b; }

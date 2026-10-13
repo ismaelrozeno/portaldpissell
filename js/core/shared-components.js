@@ -45,8 +45,20 @@ window.portalAvatars = (() => {
     { id: "cavalete", label: "Cavalete de obra" },
     { id: "esquadro", label: "Esquadro" }
   ];
-  const find = (id) => list.find((item) => item.id === id) || null;
-  const url = (id) => (find(id) ? `images/avatars/${id}.png` : "");
+  // Fotos premium: aparecem com cadeado; só quem ganhou de presente do administrador pode usar (campo
+  // "premiumAvatars" do cadastro, gravado só pelo administrador; as regras do banco conferem).
+  const premium = [
+    { id: "premium-cabelo-longo", label: "Cabelo longo", premium: true, file: "images/avatars/premium/cabelo-longo.png" },
+    { id: "premium-cabelo-ruivo", label: "Cabelo ruivo", premium: true, file: "images/avatars/premium/cabelo-ruivo.png" },
+    { id: "premium-cabelo-castanho", label: "Cabelo castanho", premium: true, file: "images/avatars/premium/cabelo-castanho.png" },
+    { id: "premium-cabelo-cacheado", label: "Cabelo cacheado", premium: true, file: "images/avatars/premium/cabelo-cacheado.png" }
+  ];
+  const find = (id) => list.find((item) => item.id === id) || premium.find((item) => item.id === id) || null;
+  const url = (id) => { const item = find(id); return item ? item.file || `images/avatars/${id}.png` : ""; };
+  const isPremium = (id) => !!find(id)?.premium;
+  const owns = (profile, id) => (profile?.premiumAvatars || []).includes(id);
+  // Imagem que a pessoa pode mostrar: premium só se ela tiver ganho (se o presente for retirado, voltam as iniciais).
+  const srcOf = (profile) => (isPremium(profile?.avatar) && !owns(profile, profile.avatar) ? "" : url(profile?.avatar));
   // Sem avatar escolhido (padrão de toda conta nova): iniciais do primeiro e do último nome, como no Gmail,
   // sempre no laranja do portal (igual para todo mundo).
   const ignoredWords = new Set(["da", "das", "de", "do", "dos", "e"]);
@@ -61,7 +73,7 @@ window.portalAvatars = (() => {
   // Preenche um círculo com o avatar escolhido ou com as iniciais coloridas.
   function render(element, profile, alt = "") {
     if (!element) return;
-    const src = url(profile?.avatar);
+    const src = srcOf(profile);
     element.classList.toggle("has-image", !!src);
     element.classList.toggle("has-initials", !src);
     if (src) {
@@ -76,13 +88,13 @@ window.portalAvatars = (() => {
   }
   // Mesmo círculo em HTML, para listas (ex.: usuários cadastrados na Administração).
   function html(profile, className = "user-avatar") {
-    const src = url(profile?.avatar);
+    const src = srcOf(profile);
     const letters = initials(profile?.name).replace(/[<>&"]/g, "");
     return src
       ? `<span class="${className} has-image" aria-hidden="true"><img src="${src}" alt=""></span>`
       : `<span class="${className} has-initials" aria-hidden="true" style="background:${color(profile?.name)};color:#fff">${letters}</span>`;
   }
-  return { list, find, url, initials, color, render, html };
+  return { list, premium, find, url, isPremium, owns, initials, color, render, html };
 })();
 
 (async function loadSharedComponents() {
@@ -219,6 +231,46 @@ window.portalAvatars = (() => {
   // Login confirmado: os botões de "Entrar" voltam a valer (escondidos acima se a pessoa está logada) e sai a bolinha.
   document.querySelectorAll("[data-guest-actions]").forEach((el) => { el.style.visibility = ""; });
   document.querySelector(".header-auth-loading")?.remove();
+
+  // Presente do administrador (foto de perfil premium desbloqueada): aparece uma vez, no próximo login ou atualização
+  // da página, e some do cadastro ("avatarGifts") assim que é mostrado.
+  const gifts = (session?.avatarGifts || []).filter((gift) => window.portalAvatars.find(gift?.id));
+  if (gifts.length) {
+    const esc = (value) => String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const givers = [...new Set(gifts.map((gift) => gift.by).filter(Boolean))].join(" e ") || "Administrador";
+    const last = gifts[gifts.length - 1].id;
+    const giftModal = document.createElement("div");
+    giftModal.className = "logout-modal gift-modal";
+    giftModal.innerHTML = `
+      <div class="logout-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gift-modal-title">
+        <button class="logout-modal__close" type="button" aria-label="Fechar">×</button>
+        <div class="gift-modal__photos">${gifts.map((gift) => `<img src="${esc(window.portalAvatars.url(gift.id))}" alt="${esc(window.portalAvatars.find(gift.id).label)}">`).join("")}</div>
+        <h2 id="gift-modal-title">🎁 ${gifts.length > 1 ? "Fotos desbloqueadas!" : "Foto desbloqueada!"}</h2>
+        <p>Você recebeu um presente de <strong>${esc(givers)}</strong>.</p>
+        <div class="logout-modal__actions">
+          <button class="logout-modal__cancel" type="button" data-gift-close>Depois</button>
+          <button class="logout-modal__confirm gift-modal__use" type="button" data-gift-use>Usar agora</button>
+        </div>
+      </div>`;
+    document.body.append(giftModal);
+    const closeGift = () => giftModal.remove();
+    giftModal.querySelector(".logout-modal__close").addEventListener("click", closeGift);
+    giftModal.querySelector("[data-gift-close]").addEventListener("click", closeGift);
+    giftModal.addEventListener("click", (event) => { if (event.target === giftModal) closeGift(); });
+    giftModal.querySelector("[data-gift-use]").addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        const updated = await window.portalAuthDemo.updateProfile({ avatar: last, photo: "" });
+        window.portalRenderHeaderAvatar(updated || { ...session, avatar: last });
+        document.dispatchEvent(new CustomEvent("portal:avatar-changed", { detail: updated }));
+      } catch (error) {
+        console.warn("Não foi possível usar a foto agora.", error);
+      }
+      closeGift();
+    });
+    // Mostrado: tira do cadastro, para não aparecer de novo.
+    window.portalAuthDemo.updateProfile({ avatarGifts: [] }).catch((error) => console.warn("Não foi possível marcar o presente como visto.", error));
+  }
 
 })().catch((error) => {
   console.error("Falha ao carregar os componentes compartilhados.", error);
