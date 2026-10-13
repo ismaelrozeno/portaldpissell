@@ -535,7 +535,8 @@
     const filterBar = window.portalFilterBar;
     if (!card || card.disabled || !filterBar?.active()) return;
     const value = card.dataset.engineerFilter;
-    const next = filterBar.sharedStatus() === value ? "all" : value;
+    // Parte Individuais/Coletivas: sempre filtra (ir de uma para a outra do mesmo engenheiro não desliga o filtro).
+    const next = card.dataset.page ? value : filterBar.sharedStatus() === value ? "all" : value;
     if (trashMode || doneMode) {
       trashMode = false;
       doneMode = false;
@@ -902,18 +903,25 @@
       const waiting = item.pending?.count || 0;
       const done = item.approved?.count || 0;
       const name = item.key ? item.label : "sem engenheiro";
-      // O cartão inteiro é UM botão e leva só às pendências do engenheiro (aguardando abono), mesmo com 0.
-      // Abonadas e total ficam no cartão só como informação.
-      const approvedLine = item.key
-        ? `<span class="stat-engineer-approved"><b>✓</b> ${escapeHtml(plural(done, "abonada", "abonadas"))}${done ? ` <small>· ${escapeHtml(splitOf(item.approved))}</small>` : ""}</span>`
-        : "";
-      // Total do engenheiro: aguardando + abonadas, com a mesma divisão.
-      const total = waiting + done;
-      const both = { ind: (item.pending?.ind || 0) + (item.approved?.ind || 0), col: (item.pending?.col || 0) + (item.approved?.col || 0) };
-      const totalLine = item.key ? `<span class="stat-engineer-total"><b>Total ${total}</b>${total ? ` <small>· ${escapeHtml(splitOf(both))}</small>` : ""}</span>` : "";
-      return `<button class="stat-card stat-card-engineer" type="button" data-engineer-filter="${escapeHtml(filterBar?.engineerValue(item.key) || "")}">
+      const filter = escapeHtml(filterBar?.engineerValue(item.key) || "");
+      // Duas partes clicáveis: Individuais leva às individuais aguardando esse engenheiro; Coletivas, às coletivas.
+      // Cada parte mostra o aguardando (o que importa agora), as abonadas por ele e o total daquele tipo.
+      const part = (kind, page, title) => {
+        const wait = item.pending?.[kind] || 0;
+        const ok = item.approved?.[kind] || 0;
+        return `<button type="button" class="stat-engineer-part" data-engineer-filter="${filter}" data-page="${page}" aria-label="${escapeHtml(`${title} de ${name}: ${wait} aguardando, ${ok} abonadas`)}">
+            <span class="stat-engineer-part-title">${title}</span>
+            <span class="stat-engineer-part-num">${wait}</span>
+            <span class="stat-engineer-part-line">aguardando</span>
+            ${item.key ? `<span class="stat-engineer-part-line"><b>✓</b> ${escapeHtml(plural(ok, "abonada", "abonadas"))}</span><span class="stat-engineer-part-line">Total ${wait + ok}</span>` : ""}
+          </button>`;
+      };
+      const totalLine = item.key ? `<span class="stat-engineer-total"><b>Total ${waiting + done}</b> <small>· ${waiting} aguardando · ${escapeHtml(plural(done, "abonada", "abonadas"))}</small></span>` : "";
+      return `<div class="stat-card stat-card-engineer is-split">
           <span>Aguardando abono</span><b class="stat-engineer-name">${escapeHtml(name)}${managerNames.has(item.key) ? ' <em class="stat-engineer-tag">Gestor</em>' : ""}</b>
-          <strong>${waiting}</strong><small class="stat-detail">${escapeHtml(waiting ? splitOf(item.pending) : "nada esperando")}</small>${approvedLine}${totalLine}</button>`;
+          <strong>${waiting}</strong>
+          <div class="stat-engineer-split">${part("ind", "individuais", "Individuais")}${part("col", "coletivas", "Coletivas")}</div>
+          ${totalLine}</div>`;
     }).join("");
     highlightStatCard();
   }

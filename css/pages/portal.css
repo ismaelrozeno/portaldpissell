@@ -294,3 +294,8 @@ body.portal-page { background: var(--portal-bg); color: var(--portal-ink); }
 /* Encarregado, estagiário, analista e segurança: cartões de informação da obra, sem clique para filtrar. */
 body.info-only .portal-stats .stat-card:not([data-stat="team"]), body.info-only [data-engineer-filter], body.info-only .dash-station-btn { cursor: default; }
 body.info-only .portal-stats .stat-card:not([data-stat="team"]):hover, body.info-only [data-engineer-filter]:hover { transform: none; }
+
+/* Cartões dos engenheiros divididos (Individuais | Coletivas): um por linha no celular; no computador, largos o
+   bastante para as duas partes caberem lado a lado. */
+.portal-stats.portal-stats-engineers { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .portal-stats.portal-stats-engineers { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
