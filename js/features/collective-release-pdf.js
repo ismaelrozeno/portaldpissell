@@ -44,7 +44,7 @@
     };
 
     // Assinatura por digital na linha do participante: desenho da digital + "Assinado por digital" e a hora.
-    const drawBio = (bio, x, y, h) => {
+    const drawBio = (bio, x, y, h, w) => {
       const size = h - 1;
       if (window.portalFingerprint) {
         line(0.1, 17);
@@ -57,7 +57,7 @@
       const tx = x + 3 + size / 1.2;
       textIn(`ASSINADO POR DIGITAL\n${bio.when}`, tx, y, 24, h, { size: 5.5, color: GREY, maxLines: 2, pad: 0 });
       // Nome do colaborador ao lado, como assinatura (igual à folha individual).
-      if (bio.name) textIn(bio.name, tx + 24, y, x + 86 - tx - 24, h, { size: 8.5, style: "italic", maxLines: 2, pad: 1 });
+      if (bio.name) textIn(bio.name, tx + 24, y, x + w - tx - 24, h, { size: 8.5, style: "italic", maxLines: 2, pad: 1 });
     };
 
     // ---- Cabeçalho: logo | título | motivo + data
@@ -116,8 +116,8 @@
     y += rh - 1 + 5;
 
     // ---- Participantes
-    const cols = [12, 64, 28, 86];
-    const heads = ["ID", "NOME", "Função", "Assinatura"];
+    const cols = [12, 58, 16, 26, 78];
+    const heads = ["ID", "NOME", "Saída", "Função", "Assinatura"];
     const header = () => {
       line(0.25);
       cell(M, y, W, 7, [238, 238, 238]);
@@ -141,8 +141,9 @@
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
         else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 2 });
-        else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
-        else if (c === 3 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH);
+        else if (c === 2 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
+        else if (c === 3 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
+        else if (c === 4 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH, w);
         x += w;
       });
       y += rowH;

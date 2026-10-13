@@ -114,6 +114,11 @@
       launched: !!sheet.abonoLaunchedAt,
       stampDetail: stampDetail(sheet),
       footer: `Obra 369 · ${movementLabel(sheet)}${sheet.time && !hasBoth(sheet) ? ` a partir das ${sheet.time} hs` : hasBoth(sheet) ? " · não bateu o ponto" : ""}`,
+      // Hora da saída de cada participante na portaria ("-" sem registro), para a coluna "Saída".
+      participantExit: (sheet.participants || []).map((person) => {
+        const exit = exitOf(sheet, person);
+        return exit ? new Date(exit.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "-";
+      }),
       // Uma por linha da lista (null = sem digital, fica em branco para assinar à mão).
       participantBio: (sheet.participants || []).map((person) => {
         const signature = signatureOf(sheet, person);
@@ -134,7 +139,8 @@
         : "";
       const exit = exitOf(sheet, person);
       const exitTime = exit ? new Date(exit.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}${exit ? `<small class="cs-exit">saiu às ${esc(exitTime)}</small>` : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
+      // Coluna "Saída": hora em que a portaria marcou a saída; sem registro, "-".
+      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-exit-cell">${person ? (exit ? esc(exitTime) : '<span class="cs-exit-none">-</span>') : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
     return `
       <header class="cs-head">
@@ -154,8 +160,8 @@
       </table>
       <table class="cs-list">
         <thead>
-          <tr><th colspan="4" class="cs-participants">Participantes</th></tr>
-          <tr><th class="cs-id">ID</th><th>NOME</th><th>Função</th><th>Assinatura</th></tr>
+          <tr><th colspan="5" class="cs-participants">Participantes</th></tr>
+          <tr><th class="cs-id">ID</th><th>NOME</th><th class="cs-exit-cell">Saída</th><th>Função</th><th>Assinatura</th></tr>
         </thead>
         <tbody>${body}</tbody>
       </table>
@@ -260,7 +266,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=67570bcb");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=c3ba6af6");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -307,7 +313,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=dbcd85ef", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=d5793b4d", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
