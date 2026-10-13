@@ -76,7 +76,8 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "updatedAt"])) ||
         // ...e pôr um encarregado na equipe de um engenheiro (campo "linkedEngineer"), nada além disso.
         // (O engenheiro também monta as equipes dos engenheiros.)
-        ((isDp() || isEngineer()) && resource.data.roleValue == "encarregado" &&
+        // Chefes de equipe que entram na equipe de um engenheiro: encarregado e analista.
+        ((isDp() || isEngineer()) && resource.data.roleValue in ["encarregado", "analista"] &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedEngineer", "updatedAt"])));
       allow delete: if isAdmin();
     }

@@ -293,15 +293,18 @@
     // mais "todos os engenheiros"). As equipes dos engenheiros são montadas pelo DP e pelos engenheiros (Equipes-Engenheiros.html).
     async getEngineerRouting() {
       const directory = await this.getTeamDirectory();
-      const ofForeman = (name) => (name ? directory.foremen.find((user) => user.roleValue === "encarregado" && normalizeIdentity(user.name) === normalizeIdentity(name))?.linkedEngineer || "" : "");
       const isEngineerLike = (user) => user?.roleValue === "engenheiro" || (user?.roleValue === "analista" && (user.privileges || []).includes("engenheiro"));
+      // Chefes de equipe que entram na equipe de um engenheiro: encarregado e analista (o analista com acesso de
+      // engenheiro conta como engenheiro).
+      const isChief = (user) => user?.roleValue === "encarregado" || (user?.roleValue === "analista" && !isEngineerLike(user));
+      const ofForeman = (name) => (name ? directory.foremen.find((user) => isChief(user) && normalizeIdentity(user.name) === normalizeIdentity(name))?.linkedEngineer || "" : "");
       return {
         ofForeman,
-        // Encarregado: o engenheiro da equipe dele. Engenheiro: ele mesmo. Estagiário (e quem mais estiver vinculado a
-        // um encarregado): o engenheiro desse encarregado. Senão (DP, administrador...): o do encarregado do colaborador.
+        // Engenheiro: ele mesmo. Encarregado/analista: o engenheiro da equipe dele. Estagiário (e quem mais estiver
+        // vinculado a um encarregado): o engenheiro desse encarregado. Senão (DP, administrador...): o do encarregado do colaborador.
         forSender(session, employeeForeman = "") {
-          if (session?.roleValue === "encarregado") return ofForeman(session.name) || session.linkedEngineer || "";
           if (isEngineerLike(session)) return session.name || "";
+          if (isChief(session)) return ofForeman(session.name) || session.linkedEngineer || "";
           return ofForeman(session?.linkedForeman) || ofForeman(employeeForeman);
         }
       };
