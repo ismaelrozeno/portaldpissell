@@ -30,6 +30,9 @@
     employeeSelected.textContent = item ? `Selecionado: ${item.nome} · Matrícula ${item.matricula}` : "";
     employeeSelected.hidden = !item;
     selectedEmployeeForeman = item ? item.encarregado || "" : "";
+    // Sem vínculo próprio, o campo "Encarregado" acompanha o encarregado do colaborador (até a pessoa trocar à mão).
+    if (item && picksForeman() && !foremanTouched && !ownForeman()) setForeman(selectedEmployeeForeman);
+    warnNoEngineer();
     employeeSearch.value = "";
     if (item) errorMessage.hidden = true;
     filterEmployees();
@@ -124,6 +127,11 @@
       refusal.textContent = `Recusada por ${release.refusedBy || "engenheiro"}: ${release.refusalReason || "sem motivo informado"}. Ajuste os dados e envie novamente.`;
       refusal.hidden = false;
     }
+    if (release.foreman && picksForeman()) {
+      setForeman(release.foreman);
+      foremanTouched = true;
+      warnNoEngineer();
+    }
     particularReason.value = release.reasonDetail ?? (savedReason === "particular" && release.reason !== "Particular" ? release.reason || "" : "");
     const savedMovement = release.movement || ["saida"];
     document.querySelectorAll('input[name="movement"]').forEach((input) => { input.checked = savedMovement.includes(input.value); });
@@ -134,11 +142,48 @@
     updateParticularField();
   }
 
-  // Engenheiro que recebe: o da equipe do encarregado (js/core/firebase-auth.js, getEngineerRouting), decidido no envio,
-  // sem campo na tela. Não existe mais "todos os engenheiros": sem engenheiro vinculado, a liberação não pode ser enviada.
+  // Engenheiro que recebe: o da equipe do encarregado (js/core/firebase-auth.js, getEngineerRouting), decidido no envio.
+  // Não existe mais "todos os engenheiros": sem engenheiro vinculado, a liberação não pode ser enviada.
+  // Campo "Encarregado" (como na coletiva): vai para o engenheiro da equipe do encarregado escolhido. O encarregado/
+  // analista já vem selecionado (ele mesmo); o estagiário, com o encarregado a quem está vinculado. O engenheiro não
+  // tem o campo: a liberação fica com ele mesmo.
   let routing = null;
-  const engineerFor = () => routing?.forSender(window.portalAuthDemo.getSession(), selectedEmployeeForeman) || "";
+  const me = () => window.portalAuthDemo.getSession();
+  const foremanField = document.querySelector("#foreman-field");
+  const foremanSelect = document.querySelector("#foreman-name");
+  let foremanTouched = false;
+  const picksForeman = () => !!routing && !routing.isEngineerLike(me());
+  // Encarregado que vem escolhido ao abrir: o próprio chefe de equipe ou aquele a quem a conta está vinculada.
+  const ownForeman = () => (routing?.isChief(me()) ? me()?.name || "" : me()?.linkedForeman || "");
+  function setForeman(name) {
+    if (!name) return;
+    const fold = normalizeSearchText;
+    let option = [...foremanSelect.options].find((item) => item.value && fold(item.value) === fold(name));
+    if (!option) {
+      // Encarregado sem conta no portal: entra na lista (e o aviso explica que ele não tem engenheiro).
+      option = new Option(name, name);
+      foremanSelect.add(option);
+    }
+    foremanSelect.value = option.value;
+  }
+  const engineerFor = () => {
+    if (!routing) return "";
+    return picksForeman() ? routing.ofForeman(foremanSelect.value) : routing.forSender(me());
+  };
   const noEngineerText = "Sem engenheiro vinculado: peça ao DP ou ao engenheiro para colocar o encarregado na equipe de um engenheiro (Equipes dos engenheiros).";
+  // Sem engenheiro na equipe: avisa já ao abrir/escolher, não só no envio.
+  function warnNoEngineer() {
+    form.querySelector(".release-no-engineer")?.remove();
+    if (!routing || routing.isEngineerLike(me()) || engineerFor()) return;
+    if (!picksForeman() || !foremanSelect.value) return;
+    const isMe = normalizeSearchText(foremanSelect.value) === normalizeSearchText(me()?.name || "");
+    const who = isMe ? "Você ainda não está" : `O encarregado ${foremanSelect.value} ainda não está`;
+    form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${window.escapeHtml(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
+  }
+  foremanSelect.addEventListener("change", () => {
+    foremanTouched = true;
+    warnNoEngineer();
+  });
   async function loadEngineers() {
     try {
       routing = await window.portalAuthDemo.getEngineerRouting();
@@ -146,12 +191,13 @@
       console.warn("Não foi possível buscar o engenheiro da equipe.", error);
       return;
     }
-    // Encarregado (ou estagiário) que ainda não está na equipe de nenhum engenheiro: avisa já ao abrir, não só no envio.
-    const me = window.portalAuthDemo.getSession();
-    const isEngineerLike = me?.roleValue === "engenheiro" || (me?.roleValue === "analista" && (me.privileges || []).includes("engenheiro"));
-    if (isEngineerLike || !["encarregado", "analista", "estagiario_engenharia"].includes(me?.roleValue) || routing.forSender(me)) return;
-    const who = me.roleValue !== "estagiario_engenharia" || !me.linkedForeman ? "Você ainda não está" : `O encarregado ${me.linkedForeman} ainda não está`;
-    form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${window.escapeHtml(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
+    if (picksForeman()) {
+      foremanSelect.innerHTML = `<option value="">Selecione o encarregado</option>${routing.chiefs.map((name) => `<option value="${window.escapeHtml(name)}">${window.escapeHtml(name)}</option>`).join("")}`;
+      foremanSelect.required = true;
+      foremanField.hidden = false;
+      setForeman(ownForeman());
+    }
+    warnNoEngineer();
   }
 
   updatePageCopy();
@@ -197,6 +243,12 @@
     }
 
     const engineerName = engineerFor();
+    if (picksForeman() && !foremanSelect.value) {
+      errorMessage.textContent = "Selecione o encarregado: a liberação vai para o engenheiro da equipe dele.";
+      errorMessage.hidden = false;
+      releaseButton();
+      return;
+    }
     if (!engineerName) {
       errorMessage.textContent = routing ? noEngineerText : "Não foi possível buscar o engenheiro da equipe. Verifique a internet e recarregue a página.";
       errorMessage.hidden = false;
@@ -238,6 +290,8 @@
       reasonDetail: particularReason.value.trim(),
       reason: reason === "particular" ? particularReason.value.trim() : `Tarefa: ${particularReason.value.trim()}`,
       targetEngineer: engineerName,
+      // Encarregado da liberação (de quem é a equipe): o próprio chefe de equipe ou o escolhido no campo.
+      foreman: picksForeman() ? foremanSelect.value : "",
       requester: existing?.requester || session?.name || "Solicitante",
       // Conta de quem pediu: o painel dele acha a liberação mesmo se ele mudar o nome no Perfil.
       ...(existing ? {} : { requesterUid: session?.uid || "" }),

@@ -298,8 +298,14 @@
       // engenheiro conta como engenheiro).
       const isChief = (user) => user?.roleValue === "encarregado" || (user?.roleValue === "analista" && !isEngineerLike(user));
       const ofForeman = (name) => (name ? directory.foremen.find((user) => isChief(user) && normalizeIdentity(user.name) === normalizeIdentity(name))?.linkedEngineer || "" : "");
+      // Chefes de equipe com conta (os únicos que podem estar na equipe de um engenheiro), para o campo "Encarregado".
+      const chiefs = [...new Set(directory.foremen.filter(isChief).map((user) => user.name))]
+        .sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
       return {
         ofForeman,
+        chiefs,
+        isChief,
+        isEngineerLike,
         // Engenheiro: ele mesmo. Encarregado/analista: o engenheiro da equipe dele. Estagiário (e quem mais estiver
         // vinculado a um encarregado): o engenheiro desse encarregado. Senão (DP, administrador...): o do encarregado do colaborador.
         forSender(session, employeeForeman = "") {
