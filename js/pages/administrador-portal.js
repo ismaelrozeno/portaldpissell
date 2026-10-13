@@ -140,6 +140,16 @@
       : `<p class="text-muted mb-0">${query ? "Nenhum resultado para a busca." : "Nenhum cadastro de porteiro recebido."}</p>`;
   }
 
+  // Perfis que o administrador pode dar a uma conta já cadastrada (os mesmos do "Liberar matrícula").
+  const ROLE_LABELS = {
+    dp: "Departamento Pessoal",
+    encarregado: "Encarregado",
+    estagiario_engenharia: "Estagiário de Engenharia",
+    analista: "Analista",
+    seguranca_trabalho: "Segurança do trabalho",
+    engenheiro: "Engenheiro responsável"
+  };
+
   // Privilégios que o administrador pode dar, por perfil. O analista é o perfil "curinga": com um acesso ele VIRA
   // aquele perfil no Meu portal (DP tem prioridade; com engenheiro + segurança, alterna entre os dois).
   const PRIVILEGES = {
@@ -159,10 +169,12 @@
     const items = defs.length
       ? `<li><h6 class="dropdown-header">Privilégios</h6></li>${defs.map((def) => `<li><button class="dropdown-item ${has(def) ? "text-danger fw-semibold" : ""}" type="button" data-privilege-user="${escapeHtml(user.id)}" data-privilege-key="${def.key}" data-privilege-grant="${has(def) ? "0" : "1"}">${has(def) ? def.revoke : def.grant}</button><span class="dropdown-item-text small text-muted pt-0">${def.note}</span></li>`).join("")}`
       : '<li><span class="dropdown-item-text small text-muted">Este perfil não tem privilégios para dar.</span></li>';
+    // Mudar perfil (ex.: Encarregado -> Analista, o "curinga" que recebe os acessos acima). A portaria tem cadastro à parte.
+    const roleItems = user.roleValue === "porteiro" ? "" : `<li><hr class="dropdown-divider"></li><li><h6 class="dropdown-header">Mudar perfil (hoje: ${escapeHtml(ROLE_LABELS[user.roleValue] || user.role || "—")})</h6></li>${Object.entries(ROLE_LABELS).filter(([value]) => value !== user.roleValue).map(([value, label]) => `<li><button class="dropdown-item" type="button" data-role-user="${escapeHtml(user.id)}" data-role-value="${value}">Mudar para ${escapeHtml(label)}</button></li>`).join("")}`;
     // Fotos de perfil premium: o administrador presenteia (desbloqueia) ou tira, para qualquer perfil.
     const owned = (id) => (user.premiumAvatars || []).includes(id);
     const premiumItems = `<li><hr class="dropdown-divider"></li><li><h6 class="dropdown-header">Fotos de perfil premium</h6></li>${window.portalAvatars.premium.map((item) => `<li><button class="dropdown-item d-flex align-items-center gap-2 ${owned(item.id) ? "text-danger fw-semibold" : ""}" type="button" data-premium-user="${escapeHtml(user.id)}" data-premium-id="${item.id}" data-premium-grant="${owned(item.id) ? "0" : "1"}"><img src="${window.portalAvatars.url(item.id)}" alt="" width="28" height="28" style="border-radius:50%">${owned(item.id) ? `Tirar: ${escapeHtml(item.label)}` : `🎁 Presentear: ${escapeHtml(item.label)}`}</button></li>`).join("")}`;
-    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem">${items}${premiumItems}</ul></div>`;
+    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem;max-height:70vh;overflow-y:auto">${items}${roleItems}${premiumItems}</ul></div>`;
   };
   const privilegeBadge = (user) => {
     const given = (PRIVILEGES[user.roleValue] || []).filter((def) => (user.privileges || []).includes(def.key));
@@ -194,6 +206,36 @@
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
+
+  // Mudar perfil (menu ⋮): muda na hora, como os privilégios, e avisa como desfazer.
+  registeredUsersList.addEventListener("click", async (event) => {
+    const item = event.target.closest("[data-role-user]");
+    if (!item) return;
+    const users = await window.portalAuthDemo.getAllUsers();
+    const user = users.find((entry) => entry.id === item.dataset.roleUser);
+    const roleValue = item.dataset.roleValue;
+    const label = ROLE_LABELS[roleValue];
+    if (!user || !label) return;
+    const before = ROLE_LABELS[user.roleValue] || user.role || "perfil anterior";
+    // Privilégios que continuam valendo no perfil novo (ex.: Gestor do engenheiro); os outros saem.
+    const keep = (user.privileges || []).filter((key) => (PRIVILEGES[roleValue] || []).some((def) => def.key === key));
+    const feedback = document.querySelector("#privilege-feedback");
+    const say = (text, ok) => {
+      feedback.textContent = text;
+      feedback.className = `alert py-2 mt-3 mb-0 ${ok ? "alert-success" : "alert-danger"}`;
+      feedback.hidden = false;
+    };
+    try {
+      await window.portalAuthDemo.setUserRole(user.id, roleValue, label, keep);
+    } catch (error) {
+      console.error("Não foi possível mudar o perfil.", error);
+      say(`Não foi possível mudar o perfil de ${user.name} (${error.code || "erro"}). Verifique a internet e as regras do banco.`, false);
+      return;
+    }
+    const removed = (user.privileges || []).length - keep.length;
+    say(`${user.name}: perfil mudado de ${before} para ${label}.${removed ? " Os acessos que não valem para o perfil novo foram retirados." : ""}${roleValue === "analista" ? " Agora dá para dar os acessos de analista no mesmo menu ⋮." : ""} Vale no próximo login ou ao atualizar a página. Para desfazer, use "Mudar para ${before}" no mesmo menu.`, true);
+    await renderRegisteredUsers();
+  });
 
   // Presentear / tirar foto de perfil premium (menu ⋮ de cada usuário).
   registeredUsersList.addEventListener("click", async (event) => {
