@@ -47,20 +47,25 @@
     const chips = [];
     if (sheet.bonusRequest) chips.push(chip("info", `Pedido do encarregado: <b>${sheet.bonusRequest === "abonado" ? "Abonado" : "Não abonado"}</b>`));
     chips.push(decided
-      ? chip(decided === "approved" ? "yes" : "no", `Eng. <b>${esc(sheet.engineer || "")}</b> · assinou como ${decided === "approved" ? "abonado" : "não abonado"}`)
-      : chip("wait", `Engenheiro: aguardando${sheet.targetEngineer ? ` (${esc(sheet.targetEngineer)})` : ""}`));
-    chips.push(sheet.dpSigner
-      ? chip(stage === "closed" ? "no" : "yes", `DP <b>${esc(sheet.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`)
-      : retroactive ? chip("info", `${(sheet.movement || []).length > 1 ? "Não bateu o ponto" : "Retroativa"} · sem autorização de saída nem portaria`) : chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
-    if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${esc(sheet.abonoLaunchedBy || "DP")}</b>`));
-    else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
-    if (sheet.exitConfirmedBy) chips.push(chip("info", `Portaria <b>${esc(sheet.exitConfirmedBy)}</b> · assinou`));
+      ? chip(decided === "approved" ? "yes" : "no", `Engenheiro: <b>${decided === "approved" ? "abonado" : "não abonado"}</b> · ${esc(sheet.engineer || "")}`)
+      : chip("wait", `Engenheiro: <b>aguardando</b>${sheet.targetEngineer ? ` · ${esc(sheet.targetEngineer)}` : ""}`));
+    // Retroativa / não bateu o ponto não passa pelo DP para autorizar: o aviso fica nos dados da liberação (flag).
+    if (sheet.dpSigner) chips.push(chip(stage === "closed" ? "no" : "yes", `DP: <b>${stage === "closed" ? "negou" : "assinou"}</b> · ${esc(sheet.dpSigner)}`));
+    else if (!retroactive) chips.push(chip("wait", `DP: <b>${stage === "engineer" ? "aguardando o engenheiro" : "aguardando"}</b>`));
+    if (sheet.abonoLaunchedAt) chips.push(chip("yes", `Abono no RM: <b>lançado</b> · ${esc(sheet.abonoLaunchedBy || "DP")}`));
+    else if (decided === "approved" && profile === "dp") chips.push(chip("wait", "Abono no RM: <b>por lançar</b>"));
+    if (sheet.exitConfirmedBy) chips.push(chip("yes", `Portaria: <b>assinou</b> · ${esc(sheet.exitConfirmedBy)}`));
     else if (stage === "gate") {
       // A portaria marca a saída de cada colaborador; a folha só fecha quando todos saírem.
       const out = sheetApi().exitedCount(sheet);
       const total = (sheet.participants || []).length;
       chips.push(chip(out ? "info" : "wait", `Portaria: <b>${out} de ${total}</b> ${out === 1 ? "saiu" : "saíram"}`));
-    } else if (sheetApi().isEntryOnly(sheet) && !retroactive) chips.push(chip("info", "Só entrada · sem portaria"));
+    }
+    // Dado da liberação (não é assinatura), junto da data: retroativa (com horário) ou só entrada. "Não bateu o ponto"
+    // já aparece em "Batida do ponto".
+    const flag = retroactive
+      ? ((sheet.movement || []).length < 2 ? '<small class="row-flag"><b>Retroativa</b> · sem autorização de saída nem portaria</small>' : "")
+      : sheetApi().isEntryOnly(sheet) ? '<small class="row-flag"><b>Só entrada</b> · sem portaria</small>' : "";
     // Digitais dos colaboradores: o DP sempre vê quantos faltam; os outros perfis só depois que alguém assinou.
     const people = (sheet.participants || []).length;
     const signedBio = sheetApi().signedCount(sheet);
@@ -69,11 +74,11 @@
     // Devolvida pelo DP ao engenheiro: motivo e o que estava marcado, até o engenheiro decidir de novo.
     if (stage === "engineer" && !decided && sheet.dpReturnReason) {
       const prev = sheet.dpReturnPrevBonus === "approved" ? " · estava abonado" : sheet.dpReturnPrevBonus === "denied" ? " · estava não abonado" : "";
-      chips.unshift(chip("no", `Devolvida pelo DP <b>${esc(sheet.dpReturnBy || "")}</b>: ${esc(sheet.dpReturnReason)}${prev}`));
+      chips.unshift(chip("no", `Devolvida pelo DP: <b>${esc(sheet.dpReturnBy || "")}</b> · ${esc(sheet.dpReturnReason)}${prev}`));
     }
     if (stage === "foreman") {
       chips.length = 0;
-      chips.push(chip("no", `Recusada por <b>${esc(sheet.refusedBy || "")}</b>${sheet.refusalReason ? ` · ${esc(sheet.refusalReason)}` : ""}`));
+      chips.push(chip("no", `Recusada por: <b>${esc(sheet.refusedBy || "")}</b>${sheet.refusalReason ? ` · ${esc(sheet.refusalReason)}` : ""}`));
     }
     const engineerButtons = canDecide(sheet)
       ? `${btn("row-yes-btn", "approved", decided === "approved" ? "Abonado ✓" : "Abonado")}${btn("row-no-btn", "denied", decided === "denied" ? "Não abonado ✓" : "Não abonado")}`
@@ -99,7 +104,7 @@
       ? `${btn("row-yes-btn", "restore", "Restaurar")}${view}${btn("row-delete-btn", "purge", canHard() ? "Apagar do banco" : "Apagar de vez")}`
       : `${gateButtons}${bioButton}${dpButtons}${engineerButtons}${refuseButton}${editButton}${view}${btn("row-delete-btn", "trash", "Apagar")}`;
     return `<tr>
-      <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: ${esc(sheet.requester || "—")}</small><small class="row-date">Data da liberação: <b>${esc(dateLabel(sheet.date))}</b></small><small class="row-date">Batida do ponto: <b>${sheet.time && (sheet.movement || []).length < 2 ? esc(sheet.time) : "Não bateu o ponto"}</b></small>${window.portalCreatedLabel?.(sheet.createdAt) || ""}<div class="sig-chips">${chips.join("")}</div></td>
+      <td data-label="Liberação" class="col-who"><strong>${esc(sheet.motive || "Sem motivo")}</strong><small class="row-role">Liberação coletiva · ${people} ${people === 1 ? "colaborador" : "colaboradores"}</small><small class="row-who">Solicitante: <b>${esc(sheet.requester || "—")}</b></small><small class="row-date">Data da liberação: <b>${esc(dateLabel(sheet.date))}</b></small>${flag}<small class="row-date">Batida do ponto: <b>${sheet.time && (sheet.movement || []).length < 2 ? esc(sheet.time) : "Não bateu o ponto"}</b></small>${window.portalCreatedLabel?.(sheet.createdAt) || ""}<div class="sig-chips">${chips.join("")}</div></td>
       <td data-label="Frente" class="col-frente">Coletiva</td>
       <td data-label="Horário" class="col-horario">${esc(sheet.time || "—")}</td>
       <td data-label="Status" class="col-status"><span class="status-badge status-${stageInfo.tone}">${esc(sheetApi().stageLabel(sheet, stage))}</span>${!isDoneMode() && sheetApi().isConcluded(sheet) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
