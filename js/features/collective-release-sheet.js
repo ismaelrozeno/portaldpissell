@@ -140,7 +140,7 @@
       const exit = exitOf(sheet, person);
       const exitTime = exit ? new Date(exit.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
       // Coluna "Saída": hora em que a portaria marcou a saída; sem registro, "-".
-      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-exit-cell">${person ? (exit ? esc(exitTime) : '<span class="cs-exit-none">-</span>') : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
+      return `<tr><td class="cs-id">${index + 1}</td><td class="cs-name">${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-exit-cell">${person ? (exit ? esc(exitTime) : '<span class="cs-exit-none">-</span>') : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
     return `
       <header class="cs-head">
@@ -159,6 +159,7 @@
         <tr><th>Horas</th><td colspan="3" class="cs-bonus cs-bonus-${sheet.bonusStatus === "approved" ? "yes" : sheet.bonusStatus === "denied" ? "no" : "wait"}">${sheet.bonusStatus === "approved" ? "ABONADO" : sheet.bonusStatus === "denied" ? "NÃO ABONADO" : "PENDENTE · aguardando decisão do engenheiro"}</td></tr>
       </table>
       <table class="cs-list">
+        <colgroup><col class="cs-col-id"><col><col class="cs-col-role"><col class="cs-col-exit"><col class="cs-col-sign"></colgroup>
         <thead>
           <tr><th colspan="5" class="cs-participants">Participantes</th></tr>
           <tr><th class="cs-id">ID</th><th>NOME</th><th>Função</th><th class="cs-exit-cell">Saída</th><th>Assinatura</th></tr>
@@ -245,8 +246,21 @@ O carimbo será removido.`)) return;
     });
   }
 
+  // Nome, função e nome na assinatura ficam numa linha só: se não couber, a letra diminui até caber (como no PDF).
+  function fitOneLine(root) {
+    root.querySelectorAll(".cs-list td.cs-name, .cs-list td.cs-role, .cs-list .cs-bio-name").forEach((el) => {
+      el.style.fontSize = "";
+      let size = parseFloat(getComputedStyle(el).fontSize) || 12;
+      while (el.scrollWidth > el.clientWidth + 1 && size > 7) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+    });
+  }
+
   function draw() {
     overlay.querySelector("#cs-sheet").innerHTML = sheetHtml(current);
+    requestAnimationFrame(() => fitOneLine(overlay.querySelector("#cs-sheet")));
     overlay.querySelector("#cs-launch").hidden = !canLaunch(current);
     overlay.querySelector("#cs-undo-launch").hidden = !(isDp() && current.abonoLaunchedAt);
     const hint = launchHint(current);
@@ -266,7 +280,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=e7831e4e");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=824f6fde");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -313,7 +327,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=d5793b4d", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=04cf528d", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);

@@ -108,3 +108,11 @@
 .cs-meta .cs-meta-date { grid-template-columns: 70px 1fr 70px 1fr; }
 .cs-meta .cs-meta-date strong + span { border-left: 1px solid #555; }
 .cs-list th.cs-exit-cell, .cs-list .cs-exit-none { color: #777; font-weight: 400; }
+/* Nome, função e nome na assinatura numa linha só (a letra diminui até caber; js/features/collective-release-sheet.js). */
+.cs-list td.cs-name, .cs-list td.cs-role, .cs-list .cs-bio-name { white-space: nowrap; overflow: hidden; }
+/* Larguras fixas: o texto numa linha não pode esticar a tabela para fora da folha. */
+.cs-list { table-layout: fixed; width: 100%; }
+.cs-list .cs-col-id { width: 34px; }
+.cs-list .cs-col-role { width: 170px; }
+.cs-list .cs-col-exit { width: 56px; }
+.cs-list .cs-col-sign { width: 35%; }

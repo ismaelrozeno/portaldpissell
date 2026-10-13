@@ -36,7 +36,8 @@
       if (!lines) {
         size = 4.5;
         font(style, size, color, family);
-        lines = doc.splitTextToSize(text, w - pad * 2).slice(0, maxLines);
+        // Nem com a letra mínima coube: numa linha só, mostra o texto inteiro (nunca corta palavras).
+        lines = maxLines === 1 ? [text] : doc.splitTextToSize(text, w - pad * 2).slice(0, maxLines);
       }
       const lh = size * 0.3528 * 1.2;
       const top = y + (h - lines.length * lh) / 2 + lh * 0.78;
@@ -57,7 +58,7 @@
       const tx = x + 3 + size / 1.2;
       textIn(`ASSINADO POR DIGITAL\n${bio.when}`, tx, y, 24, h, { size: 5.5, color: GREY, maxLines: 2, pad: 0 });
       // Nome do colaborador ao lado, como assinatura (igual à folha individual).
-      if (bio.name) textIn(bio.name, tx + 24, y, x + w - tx - 24, h, { size: 8.5, style: "italic", maxLines: 2, pad: 1 });
+      if (bio.name) textIn(bio.name, tx + 24, y, x + w - tx - 24, h, { size: 8.5, style: "italic", maxLines: 1, pad: 1 });
     };
 
     // ---- Cabeçalho: logo | título | motivo + data
@@ -116,7 +117,7 @@
     y += rh - 1 + 5;
 
     // ---- Participantes
-    const cols = [12, 58, 26, 16, 78];
+    const cols = [12, 56, 30, 14, 78];
     const heads = ["ID", "NOME", "Função", "Saída", "Assinatura"];
     const header = () => {
       line(0.25);
@@ -140,7 +141,7 @@
         line(0.25);
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
-        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 2 });
+        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 1 });
         else if (c === 3 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
         else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
         else if (c === 4 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH, w);
