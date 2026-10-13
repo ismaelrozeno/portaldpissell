@@ -148,8 +148,9 @@
     }
     // Encarregado (ou estagiário) que ainda não está na equipe de nenhum engenheiro: avisa já ao abrir, não só no envio.
     const me = window.portalAuthDemo.getSession();
-    if (!["encarregado", "estagiario_engenharia"].includes(me?.roleValue) || routing.forSender(me)) return;
-    const who = me.roleValue === "encarregado" || !me.linkedForeman ? "Você ainda não está" : `O encarregado ${me.linkedForeman} ainda não está`;
+    const isEngineerLike = me?.roleValue === "engenheiro" || (me?.roleValue === "analista" && (me.privileges || []).includes("engenheiro"));
+    if (isEngineerLike || !["encarregado", "analista", "estagiario_engenharia"].includes(me?.roleValue) || routing.forSender(me)) return;
+    const who = me.roleValue !== "estagiario_engenharia" || !me.linkedForeman ? "Você ainda não está" : `O encarregado ${me.linkedForeman} ainda não está`;
     form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${window.escapeHtml(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
   }
 

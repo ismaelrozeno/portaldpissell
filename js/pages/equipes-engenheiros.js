@@ -35,7 +35,7 @@
   // Função de cada encarregado, do cadastro de colaboradores (pela matrícula da conta ou, sem ela, pelo nome).
   let roleByMatricula = new Map();
   let roleByName = new Map();
-  const roleOf = (user) => (user.accounts || [user]).map((account) => roleByMatricula.get(String(account.matricula || "")) || roleByName.get(fold(account.name))).find(Boolean) || "Encarregado";
+  const roleOf = (user) => (user.accounts || [user]).map((account) => roleByMatricula.get(String(account.matricula || "")) || roleByName.get(fold(account.name))).find(Boolean) || (user.roleValue === "analista" ? "Analista" : "Encarregado");
 
   const isEngineerLike = (user) => user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"));
   const isManager = (user) => (user.privileges || []).includes("gestor");
@@ -61,7 +61,8 @@
     // O Gestor recebe as liberações de todos: não tem equipe, então não aparece aqui.
     engineers = group(directory.all.filter(isEngineerLike)).filter((user) => !isManager(user));
     // Só encarregados entram na equipe de um engenheiro.
-    foremen = group(directory.all.filter((user) => user.roleValue === "encarregado"));
+    // Chefes de equipe: encarregados e analistas (o analista com acesso de engenheiro aparece como engenheiro).
+    foremen = group(directory.all.filter((user) => user.roleValue === "encarregado" || (user.roleValue === "analista" && !isEngineerLike(user))));
   }
 
   // "2 contas com este nome": aviso no cartão, com o e-mail de cada conta ao passar o mouse.
@@ -222,7 +223,7 @@
   $("#teams-kicker").textContent = `${session?.role || "Portal"} · Obra 369`;
   // Engenheiro abre direto a equipe dele; o encarregado, a do engenheiro dele.
   if (isEngineerUser && !(session.privileges || []).includes("gestor")) openedEngineer = session.name || "";
-  else if (session.roleValue === "encarregado") openedEngineer = session.linkedEngineer || "";
+  else if (["encarregado", "analista"].includes(session.roleValue)) openedEngineer = session.linkedEngineer || "";
   if (!canEdit) {
     // Só consulta: sem vincular/tirar; a lista mostra só quem está na equipe aberta.
     $("#teams-intro").textContent = "Veja os encarregados da equipe de cada engenheiro. As liberações de cada encarregado vão só para o engenheiro da equipe. Quem monta as equipes é o DP ou o engenheiro.";
