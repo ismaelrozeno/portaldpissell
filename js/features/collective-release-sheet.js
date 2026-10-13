@@ -257,7 +257,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=53d0088a");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=1c4637fd");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
