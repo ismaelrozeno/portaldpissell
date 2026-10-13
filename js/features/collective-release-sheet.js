@@ -140,7 +140,7 @@
       const exit = exitOf(sheet, person);
       const exitTime = exit ? new Date(exit.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
       // Coluna "Saída": hora em que a portaria marcou a saída; sem registro, "-".
-      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-exit-cell">${person ? (exit ? esc(exitTime) : '<span class="cs-exit-none">-</span>') : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
+      return `<tr><td class="cs-id">${index + 1}</td><td>${person ? esc(person.nome) : ""}</td><td class="cs-role">${person ? esc(String(person.funcao || "").toUpperCase()) : ""}</td><td class="cs-exit-cell">${person ? (exit ? esc(exitTime) : '<span class="cs-exit-none">-</span>') : ""}</td><td class="cs-bio-cell">${bio}</td></tr>`;
     }).join("");
     return `
       <header class="cs-head">
@@ -161,7 +161,7 @@
       <table class="cs-list">
         <thead>
           <tr><th colspan="5" class="cs-participants">Participantes</th></tr>
-          <tr><th class="cs-id">ID</th><th>NOME</th><th class="cs-exit-cell">Saída</th><th>Função</th><th>Assinatura</th></tr>
+          <tr><th class="cs-id">ID</th><th>NOME</th><th>Função</th><th class="cs-exit-cell">Saída</th><th>Assinatura</th></tr>
         </thead>
         <tbody>${body}</tbody>
       </table>
@@ -266,7 +266,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=c3ba6af6");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=e7831e4e");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
