@@ -116,8 +116,8 @@
     y += rh - 1 + 5;
 
     // ---- Participantes
-    const cols = [12, 58, 16, 26, 78];
-    const heads = ["ID", "NOME", "Saída", "Função", "Assinatura"];
+    const cols = [12, 58, 26, 16, 78];
+    const heads = ["ID", "NOME", "Função", "Saída", "Assinatura"];
     const header = () => {
       line(0.25);
       cell(M, y, W, 7, [238, 238, 238]);
@@ -141,8 +141,8 @@
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
         else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 2 });
-        else if (c === 2 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
-        else if (c === 3 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
+        else if (c === 3 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
+        else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
         else if (c === 4 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH, w);
         x += w;
       });
