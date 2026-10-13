@@ -168,6 +168,9 @@
   setTimeout(doneLoading, 20000);
   // own: só as liberações da própria pessoa (encarregado, segurança, estagiário, analista). Para esses perfis a esteira
   // mostra a obra toda (releases/sheets) e o "Para você agora" e os números do menu, só o que é dela.
+  // Lista que um cartão/atalho abre: Coletivas quando tudo o que ele conta é coletiva; senão, Individuais.
+  const pageOf = (list) => (list.length && list.every((x) => x.kind === "col") ? "coletivas" : "individuais");
+
   function update({ profileKey, releases = [], sheets = [], own = null }) {
     doneLoading();
     lastProfile = profileKey;
@@ -222,6 +225,8 @@
     const flowEl = $("#dash-flow");
     if (flowEl) {
       flowEl.hidden = false;
+      // Página que cada cartão abre: Coletivas quando só há coletivas nele (senão, Individuais).
+      flowEl._pages = Object.fromEntries(stations.map((st) => [st.key, pageOf(st.list)]));
       const mine = MINE[role];
       flowEl.querySelector("#dash-stations").innerHTML = stations.map((st) => {
         const n = st.list.length;
@@ -239,7 +244,7 @@
 
     // Para você agora: o que esse perfil precisa fazer (até 3 itens)
     const items = [];
-    const add = (list, title, note, page, status) => items.push({ n: list.length, title, note, page, status });
+    const add = (list, title, note, page, status) => items.push({ n: list.length, title, note, page: page === "individuais" ? pageOf(list) : page, status });
     if (role === "dp") {
       add(groups.dp, "aguardando sua autorização", "o engenheiro já assinou o abono", "individuais", "pending");
       // Digital pendente conta PESSOAS, como o "Digitais pendentes" do BI Dados: cada individual é 1 e cada coletiva
@@ -313,7 +318,7 @@
     const card = event.target.closest(".portal-stats .stat-card[data-stat]:not([data-stat='team']), [data-engineer-filter]");
     if (!card || card.disabled || body.dataset.page !== "overview") return;
     setTimeout(() => {
-      if (window.portalFilterBar?.sharedStatus()) go("individuais");
+      if (window.portalFilterBar?.sharedStatus()) go(card.dataset.page || "individuais");
     }, 60);
   });
 
@@ -323,7 +328,7 @@
     if (station) {
       const key = station.dataset.flow;
       const status = (STATUS_FOR[roleKey(lastProfile)] || {})[key];
-      go("individuais", status || "all");
+      go($("#dash-flow")?._pages?.[key] || "individuais", status || "all");
       return;
     }
     const now = event.target.closest("[data-now]");

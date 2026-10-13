@@ -824,6 +824,11 @@
     const people = collective.reduce((sum, sheet) => sum + (sheet.participants?.length || 0), 0);
     return `${plural(individual.length, "individual", "individuais")} · ${plural(collective.length, "coletiva", "coletivas")}${collective.length ? ` (${plural(people, "pessoa", "pessoas")})` : ""}`;
   }
+  // Lista que o cartão abre no clique (js/features/portal-dashboard.js): Coletivas quando só há coletivas nele.
+  function statPage(detailId, individual, collective) {
+    const card = document.querySelector(`#${detailId}`)?.closest(".stat-card");
+    if (card) card.dataset.page = !individual.length && collective.length ? "coletivas" : "individuais";
+  }
   const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
 
   // Pendências de abono por engenheiro de destino (o "Enviar para" da liberação, nome do cadastro dele) e as enviadas
@@ -927,6 +932,7 @@
     elements.pending.textContent = pending.length + col.pending.length;
     document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento na obra (engenheiro ou DP)";
     detail("stat-pending-detail", isPortaria ? [] : [splitLabel(pending, col.pending), waitingLabel([...pending, ...col.pending])]);
+    statPage("stat-pending-detail", pending, col.pending);
 
     const stageCount = (stage) => approved.filter((release) => window.portalReleaseFlow.stageOf(release) === stage).length
       + col.approved.filter((sheet) => col.stageOf(sheet) === stage).length;
@@ -939,9 +945,11 @@
       approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited - entered} aguardando portaria${entered ? ` · ${plural(entered, "entrada", "entradas")}` : ""}` : "",
       splitLabel(approved, col.approved)
     ]);
+    statPage("stat-approved-detail", approved, col.approved);
 
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
     detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
+    statPage("stat-bonus-detail", bonus, col.bonus);
     // "Abonadas por <engenheiro>": de todas as liberações que o perfil vê, as que o engenheiro marcou como abonadas.
     // O Administrador Analista (perfil de teste e correções) não entra nos cartões.
     const byAdmin = (record) => /administrador/i.test(`${record.engineerRole || ""} ${record.engineer || ""}`);
