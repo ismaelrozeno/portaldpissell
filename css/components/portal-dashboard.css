@@ -462,12 +462,14 @@ body.dash .portal-stats.portal-stats-engineers { grid-template-columns: minmax(0
 .dash-station-part.is-zero { color: #7f93ad; }
 @media (min-width: 992px) { .dash-station-split { grid-column: 1; order: 6; } }
 
-/* Celular: nos cartões do resumo (dois por linha) as partes Individuais/Coletivas ficam uma embaixo da outra,
-   em linha: nome à esquerda, número à direita. Os cartões dos engenheiros (um por linha) continuam lado a lado. */
-@media (max-width: 599px) {
-  .portal-stats:not(.portal-stats-engineers) .stat-engineer-split { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
-  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .4rem; padding: .4rem .55rem; }
-  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-title { flex: 1; min-width: 0; font-size: .66rem; letter-spacing: .02em; }
-  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-num { font-size: 1.1rem; }
-  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-line { flex-basis: 100%; font-size: .7rem; }
+/* Cartões divididos (resumo e engenheiros) em qualquer resolução: cada cartão olha a PRÓPRIA largura. Estreito
+   (ex.: cinco cartões por linha, ou dois no celular), as partes Individuais/Coletivas ficam uma embaixo da outra,
+   em linha (nome à esquerda, número à direita); com espaço, lado a lado. Assim o nome nunca é cortado. */
+.portal-stats .stat-card.is-split { container-type: inline-size; }
+@container (max-width: 270px) {
+  .stat-engineer-split { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
+  .stat-engineer-part { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .4rem; padding: .4rem .55rem; }
+  .portal-stats .stat-engineer-part .stat-engineer-part-title { flex: 1; min-width: 0; font-size: .66rem; letter-spacing: .02em; }
+  .portal-stats .stat-engineer-part .stat-engineer-part-num { font-size: 1.1rem; }
+  .portal-stats .stat-engineer-part .stat-engineer-part-line { flex-basis: 100%; font-size: .7rem; }
 }
