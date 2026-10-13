@@ -528,6 +528,91 @@
     `).join("") : `<tr><td colspan="5" class="empty-state">${filtering || statFilter ? "Nenhum registro encontrado para os filtros." : doneMode ? "Nenhuma liberação concluída ainda." : "Nenhuma pendência: tudo o que foi concluído está em ✅ Concluídas."}</td></tr>`;
   }
 
+  // ---------- "Equipe vinculada": as pessoas da equipe, para criar liberação ----------
+  // Clicar no nome abre a liberação individual dessa pessoa; marcar (uma a uma ou "Selecionar todos") e tocar em
+  // "Liberação coletiva" abre a coletiva já com elas (Liberacao-Coletiva.html?employees=matrícula,matrícula...).
+  let currentTeam = [];
+  let teamCardIsMine = false; // o cartão "Equipe vinculada" mostra a equipe de quem está logado (chefe de equipe)
+  let teamDialog = null;
+  const teamPicked = new Set();
+  function openTeamDialog() {
+    if (!teamDialog) {
+      document.body.insertAdjacentHTML("beforeend", `
+        <dialog class="refuse-dialog team-dialog" id="team-dialog" aria-labelledby="team-dialog-title">
+          <button type="button" class="team-dialog-close" aria-label="Fechar">×</button>
+          <h2 id="team-dialog-title">Minha equipe</h2>
+          <p class="team-dialog-sub" id="team-dialog-sub"></p>
+          <input type="search" class="team-dialog-search" id="team-dialog-search" placeholder="Buscar por nome ou matrícula..." autocomplete="off" aria-label="Buscar na equipe">
+          <label class="team-dialog-all"><input type="checkbox" id="team-dialog-all"> Selecionar todos</label>
+          <ul class="team-dialog-list" id="team-dialog-list"></ul>
+          <div class="team-dialog-actions">
+            <button type="button" class="team-dialog-collective" id="team-dialog-collective" disabled>Liberação coletiva</button>
+          </div>
+        </dialog>`);
+      teamDialog = document.querySelector("#team-dialog");
+      teamDialog.querySelector(".team-dialog-close").addEventListener("click", () => teamDialog.close());
+      // Clicar fora da janela fecha.
+      teamDialog.addEventListener("click", (event) => { if (event.target === teamDialog) teamDialog.close(); });
+      teamDialog.querySelector("#team-dialog-search").addEventListener("input", renderTeamDialog);
+      teamDialog.querySelector("#team-dialog-list").addEventListener("change", (event) => {
+        const box = event.target.closest("[data-team-pick]");
+        if (!box) return;
+        if (box.checked) teamPicked.add(box.dataset.teamPick); else teamPicked.delete(box.dataset.teamPick);
+        updateTeamActions();
+      });
+      teamDialog.querySelector("#team-dialog-all").addEventListener("change", (event) => {
+        // "Selecionar todos" vale para quem aparece na busca.
+        visibleTeam().forEach((employee) => (event.target.checked ? teamPicked.add(employee.matricula) : teamPicked.delete(employee.matricula)));
+        renderTeamDialog();
+      });
+      teamDialog.querySelector("#team-dialog-collective").addEventListener("click", () => {
+        if (!teamPicked.size) return;
+        // Uma pessoa só: liberação individual dela. Duas ou mais: coletiva com todas.
+        window.location.href = teamPicked.size === 1
+          ? `Liberacao.html?employee=${encodeURIComponent([...teamPicked][0])}`
+          : `Liberacao-Coletiva.html?employees=${encodeURIComponent([...teamPicked].join(","))}`;
+      });
+    }
+    teamPicked.clear();
+    teamDialog.querySelector("#team-dialog-search").value = "";
+    renderTeamDialog();
+    teamDialog.showModal();
+  }
+  const visibleTeam = () => {
+    const term = window.normalizeSearchText(teamDialog.querySelector("#team-dialog-search").value).trim();
+    return [...currentTeam]
+      .sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR", { sensitivity: "base" }))
+      .filter((employee) => !term || window.normalizeSearchText(`${employee.nome} ${employee.matricula} ${employee.funcao || ""}`).includes(term));
+  };
+  function renderTeamDialog() {
+    const list = visibleTeam();
+    teamDialog.querySelector("#team-dialog-sub").textContent = currentTeam.length
+      ? `${currentTeam.length} ${currentTeam.length === 1 ? "colaborador" : "colaboradores"}. Toque no nome (ou marque 1) para uma liberação individual; marque 2 ou mais para uma coletiva.`
+      : "Nenhum colaborador vinculado à sua equipe ainda. A equipe é montada em Equipes.";
+    teamDialog.querySelector("#team-dialog-list").innerHTML = list.length
+      ? list.map((employee) => {
+        const id = escapeHtml(employee.matricula);
+        return `<li>
+          <input type="checkbox" data-team-pick="${id}" aria-label="Selecionar ${escapeHtml(employee.nome)}"${teamPicked.has(employee.matricula) ? " checked" : ""}>
+          <a href="Liberacao.html?employee=${encodeURIComponent(employee.matricula)}" title="Liberação individual para ${escapeHtml(employee.nome)}"><strong>${escapeHtml(employee.nome)}</strong><small>${escapeHtml(employee.funcao || "Função não informada")} · Matrícula ${id}</small></a>
+        </li>`;
+      }).join("")
+      : `<li class="team-dialog-empty">${currentTeam.length ? "Ninguém encontrado na busca." : "Sem colaboradores."}</li>`;
+    updateTeamActions();
+  }
+  function updateTeamActions() {
+    const list = visibleTeam();
+    const all = teamDialog.querySelector("#team-dialog-all");
+    const pickedHere = list.filter((employee) => teamPicked.has(employee.matricula)).length;
+    all.checked = !!list.length && pickedHere === list.length;
+    all.indeterminate = pickedHere > 0 && pickedHere < list.length;
+    all.disabled = !list.length;
+    const button = teamDialog.querySelector("#team-dialog-collective");
+    button.disabled = !teamPicked.size;
+    button.textContent = !teamPicked.size ? "Marque as pessoas para a liberação"
+      : teamPicked.size === 1 ? "Liberação individual" : `Liberação coletiva com ${teamPicked.size} selecionados`;
+  }
+
   // Clique nos cartões do resumo: "Equipe vinculada" abre a equipe; os outros filtram a tabela (clicar de novo tira o filtro).
   // Cartão "Aguardando <engenheiro>": escolhe a mesma opção na Situação das duas listas (clicar de novo tira).
   document.querySelector("#engineer-stats")?.addEventListener("click", async (event) => {
@@ -563,7 +648,8 @@
     if (card.classList.contains("is-split") && !part) return;
     const key = card.dataset.stat;
     if (key === "team") {
-      if (foremanRoleValues.includes(activeProfileKey)) document.querySelector("#foreman-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Quem tem equipe (encarregado, analista, estagiário, segurança): abre a equipe para criar liberações dela.
+      if (teamCardIsMine) openTeamDialog();
       else window.location.href = "Equipes.html";
       return;
     }
@@ -1037,7 +1123,17 @@
     const foremanTeam = foremanRoleValues.includes(session?.roleValue)
       ? employees.filter((employee) => [session.name, linkedRoleValues.includes(session.roleValue) ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
       : [];
-    elements.team.textContent = foremanRoleValues.includes(profileKey) ? foremanTeam.length : ["dp", "engenheiro"].includes(profileKey) ? employees.length : profile.team;
+    // Chefe de equipe (encarregado ou analista, inclusive o analista com acesso de DP, que abre o portal como DP):
+    // o cartão "Equipe vinculada" é a equipe DELE e abre a janela da equipe, em qualquer painel.
+    const isEngineerAnalyst = session?.roleValue === "analista" && (session.privileges || []).includes("engenheiro");
+    const isTeamChief = session?.roleValue === "encarregado" || (session?.roleValue === "analista" && !isEngineerAnalyst);
+    const ownTeam = isTeamChief
+      ? employees.filter((employee) => employee.encarregado?.trim().toLowerCase() === String(session.name || "").trim().toLowerCase())
+      : [];
+    currentTeam = foremanRoleValues.includes(profileKey) ? foremanTeam : isTeamChief ? ownTeam : [];
+    // Sem ninguém na equipe: o cartão mostra o total da obra e leva à página de Equipes (como para o DP).
+    teamCardIsMine = currentTeam.length > 0;
+    elements.team.textContent = teamCardIsMine ? currentTeam.length : profileKey === "portaria" ? profile.team : employees.length;
     const stageOf = window.portalReleaseFlow.stageOf;
     const rules = statRules(profileKey);
     // Encarregado, estagiário, analista e segurança: as listas mostram só o que eles pediram, mas os cartões de
