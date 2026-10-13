@@ -318,6 +318,11 @@
         }
       };
     },
+    // Administrador: muda o perfil de uma conta (ex.: Encarregado -> Analista). Os privilégios que não valem para o
+    // perfil novo saem; conta, senha, foto e liberações continuam as mesmas.
+    async setUserRole(userId, roleValue, roleLabel, privileges) {
+      await usersRef().doc(userId).update({ roleValue, role: roleLabel, privileges: privileges || [], updatedAt: new Date().toISOString() });
+    },
     // Administrador: presenteia uma foto de perfil premium. A pessoa vê o aviso "Foto desbloqueada" no próximo login.
     async giftPremiumAvatar(userId, avatarId, giverName) {
       const FieldValue = firebase.firestore.FieldValue;
