@@ -15,6 +15,7 @@
     equipes: '<circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3.5 18a4.5 4.5 0 0 1 9 0"/><path d="M11.5 18a4.5 4.5 0 0 1 9 0"/>',
     app: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/>',
     admin: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    biometria: '<path d="M8.5 19.5c1-2 1.5-4.5 1.5-7.5a2 2 0 0 1 4 0c0 1.5-.1 3-.4 4.4"/><path d="M5.6 16.5c.6-1.4.9-2.9.9-4.5a5.5 5.5 0 0 1 11 0c0 2.4-.3 4.6-1 6.6"/><path d="M4 9.5A8.5 8.5 0 0 1 19.6 7"/><path d="M12 12c0 3-.6 5.7-1.8 8"/>',
     concluidas: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
     lixeira: '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/>',
     plus: '<path d="M12 5v14M5 12h14"/>'
@@ -32,6 +33,7 @@
       ${item("individuais", "Portal.html#individuais", "Individuais")}
       ${item("coletivas", "Portal.html#coletivas", "Coletivas")}
       ${item("concluidas", "Portal.html#concluidas", "Concluídas", "dash-nav-desktop")}
+      ${item("biometria", "Biometria.html", "Biometria", "dash-nav-desktop").replace("<li", "<li data-dash-bio hidden")}
       ${item("indicadores", "Portal.html#indicadores", "BI Dados")}
       ${item("equipe", "Portal.html#equipe", "Atalhos")}
       ${item("equipes", "Equipes.html", "Equipes", "dash-nav-desktop")}
@@ -84,6 +86,8 @@
     const session = window.portalAuthDemo?.getSession();
     const isAdmin = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
     document.querySelectorAll("[data-dash-admin]").forEach((el) => { el.hidden = !isAdmin; });
+    // "Biometria" só para o DP (e o administrador), e só no computador (dash-nav-desktop).
+    document.querySelectorAll("[data-dash-bio]").forEach((el) => { el.hidden = !(isAdmin || session?.roleValue === "dp"); });
     const canCreate = !!session && session.roleValue !== "porteiro";
     document.querySelectorAll("[data-dash-create]").forEach((el) => { el.hidden = !canCreate; });
   })();

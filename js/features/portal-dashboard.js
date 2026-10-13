@@ -279,6 +279,9 @@
     document.querySelectorAll('[data-dash-page="equipe"]').forEach((item) => { item.hidden = profileKey === "portaria"; });
     const equipesItem = $("#dash-nav-equipes");
     if (equipesItem) equipesItem.hidden = profileKey === "portaria";
+    // "Biometria" (digitais dos colaboradores e leitor biométrico): só para o DP e só no computador (dash-nav-desktop).
+    const bioItem = $("#dash-nav-biometria");
+    if (bioItem) bioItem.hidden = profileKey !== "dp";
     // "Administração" no menu lateral: só para o Administrador Analista (mesma regra do menu de cima).
     const session = window.portalAuthDemo?.getSession();
     const adminItem = $("#dash-nav-admin");
