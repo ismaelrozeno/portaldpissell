@@ -67,15 +67,21 @@
     cell(M, hy, 50, hh);
     cell(M + 50, hy, 60, hh);
     cell(M + 110, hy, 80, hh * 0.65);
-    cell(M + 110, hy + hh * 0.65, 80, hh * 0.35);
+    // Linha de baixo: DATA | data | BATIDA | horário da batida do ponto.
+    cell(M + 110, hy + hh * 0.65, 14, hh * 0.35);
+    cell(M + 124, hy + hh * 0.65, 26, hh * 0.35);
+    cell(M + 150, hy + hh * 0.65, 15, hh * 0.35);
+    cell(M + 165, hy + hh * 0.65, 25, hh * 0.35);
     textIn("DIRECIONAL", M, hy, 50, hh, { align: "center", size: 17, style: "bold", color: [68, 68, 68] });
     textIn("LIBERAÇÃO COLETIVA", M + 50, hy, 60, hh, { align: "center", size: 10, color: [119, 119, 119], family: "times" });
     textIn("MOTIVO", M + 110, hy, 22, hh * 0.65, { size: 6.5, color: [119, 119, 119], family: "times" });
     // Motivo longo: letra menor e mais linhas, para não cortar o texto.
     const mLen = String(f.motive || "").length;
     textIn(String(f.motive || "").toUpperCase(), M + 132, hy, 58, hh * 0.65, { size: mLen > 110 ? 7.5 : mLen > 70 ? 8.5 : 10, style: "bold", maxLines: mLen > 110 ? 6 : 5 });
-    textIn("DATA", M + 110, hy + hh * 0.65, 22, hh * 0.35, { size: 6.5, color: [119, 119, 119], family: "times" });
-    textIn(f.date, M + 132, hy + hh * 0.65, 58, hh * 0.35, { size: 11, style: "bold" });
+    textIn("DATA", M + 110, hy + hh * 0.65, 14, hh * 0.35, { size: 6.5, color: [119, 119, 119], family: "times" });
+    textIn(f.date, M + 124, hy + hh * 0.65, 26, hh * 0.35, { size: 10.5, style: "bold" });
+    textIn("BATIDA", M + 150, hy + hh * 0.65, 15, hh * 0.35, { size: 6.5, color: [119, 119, 119], family: "times" });
+    textIn(f.clock || "—", M + 165, hy + hh * 0.65, 25, hh * 0.35, { size: 10.5, style: "bold", maxLines: 2 });
 
     // ---- Assinaturas: encarregado, engenheiro, DP, portaria + horas
     let y = hy + hh + 4;

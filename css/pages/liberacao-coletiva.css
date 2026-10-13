@@ -102,3 +102,6 @@
 
 /* Hora em que o colaborador passou pela portaria (saída marcada um por um) */
 .cs-list .cs-exit { display: block; color: #17613b; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+/* Linha da data com a batida do ponto ao lado: DATA | 09/10/2026 | BATIDA | 14:00. */
+.cs-meta .cs-meta-date { grid-template-columns: 70px 1fr 70px 1fr; }
+.cs-meta .cs-meta-date strong + span { border-left: 1px solid #555; }

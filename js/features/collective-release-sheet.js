@@ -34,6 +34,7 @@
   };
   const hasBoth = (sheet) => (sheet?.movement || []).includes("entrada") && (sheet?.movement || []).includes("saida");
   // "Não se aplica" de DP/portaria: entrada e saída juntas = não bateu o ponto; senão, data retroativa.
+  const clockLabel = (sheet) => (hasBoth(sheet) ? "NÃO BATEU O PONTO" : sheet.time || "—");
   const notApplicable = (sheet) => `Não se aplica · ${hasBoth(sheet) ? "não bateu o ponto" : "retroativa"}`;
   const isEntryOnly = (sheet) => (sheet?.movement || []).includes("entrada") && !(sheet?.movement || []).includes("saida");
   // Mesma conta do portalReleaseFlow.isRetroactive (esta tela também abre sem ele, em Liberacao-Coletiva.html).
@@ -97,6 +98,8 @@
     return {
       motive: sheet.motive || "",
       date: formatDate(sheet.date),
+      // Batida do ponto ao lado da data (entrada e saída juntas: não bateu o ponto).
+      clock: clockLabel(sheet),
       foreman: sheet.foreman || "",
       requester: sheet.requester || "",
       requesterTime: formatDateTime(sheet.createdAt),
@@ -139,7 +142,7 @@
         <div class="cs-title">LIBERAÇÃO COLETIVA</div>
         <div class="cs-meta">
           <div><span>MOTIVO</span><strong>${esc(sheet.motive || "")}</strong></div>
-          <div><span>DATA</span><strong>${esc(formatDate(sheet.date))}</strong></div>
+          <div class="cs-meta-date"><span>DATA</span><strong>${esc(formatDate(sheet.date))}</strong><span>BATIDA</span><strong>${esc(clockLabel(sheet))}</strong></div>
         </div>
       </header>
       <table class="cs-sign">
@@ -257,7 +260,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=1c4637fd");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=67570bcb");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -304,7 +307,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=1edfb089", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=dbcd85ef", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
