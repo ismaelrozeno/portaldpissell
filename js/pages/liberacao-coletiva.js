@@ -308,6 +308,14 @@
       warnNoEngineer();
     }
   }
+  // Vindo de "Equipe vinculada" no portal (?employees=matrícula,matrícula...): essas pessoas já entram na lista.
+  const preselected = new URLSearchParams(window.location.search).get("employees");
+  if (!editId && preselected) {
+    preselected.split(",").forEach((matricula) => {
+      const item = rawEmployees.find((employee) => employee.matricula === matricula.trim());
+      if (item) chosen.set(item.matricula, { matricula: item.matricula, nome: item.nome, funcao: item.funcao || "" });
+    });
+  }
   renderChosen();
   loadHistory();
 })();

@@ -473,3 +473,24 @@ body.dash .portal-stats.portal-stats-engineers { grid-template-columns: minmax(0
   .portal-stats .stat-engineer-part .stat-engineer-part-num { font-size: 1.1rem; }
   .portal-stats .stat-engineer-part .stat-engineer-part-line { flex-basis: 100%; font-size: .7rem; }
 }
+
+/* "Equipe vinculada": janela com a equipe para criar liberação individual (nome) ou coletiva (marcados) */
+.team-dialog { position: relative; width: min(94vw, 520px); }
+.team-dialog-close { position: absolute; top: .7rem; right: .85rem; border: 0; color: #718096; background: transparent; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+.team-dialog-sub { margin: 0 0 .7rem; color: #5d6b7b; font-size: .85rem; }
+.team-dialog-search { display: block; width: 100%; margin-bottom: .6rem; padding: .55rem .75rem; border: 1px solid #c9d3e0; border-radius: .5rem; font: inherit; font-size: .9rem; }
+.team-dialog-search:focus { outline: 2px solid rgba(245, 130, 13, .45); outline-offset: 1px; }
+.team-dialog-all { display: flex; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: .3rem .2rem; color: #29415b; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.team-dialog-list { display: grid; gap: .35rem; max-height: 50vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.team-dialog-list li { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border: 1px solid #e2e9f1; border-radius: .55rem; }
+.team-dialog-list li:hover { border-color: #f5b46b; background: #fffaf3; }
+.team-dialog-list input[type="checkbox"], .team-dialog-all input { width: 1.1rem; height: 1.1rem; flex: none; accent-color: #ef6c00; cursor: pointer; }
+.team-dialog-list a { display: grid; flex: 1; min-width: 0; color: #00142d; text-decoration: none; }
+.team-dialog-list a strong { overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
+.team-dialog-list a small { color: #66768a; font-size: .74rem; }
+.team-dialog-list a:hover strong { color: #ef6c00; text-decoration: underline; }
+.team-dialog-empty { justify-content: center; color: #66768a; font-size: .85rem; }
+.team-dialog-actions { display: flex; justify-content: flex-end; margin-top: .9rem; }
+.team-dialog-collective { padding: .65rem 1rem; border: 0; border-radius: .5rem; color: #fff; background: #ef6c00; font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer; }
+.team-dialog-collective:hover:not(:disabled) { background: #d35f00; }
+.team-dialog-collective:disabled { color: #8a97a8; background: #e8edf2; cursor: default; }
