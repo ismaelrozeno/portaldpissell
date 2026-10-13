@@ -161,9 +161,10 @@
     current = null;
   }
 
-  // A folha tem tamanho fixo (meia A4); em telas menores é reduzida para caber inteira na largura.
+  // A folha tem largura fixa (960 px desenhada, 794 px no HTML de reserva); em telas menores é reduzida para caber inteira na largura.
   function fit() {
-    overlay.querySelector(".release-sheet").style.zoom = Math.min(1, (overlay.clientWidth - 16) / 794);
+    const sheet = overlay.querySelector(".release-sheet");
+    sheet.style.zoom = Math.min(1, (overlay.clientWidth - 16) / (sheet.classList.contains("is-drawn") ? 960 : 794));
   }
 
   async function findRole(release) {
@@ -286,6 +287,24 @@
     overlay.querySelector("#launch-hint").hidden = !hint;
     overlay.querySelector("#undo-launch-release-preview").hidden = !(isDp() && release.abonoLaunchedAt);
     renderStamp(release, animate);
+    draw(f);
+  }
+
+  // Desenha a folha igual ao PDF/PNG (release-image.js), nítida na tela (960 px x densidade de pixels).
+  // O carimbo fica de fora do desenho: é o do HTML, por cima, para manter a animação.
+  function draw(fields) {
+    const sheet = overlay.querySelector(".release-sheet");
+    sheet.querySelector(".release-sheet-canvas")?.remove();
+    if (!window.portalReleaseImage) {
+      sheet.classList.remove("is-drawn");
+      return;
+    }
+    const canvas = window.portalReleaseImage.draw({ ...fields, launched: false }, (960 / 794) * Math.max(2, window.devicePixelRatio || 1));
+    canvas.className = "release-sheet-canvas";
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", `Autorização de saída de ${fields.name}, ${fields.date}`);
+    sheet.prepend(canvas);
+    sheet.classList.add("is-drawn");
   }
 
   async function launch() {

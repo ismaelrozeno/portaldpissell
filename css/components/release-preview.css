@@ -16,7 +16,7 @@
 /* Folha de liberação: meia folha A4 (A5 paisagem, 210x148 mm = 794x559 px) em qualquer tela.
    Em telas estreitas o JS aplica zoom para a folha inteira caber na largura. */
 .release-preview-overlay { padding:0 1rem 1rem; background:rgba(0,20,45,.94); }
-.release-preview { width:100%; max-width:794px; margin:0 auto; }
+.release-preview { width:100%; max-width:960px; margin:0 auto; }
 .release-preview-actions { position:sticky; top:0; z-index:2; width:100%; padding:.75rem 0; margin:0; background:rgba(0,20,45,.92); }
 .release-sheet { width:794px; min-height:559px; margin:0 auto; padding:22px 32px; box-sizing:border-box; }
 .release-sheet-header { gap:1.5rem; padding-bottom:.6rem; }
@@ -32,6 +32,13 @@
 .bio-signature-text small { font-size:inherit; }
 .release-sheet-signature .bio-signature-name { margin:0 0 0 .8rem; font-size:1.05rem; text-transform:none; white-space:nowrap; }
 .release-sheet footer { padding-top:.9rem; }
+/* Na tela a folha é desenhada pelo mesmo desenho do PDF/PNG (js/features/release-image.js), num canvas de 960 px
+   (proporção 794x559). O HTML da folha continua no lugar como reserva, caso o desenho não esteja disponível. */
+.release-sheet.is-drawn { width:960px; min-height:0; padding:0; }
+.release-sheet.is-drawn > :not(.release-sheet-canvas):not(.release-stamp) { display:none; }
+.release-sheet-canvas { display:block; width:100%; height:auto; }
+/* Carimbo no mesmo lugar do PDF: centro em (640,334) de 794x559. "translate" é separado do "transform" da animação. */
+.release-sheet.is-drawn .release-stamp { top:59.75%; right:auto; left:80.6%; translate:-50% -50%; }
 @media (max-width:520px) { .release-preview-overlay { padding:0 .5rem .5rem; }.release-preview-actions { justify-content:stretch; }.release-preview-actions button { flex:1; padding:.8rem; font-size:1rem; } }
 /* Impressão: meia folha A4 no topo de uma A4 retrato, com margens de 10 mm (área útil de 190 mm = ~718 px).
    A folha tem 794 px de projeto, então reduz para 90% para caber sem barra de rolagem lateral. */
