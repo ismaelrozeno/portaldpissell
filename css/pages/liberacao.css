@@ -77,3 +77,7 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 /* Aviso de data retroativa embaixo do campo Data (js/features/retro-date-hint.js). Só informa, não bloqueia. */
 .release-field small.retro-hint { display: block; padding: .45rem .6rem; border: 1px solid #bcd9f0; border-radius: .45rem; color: #0b4a7a; background: #e3f0fb; line-height: 1.35; }
 .release-field small.retro-hint[hidden] { display: none; }
+
+/* Sem engenheiro vinculado: aviso no topo do formulário (o envio fica bloqueado até o DP ou o engenheiro vincular). */
+.release-no-engineer { margin: 0 0 1rem; padding: .75rem .9rem; border: 1px solid #e0a2a6; border-radius: .55rem; color: #8b2930; background: #fff4f4; font-size: .9rem; line-height: 1.4; }
+.release-no-engineer strong { display: block; margin-bottom: .15rem; }

@@ -22,19 +22,31 @@
 
   document.querySelector("#release-kicker").textContent = `${session?.role || "Colaborador"} · Obra 369`;
   const foremanSelect = document.querySelector("#foreman-name");
-  const engineerSelect = document.querySelector("#engineer-name");
+  // Engenheiro que recebe: o da equipe do encarregado escolhido (js/core/firebase-auth.js, getEngineerRouting), decidido
+  // no envio, sem campo na tela. Não existe mais "todos os engenheiros": sem engenheiro vinculado, não dá para enviar.
+  let routing = null;
+  const engineerFor = () => (routing ? routing.ofForeman(foremanSelect.value) || routing.forSender(session) : "");
+  // Encarregado escolhido que ainda não está na equipe de nenhum engenheiro: avisa já ao abrir/trocar, não só no envio.
+  function warnNoEngineer() {
+    form.querySelector(".release-no-engineer")?.remove();
+    if (!routing || engineerFor()) return;
+    const foreman = foremanSelect.value.trim();
+    const own = !foreman || window.normalizeSearchText(foreman) === window.normalizeSearchText(session?.name || "");
+    const who = own ? "Você ainda não está" : `O encarregado ${foreman} ainda não está`;
+    form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${esc(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
+  }
+  foremanSelect.addEventListener("change", warnNoEngineer);
+  const noEngineerText = "Sem engenheiro vinculado: peça ao DP ou ao engenheiro para colocar o encarregado na equipe de um engenheiro (Equipes dos engenheiros).";
 
-  // Encarregados e engenheiros cadastrados no portal (mais colaboradores com essa função, mesmo sem conta).
+  // Encarregados cadastrados no portal (mais colaboradores com essa função, mesmo sem conta).
   async function loadSigners(employees) {
     const fold = window.normalizeSearchText;
     const foremen = new Map();
-    const engineers = new Map();
     try {
       const directory = await window.portalAuthDemo.getTeamDirectory();
       directory.all.forEach((user) => {
-        // Chefes de equipe: encarregado e analista. Assinam como engenheiro: engenheiro e analista com esse acesso.
+        // Chefes de equipe: encarregado e analista.
         if (["encarregado", "analista"].includes(user.roleValue)) foremen.set(fold(user.name), user.name);
-        if (user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"))) engineers.set(fold(user.name), user.name);
       });
     } catch (error) {
       console.warn("Não foi possível listar encarregados e engenheiros.", error);
@@ -42,21 +54,25 @@
     employees.forEach((item) => {
       const role = fold(item.funcao);
       if (item.nome && role.includes("encarregado") && !foremen.has(fold(item.nome))) foremen.set(fold(item.nome), item.nome);
-      if (item.nome && role.includes("engenheiro") && !engineers.has(fold(item.nome))) engineers.set(fold(item.nome), item.nome);
     });
     // O próprio usuário e o encarregado a quem está vinculado sempre aparecem na lista.
     const isChief = ["encarregado", "analista"].includes(session?.roleValue);
     if (isChief && session.name) foremen.set(fold(session.name), session.name);
     if (!isChief && session?.linkedForeman) foremen.set(fold(session.linkedForeman), session.linkedForeman);
     const fill = (select, map, placeholder, firstName = "") => {
-      // O próprio usuário (encarregado ou engenheiro) vem em primeiro lugar na lista.
+      // O próprio usuário (encarregado) vem em primeiro lugar na lista.
       const first = fold(firstName);
       const names = [...map.values()].sort((a, b) => (fold(b) === first) - (fold(a) === first) || a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
       select.innerHTML = `<option value="">${placeholder}</option>${names.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join("")}`;
     };
     fill(foremanSelect, foremen, "Selecione o encarregado", isChief ? session.name : session?.linkedForeman);
-    fill(engineerSelect, engineers, "Todos os engenheiros");
     foremanSelect.value = isChief ? session.name || "" : (session?.linkedForeman || "");
+    try {
+      routing = await window.portalAuthDemo.getEngineerRouting();
+      warnNoEngineer();
+    } catch (error) {
+      console.warn("Não foi possível buscar o engenheiro da equipe.", error);
+    }
   }
   document.querySelector("#release-date").value = new Date().toISOString().slice(0, 10);
 
@@ -189,6 +205,8 @@
     }
     if (!document.querySelector('input[name="bonus-request"]:checked')) return fail("Marque o pedido de abono (abonado ou não abonado).");
     if (!document.querySelector("#signature-confirm").checked) return fail("Confirme e assine a liberação para continuar.");
+    const engineerName = engineerFor();
+    if (!engineerName) return fail(routing ? noEngineerText : "Não foi possível buscar o engenheiro da equipe. Verifique a internet e recarregue a página.");
 
     isSubmitting = true;
     submitButton.disabled = true;
@@ -202,7 +220,7 @@
       reasonType: "tarefa",
       motive: service.value.trim(),
       foreman: document.querySelector("#foreman-name").value.trim(),
-      targetEngineer: engineerSelect.value,
+      targetEngineer: engineerName,
       bonusRequest: document.querySelector('input[name="bonus-request"]:checked')?.value || null,
       stage: "engineer",
       status: "pending",
@@ -279,7 +297,7 @@
       const bonus = document.querySelector(`input[name="bonus-request"][value="${editing.bonusRequest}"]`);
       if (bonus) bonus.checked = true;
       if (editing.foreman) foremanSelect.value = editing.foreman;
-      if (editing.targetEngineer) engineerSelect.value = editing.targetEngineer;
+      warnNoEngineer();
     }
   }
   renderChosen();

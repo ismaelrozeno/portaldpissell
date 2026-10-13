@@ -21,6 +21,7 @@
   const employeeSelected = document.querySelector("#employee-selected");
   let selectedEmployeeName = "";
   let selectedEmployeeRole = "";
+  let selectedEmployeeForeman = "";
 
   function selectEmployee(item) {
     employee.value = item ? item.matricula : "";
@@ -28,6 +29,7 @@
     selectedEmployeeRole = item ? item.funcao || "" : "";
     employeeSelected.textContent = item ? `Selecionado: ${item.nome} · Matrícula ${item.matricula}` : "";
     employeeSelected.hidden = !item;
+    selectedEmployeeForeman = item ? item.encarregado || "" : "";
     employeeSearch.value = "";
     if (item) errorMessage.hidden = true;
     filterEmployees();
@@ -129,23 +131,26 @@
       const bonusInput = document.querySelector(`input[name="bonus-request"][value="${release.bonusRequest}"]`);
       if (bonusInput) bonusInput.checked = true;
     }
-    if (release.targetEngineer) targetEngineer.value = release.targetEngineer;
     updateParticularField();
   }
 
-  // Engenheiros cadastrados no portal: o encarregado escolhe para quem a solicitação vai ("Todos" = qualquer um).
-  const targetEngineer = document.querySelector("#target-engineer");
+  // Engenheiro que recebe: o da equipe do encarregado (js/core/firebase-auth.js, getEngineerRouting), decidido no envio,
+  // sem campo na tela. Não existe mais "todos os engenheiros": sem engenheiro vinculado, a liberação não pode ser enviada.
+  let routing = null;
+  const engineerFor = () => routing?.forSender(window.portalAuthDemo.getSession(), selectedEmployeeForeman) || "";
+  const noEngineerText = "Sem engenheiro vinculado: peça ao DP ou ao engenheiro para colocar o encarregado na equipe de um engenheiro (Equipes dos engenheiros).";
   async function loadEngineers() {
     try {
-      const directory = await window.portalAuthDemo.getTeamDirectory();
-      // Engenheiros e analistas com acesso de engenheiro.
-      const engineerLike = (user) => user.roleValue === "engenheiro" || (user.roleValue === "analista" && (user.privileges || []).includes("engenheiro"));
-      const names = [...new Set(directory.all.filter(engineerLike).map((user) => user.name))]
-        .sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-      targetEngineer.innerHTML = `<option value="">Todos os engenheiros</option>${names.map((name) => `<option value="${window.escapeHtml(name)}">${window.escapeHtml(name)}</option>`).join("")}`;
+      routing = await window.portalAuthDemo.getEngineerRouting();
     } catch (error) {
-      console.warn("Não foi possível listar os engenheiros.", error);
+      console.warn("Não foi possível buscar o engenheiro da equipe.", error);
+      return;
     }
+    // Encarregado (ou estagiário) que ainda não está na equipe de nenhum engenheiro: avisa já ao abrir, não só no envio.
+    const me = window.portalAuthDemo.getSession();
+    if (!["encarregado", "estagiario_engenharia"].includes(me?.roleValue) || routing.forSender(me)) return;
+    const who = me.roleValue === "encarregado" || !me.linkedForeman ? "Você ainda não está" : `O encarregado ${me.linkedForeman} ainda não está`;
+    form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${window.escapeHtml(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
   }
 
   updatePageCopy();
@@ -190,6 +195,14 @@
       return;
     }
 
+    const engineerName = engineerFor();
+    if (!engineerName) {
+      errorMessage.textContent = routing ? noEngineerText : "Não foi possível buscar o engenheiro da equipe. Verifique a internet e recarregue a página.";
+      errorMessage.hidden = false;
+      releaseButton();
+      return;
+    }
+
     stopLoading = window.portalButtonLoading(submitButton, "Enviando liberação…");
     const selectedEmployee = selectedEmployeeName;
     const reason = document.querySelector('input[name="reason"]:checked').value;
@@ -223,7 +236,7 @@
       reasonType: reason,
       reasonDetail: particularReason.value.trim(),
       reason: reason === "particular" ? particularReason.value.trim() : `Tarefa: ${particularReason.value.trim()}`,
-      targetEngineer: targetEngineer.value,
+      targetEngineer: engineerName,
       requester: existing?.requester || session?.name || "Solicitante",
       // Conta de quem pediu: o painel dele acha a liberação mesmo se ele mudar o nome no Perfil.
       ...(existing ? {} : { requesterUid: session?.uid || "" }),

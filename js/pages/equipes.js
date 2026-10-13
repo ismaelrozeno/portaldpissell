@@ -329,89 +329,25 @@
   ["#team-search", "#team-filter"].forEach((selector) => $(selector).addEventListener("input", renderList));
   
   // ---------- Exportar para o Excel ----------
+  // A mesma planilha da página Equipes dos engenheiros (js/features/teams-export.js).
   $("#export-teams").addEventListener("click", async () => {
     const button = $("#export-teams");
     const result = $("#teams-export-result");
-    if (typeof ExcelJS === "undefined") {
-      show(result, "Não foi possível carregar o gerador de Excel. Confira a internet e recarregue a página.", true);
-      return;
-    }
     button.disabled = true;
     try {
-      await loadPeople();
-      const workbook = new ExcelJS.Workbook();
-      workbook.creator = session?.name || "Portal";
-      workbook.created = new Date();
-      const style = (sheet) => {
-        const header = sheet.getRow(1);
-        header.height = 26;
-        header.eachCell((cell) => {
-          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00142D" } };
-          cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-        });
-        sheet.views = [{ state: "frozen", ySplit: 1 }];
-        sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columnCount } };
-      };
-
-      const people = workbook.addWorksheet("Colaboradores");
-      people.columns = [
-        { header: "Matrícula", key: "matricula", width: 12 },
-        { header: "Colaborador", key: "nome", width: 36 },
-        { header: "Função", key: "funcao", width: 26 },
-        { header: "Setor / frente", key: "setor", width: 22 },
-        { header: "Situação", key: "status", width: 11 },
-        { header: "Mão de obra", key: "mao", width: 13 },
-        { header: "Encarregado (equipe)", key: "encarregado", width: 34 },
-        { header: "Estagiário / engenheiro vinculado(s) ao encarregado", key: "estagiarios", width: 44 }
-      ];
-      employees.forEach((employee) => people.addRow({
-        matricula: employee.matricula,
-        nome: employee.nome,
-        funcao: employee.funcao || "",
-        setor: employee.setor || "",
-        status: employee.status || "",
-        mao: maoLabel(employee) || "Não informada",
-        encarregado: employee.encarregado || "Sem equipe",
-        estagiarios: employee.encarregado ? internsOf(employee.encarregado).join(", ") : ""
-      }));
-      style(people);
-
-      const teams = workbook.addWorksheet("Equipes");
-      teams.columns = [
-        { header: "Encarregado", key: "encarregado", width: 36 },
-        { header: "Estagiário / engenheiro vinculado(s)", key: "estagiarios", width: 44 },
-        { header: "Colaboradores na equipe", key: "total", width: 16 }
-      ];
-      foremanNames().forEach((name) => teams.addRow({
-        encarregado: name,
-        estagiarios: internsOf(name).join(", ") || "—",
-        total: employees.filter((employee) => same(employee.encarregado, name)).length
-      }));
-      const free = employees.filter((employee) => !employee.encarregado).length;
-      if (free) teams.addRow({ encarregado: "(Sem equipe)", estagiarios: "", total: free });
-      style(teams);
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const link = document.createElement("a");
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, "0");
-      link.href = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-      link.download = `equipes-obra-369_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.xlsx`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(link.href), 30000);
-      show(result, `Excel gerado: ${employees.length} colaborador(es) e ${teams.rowCount - 1} equipe(s).`);
+      const summary = await window.portalTeamsExport.download();
+      show(result, `Excel gerado: ${summary.employees} colaborador(es) e ${summary.teams} equipe(s).`);
     } catch (error) {
       console.error("Falha ao exportar as equipes.", error);
-      show(result, "Não foi possível gerar o Excel. Tente de novo.", true);
+      show(result, error?.message === "excel-unavailable" ? "Não foi possível carregar o gerador de Excel. Confira a internet e recarregue a página." : "Não foi possível gerar o Excel. Tente de novo.", true);
     } finally {
       button.disabled = false;
     }
   });
 
   // ---------- Início ----------
+  // Equipes dos engenheiros (encarregados de cada engenheiro): DP, administrador e engenheiros montam; os outros consultam.
+  $("#engineer-teams-link").hidden = false;
   $("#teams-kicker").textContent = `${session?.role || "Portal"} · Obra 369`;
   $("#teams-intro").textContent = isForeman
     ? "Veja a sua equipe e exporte as equipes para o Excel."

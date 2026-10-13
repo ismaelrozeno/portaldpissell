@@ -148,7 +148,7 @@
     ],
     analista: [
       { key: "dp", label: "Acesso de DP", grant: "Dar acesso de DP", revoke: "Revogar acesso de DP", note: "Vira DP: abre direto no painel do DP." },
-      { key: "engenheiro", label: "Acesso de engenheiro", grant: "Dar acesso de engenheiro", revoke: "Revogar acesso de engenheiro", note: "Vira engenheiro: recebe só o que for enviado a ele (ou a todos)." },
+      { key: "engenheiro", label: "Acesso de engenheiro", grant: "Dar acesso de engenheiro", revoke: "Revogar acesso de engenheiro", note: "Vira engenheiro: recebe só o que for enviado a ele (as liberações da equipe dele)." },
       { key: "gestor", label: "Gestor", grant: "Tornar Gestor", revoke: "Revogar Gestor", note: "Com acesso de engenheiro: recebe TODAS as liberações, como o engenheiro Gestor." },
       { key: "seguranca_trabalho", label: "Acesso de segurança do trabalho", grant: "Dar acesso de segurança do trabalho", revoke: "Revogar acesso de segurança do trabalho", note: "Abre o painel da segurança do trabalho." }
     ]

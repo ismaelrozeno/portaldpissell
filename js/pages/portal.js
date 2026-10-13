@@ -157,7 +157,7 @@
   // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar
   // exatamente como ela vê. Sem pessoa escolhida (ou fora do simulador), é a conta de quem está logado.
   const viewerSession = () => window.portalViewAs || window.portalAuthDemo?.getSession();
-  // Engenheiro comum (não Gestor): a lista dele só tem o que foi enviado a ele (ou a todos), mas as informações
+  // Engenheiro comum (não Gestor): a lista dele só tem o que foi enviado a ele, mas as informações
   // (esteira, cartões, BI) são da obra toda, como as do DP. O administrador sem pessoa escolhida já vê tudo.
   const limitedEngineer = (profileKey) => {
     if (profileKey !== "engenheiro") return false;
@@ -205,8 +205,9 @@
 
   // Resumo visual das assinaturas já feitas (engenheiro, DP, portaria) para dar para ler a situação de relance.
   // Engenheiro responsável na linha da liberação (no lugar do antigo "Equipe local"): quem assinou o abono; antes
-  // disso, o engenheiro para quem foi enviada ou "todos os engenheiros".
-  const engineerLabel = (release) => String(release.engineer || release.targetEngineer || "").trim() || "todos os engenheiros";
+  // disso, o engenheiro para quem foi enviada (o da equipe do encarregado). As antigas, enviadas antes das equipes dos
+  // engenheiros (quando existia "todos os engenheiros"), ficam "sem engenheiro" e só o Gestor as vê.
+  const engineerLabel = (release) => String(release.engineer || release.targetEngineer || "").trim() || "sem engenheiro";
 
   function signatureChips(release, stage) {
     const short = (name) => escapeHtml(String(name || "").trim());
@@ -228,7 +229,7 @@
       if (release.engineer && release.bonusStatus) {
         chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Engenheiro: <b>${release.bonusStatus === "approved" ? "abonado" : "não abonado"}</b> · ${short(release.engineer)}`));
       } else {
-        // Mostra para qual engenheiro foi enviada (como na coletiva); sem destino, foi para todos.
+        // Mostra para qual engenheiro foi enviada (como na coletiva).
         chips.push(chip("wait", `Engenheiro: <b>aguardando</b>${release.targetEngineer ? ` · ${short(release.targetEngineer)}` : ""}`));
       }
     }
@@ -826,7 +827,7 @@
   const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
 
   // Pendências de abono por engenheiro de destino (o "Enviar para" da liberação, nome do cadastro dele) e as enviadas
-  // a todos. Primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros. Viram os cartões "Aguardando ..." e as
+  // as antigas sem destino ("sem engenheiro"). Primeiro nome; se dois têm o mesmo primeiro nome, os dois primeiros. Viram os cartões "Aguardando ..." e as
   // opções "Aguardando por engenheiro" da Situação (js/core/filter-bar.js).
   // field: "targetEngineer" (para quem foi enviada) ou "engineer" (quem assinou o abono, nas "Abonadas por").
   function byEngineerGroups(individual, collective, field = "targetEngineer") {
@@ -850,13 +851,13 @@
     };
     const list = named.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).map((group) => ({ ...group, label: short(group.name) }));
     const all = groups.get("");
-    if (all) list.push({ ...all, label: "Todos os engenheiros" });
+    if (all) list.push({ ...all, label: "Sem engenheiro" });
     return list;
   }
 
   // Um cartão por engenheiro: "Aguardando abono" em destaque (o número grande, o que importa agora) e, embaixo, as
   // "abonadas" por ele (quem assinou o abono). As duas partes filtram as listas; as mesmas opções ficam na Situação
-  // (js/core/filter-bar.js). As enviadas a "todos os engenheiros" têm o cartão delas, só com o aguardando.
+  // (js/core/filter-bar.js). As antigas sem engenheiro (de antes das equipes dos engenheiros) têm o cartão delas, só com o aguardando.
   // Engenheiros gestores (privilégio "gestor" no cadastro): o cartão deles ganha a etiqueta "Gestor" (abonam em último
   // caso). A lista vem do cadastro uma vez; quando chega, os cartões são redesenhados.
   let managerNames = new Set();
@@ -895,7 +896,7 @@
     host.innerHTML = items.map((item) => {
       const waiting = item.pending?.count || 0;
       const done = item.approved?.count || 0;
-      const name = item.key ? item.label : "todos os engenheiros";
+      const name = item.key ? item.label : "sem engenheiro";
       // O cartão inteiro é UM botão e leva só às pendências do engenheiro (aguardando abono), mesmo com 0.
       // Abonadas e total ficam no cartão só como informação.
       const approvedLine = item.key

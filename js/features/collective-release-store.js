@@ -31,7 +31,7 @@
     async markExit(id, matricula, value) {
       await collection().doc(id).update(new firebase.firestore.FieldPath("participantExits", String(matricula)), value || firebase.firestore.FieldValue.delete());
     },
-    // Quem vê o quê: o engenheiro, só o que foi enviado a ele (ou a "todos"); DP e administrador, tudo;
+    // Quem vê o quê: o engenheiro, só o que foi enviado a ele (o Gestor, tudo); DP e administrador, tudo;
     // encarregado e demais solicitantes, só o que eles mesmos enviaram.
     // profileKey: perfil aberto no Meu portal. O administrador troca de perfil e, como nas individuais, vê pelo perfil
     // aberto: como encarregado/estagiário/analista/segurança, só o que ele mesmo enviou; como portaria, só o autorizado.
@@ -40,13 +40,9 @@
       const role = session?.roleValue;
       const key = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
       const same = (a, b) => key(a) === key(b);
-      // Do engenheiro: enviada a ele, ou enviada a todos e ainda não assinada/recusada por OUTRO engenheiro
-      // (quem assina primeiro fica com ela; assinatura do Administrador não conta).
-      const forEngineer = (sheet, name) => {
-        if (sheet.targetEngineer) return same(sheet.targetEngineer, name);
-        const by = sheet.bonusStatus ? sheet.engineer : sheet.refusedBy;
-        return !by || /administrador/i.test(`${by} ${sheet.engineerRole || ""}`) || same(by, name);
-      };
+      // Do engenheiro: só a enviada a ele (o engenheiro da equipe do encarregado). Não existe mais "todos os
+      // engenheiros": as antigas, sem destino, só o Gestor vê.
+      const forEngineer = (sheet, name) => !!sheet.targetEngineer && same(sheet.targetEngineer, name);
       if (role === "administrador-analista" && profileKey) {
         // Simulador: com uma pessoa escolhida (window.portalViewAs), vê exatamente o que ela vê.
         const viewAs = window.portalViewAs;
@@ -57,7 +53,7 @@
         if (profileKey === "portaria") return sheets.filter((sheet) => ["gate", "exited"].includes(window.portalCollectiveSheet?.stageOf(sheet) ?? sheet.stage));
       }
       // Analista com acesso de engenheiro, no painel do engenheiro: igual ao engenheiro
-      // (só o Gestor recebe todas; o comum, o que foi enviado a ele ou a todos — igual ao engenheiro).
+      // (só o Gestor recebe todas; o comum, só o que foi enviado a ele).
       if (role === "analista" && profileKey === "engenheiro" && window.portalAuthDemo?.isEngineerLike?.()) {
         return window.portalAuthDemo?.isManager?.() ? sheets : sheets.filter((sheet) => forEngineer(sheet, session.name));
       }

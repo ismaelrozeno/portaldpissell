@@ -139,7 +139,7 @@
   // Situação usada pela barra de filtros de cada perfil (quando não existir, mostra a lista inteira).
   // Cada estação da esteira abre a lista já filtrada nela (opções em js/core/filter-bar.js).
   const STATUS_FOR = {
-    dp: { foreman: "refused", engineer: "bonus", dp: "pending", gate: "gate", exited: "exitedToday", toLaunch: "toLaunch", bio: "bioPending" },
+    dp: { foreman: "refused", engineer: "bonus", dp: "toLaunch", gate: "gate", exited: "exitedToday", toLaunch: "toLaunch", bio: "bioPending" },
     engenheiro: { foreman: "refused", engineer: "pending", dp: "waitDp", gate: "gate", exited: "exitedToday" },
     portaria: { gate: "gate", exited: "exitedToday" },
     chief: { foreman: "refused", engineer: "bonus", dp: "waitDp", gate: "gate", exited: "exitedToday" }
@@ -203,10 +203,16 @@
     const gateDay = (x) => String(x.r.date || "").slice(0, 10) || dayOf(x.r.createdAt);
     const gateToday = groups.gate.filter((x) => gateDay(x) >= today).length;
     const gateOld = groups.gate.length - gateToday;
+    // No painel do DP, o cartão "DP" da esteira mostra o que ele tem a fazer no fim: abonos por lançar no RM
+    // (abonados pelo engenheiro, sem o carimbo). Nos outros perfis continua "aguardando autorização" do DP.
+    const toLaunch = all.filter((x) => x.r.bonusStatus === "approved" && !x.r.abonoLaunchedAt);
+    const dpStation = role === "dp"
+      ? { key: "dp", icon: "dp", name: "DP", sub: "abonos por lançar no RM", list: toLaunch }
+      : { key: "dp", icon: "dp", name: "DP", sub: "aguardando autorização", list: groups.dp };
     const stations = [
       { key: "foreman", icon: "foreman", name: "Encarregado", sub: "recusadas, para ajustar", list: groups.foreman },
       { key: "engineer", icon: "engineer", name: "Engenheiro", sub: "aguardando o abono", list: groups.engineer },
-      { key: "dp", icon: "dp", name: "DP", sub: "aguardando autorização", list: groups.dp },
+      dpStation,
       { key: "gate", icon: "gate", name: "Portaria", sub: "liberações autorizadas pelo DP, sem saída confirmada",
         detail: groups.gate.length
           ? `${plural(waitingPeople, "pessoa ainda não saiu", "pessoas ainda não saíram")} · ${gateToday} de hoje · ${gateOld} de dias anteriores`
@@ -235,13 +241,13 @@
     const items = [];
     const add = (list, title, note, page, status) => items.push({ n: list.length, title, note, page, status });
     if (role === "dp") {
-      add(groups.dp, "aguardando sua autorização", "o engenheiro já assinou o abono", "individuais", statusFor.dp);
+      add(groups.dp, "aguardando sua autorização", "o engenheiro já assinou o abono", "individuais", "pending");
       // Digital pendente conta PESSOAS, como o "Digitais pendentes" do BI Dados: cada individual é 1 e cada coletiva
       // soma quem da lista ainda não assinou.
       const missingBio = (x) => (x.kind === "ind" ? (x.r.employeeSignature?.method !== "biometria" ? 1 : 0) : Math.max(0, x.people - (col?.signedCount(x.r) || 0)));
       const bioPeople = all.filter((x) => live(x.stage)).reduce((sum, x) => sum + missingBio(x), 0);
       items.push({ n: bioPeople, title: bioPeople === 1 ? "colaborador com digital pendente" : "colaboradores com digital pendente", note: "ainda não assinaram com a digital", page: "individuais", status: statusFor.bio });
-      add(count((x) => x.r.bonusStatus === "approved" && !x.r.abonoLaunchedAt), "abonos por lançar no RM", "abonados pelo engenheiro, sem o carimbo do DP", "individuais", statusFor.toLaunch);
+      add(toLaunch, "abonos por lançar no RM", "abonados pelo engenheiro, sem o carimbo do DP", "individuais", statusFor.toLaunch);
     } else if (role === "engenheiro") {
       add(mineGroups.engineer, "aguardando seu abono", "marque abonado ou não abonado", "individuais", statusFor.engineer);
       add(mineGroups.engineer.filter((x) => x.stage === "engineer" && x.r.dpReturnReason), "devolvidas pelo DP", "o DP pediu para rever o abono", "individuais", statusFor.engineer);

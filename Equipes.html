@@ -7,13 +7,13 @@
   <title>Equipes | Obra 369</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=16cde341">
-  <link rel="stylesheet" href="css/pages/equipes.css?v=7f526f8a">
+  <link rel="stylesheet" href="css/pages/equipes.css?v=85b68b28">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
   <link rel="stylesheet" href="css/components/portal-dashboard.css?v=01be5af4">
   <link rel="stylesheet" href="css/components/portal-theme.css?v=5168ef8a">
-  <link rel="stylesheet" href="css/pages/equipes-dash.css?v=9bc1f52f">
+  <link rel="stylesheet" href="css/pages/equipes-dash.css?v=3d3c5901">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
 </head>
 <body class="teams-page" data-dash-shell="equipes">
@@ -23,11 +23,15 @@
       <a class="teams-back" href="Portal.html">← Voltar ao painel</a>
       <section class="teams-heading">
         <div>
+          <a class="dash-back" href="Portal.html" aria-label="Voltar ao painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Voltar</span></a>
           <p class="teams-kicker" id="teams-kicker">Obra 369</p>
           <h1>Equipes</h1>
           <p id="teams-intro">Vincule colaboradores a um encarregado e exporte as equipes para o Excel.</p>
         </div>
-        <button class="teams-button" id="export-teams" type="button">Exportar equipes (Excel)</button>
+        <div class="teams-heading-actions">
+          <a class="teams-button teams-switch" id="engineer-teams-link" href="Equipes-Engenheiros.html" hidden>Equipes dos engenheiros →</a>
+          <button class="teams-button" id="export-teams" type="button">Exportar equipes (Excel)</button>
+        </div>
       </section>
       <p class="teams-result" id="teams-export-result" role="status" hidden></p>
       <p class="teams-denied" id="teams-denied" role="alert" hidden>Esta tela é do DP, do administrador, do estagiário, do engenheiro e do encarregado.</p>
@@ -84,12 +88,13 @@
   <script src="js/core/firebase-config.js?v=5f86e13f"></script>
   <script src="js/core/firebase-init.js?v=ed313212"></script>
   <script src="js/core/firebase-schema.js?v=a72de791"></script>
-  <script src="js/core/firebase-auth.js?v=efc4f34a"></script>
+  <script src="js/core/firebase-auth.js?v=73cacfbc"></script>
   <script src="js/core/shared-components.js?v=cb8fe54f"></script>
   <script src="js/features/dash-shell.js?v=29b08d06"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="js/pages/equipes.js?v=c00116b9"></script>
+  <script src="js/features/teams-export.js?v=b4a487de"></script>
+  <script src="js/pages/equipes.js?v=26c27baf"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

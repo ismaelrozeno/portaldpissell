@@ -157,7 +157,7 @@
 
   let config = null;
   const bars = [];
-  // Opções dinâmicas "Aguardando por engenheiro" (value "eng:<nome em minúsculas>", "eng:" = enviadas a todos),
+  // Opções dinâmicas "Aguardando por engenheiro" (value "eng:<nome em minúsculas>", "eng:" = antigas sem engenheiro),
   // montadas pelo portal com os engenheiros que têm pendência (setEngineers). Os cartões por engenheiro usam as mesmas.
   let engineers = [];
   const ENG = "eng:";
@@ -171,7 +171,7 @@
     // Lista na ordem do perfil. Os engenheiros entram logo depois da Situação marcada com engineersAfter (no mesmo grupo
     // dela) e os que abonaram depois da marcada com approversAfter; sem a marca, vão em grupos próprios no fim.
     // O número ao lado do nome é sempre a PENDÊNCIA (aguardando abono); nas abonadas vai só o nome.
-    const pendingItems = (group) => engineers.map(({ key, label, count }) => ({ value: ENG + key, label: key ? `Aguardando · ${label} (${count})` : `Aguardando · enviadas a todos (${count})`, group }));
+    const pendingItems = (group) => engineers.map(({ key, label, count }) => ({ value: ENG + key, label: key ? `Aguardando · ${label} (${count})` : `Aguardando · sem engenheiro (${count})`, group }));
     const approvedItems = (group) => approvers.map(({ key, label }) => ({ value: AB + key, label: `Abonadas · por ${label}`, group }));
     const items = [];
     const pendingTotal = engineers.reduce((sum, { count }) => sum + (count || 0), 0);
@@ -363,7 +363,7 @@
   function matchesStatus(search, record, stage, collective = false) {
     const value = status(search);
     if (value === "all") return true;
-    // "Aguardando <engenheiro>": sem decisão de abono e enviada a ele ("eng:" = enviada a todos).
+    // "Aguardando <engenheiro>": sem decisão de abono e enviada a ele ("eng:" = antiga, sem engenheiro).
     if (value.startsWith(ENG)) return awaitingEngineer(record, stage) && normName(record.targetEngineer) === value.slice(ENG.length);
     // "Abonadas por <engenheiro>": ele marcou como abonada.
     if (value.startsWith(AB)) return record.bonusStatus === "approved" && normName(record.engineer) === value.slice(AB.length);

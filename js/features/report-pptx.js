@@ -153,9 +153,9 @@
     const waiting = [...releases.map((r) => ({ r, stage: stageInd(r) })), ...sheets.map((s) => ({ r: s, stage: stageCol(s) }))]
       .filter((x) => !x.r.bonusStatus && live(x.stage));
     const waitMap = new Map();
-    waiting.forEach((x) => { const key = clean(x.r.targetEngineer) || "Todos os engenheiros"; waitMap.set(key, (waitMap.get(key) || 0) + 1); });
-    const waitShort = shortNames([...waitMap.keys()].filter((k) => k !== "Todos os engenheiros"));
-    const waitingBy = rank(waitMap, 8).map(([name, v]) => [name === "Todos os engenheiros" ? "Todos" : waitShort(name), v]);
+    waiting.forEach((x) => { const key = clean(x.r.targetEngineer) || "Sem engenheiro"; waitMap.set(key, (waitMap.get(key) || 0) + 1); });
+    const waitShort = shortNames([...waitMap.keys()].filter((k) => k !== "Sem engenheiro"));
+    const waitingBy = rank(waitMap, 8).map(([name, v]) => [name === "Sem engenheiro" ? "Sem engenheiro" : waitShort(name), v]);
 
     // Recusas do mês (motivos)
     const refusalMap = new Map();
@@ -392,7 +392,7 @@
       divider(slide, pres, 6.67);
       slide.addText("Aguardando o abono, por engenheiro", { x: 7.0, y: 1.85, w: 5.9, h: 0.4, fontFace: FONT, fontSize: 16, bold: true, color: INK, margin: 0, isTextBox: true });
       rankBars(slide, pres, data.waitingBy, { x: 6.9, y: 2.3, w: 6.0, h: 4.5, color: SERIES[3], label: "Pendências" });
-      slide.addNotes("O número entre parênteses é a quantidade de decisões do engenheiro no mês. \"Todos\" = liberações enviadas a todos os engenheiros.");
+      slide.addNotes("O número entre parênteses é a quantidade de decisões do engenheiro no mês. \"Sem engenheiro\" = liberações antigas, enviadas antes das equipes dos engenheiros.");
     }
 
     // 10. Lançamento no RM + motivos de recusa

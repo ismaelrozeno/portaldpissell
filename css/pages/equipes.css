@@ -81,3 +81,11 @@ body.teams-page { background:var(--tm-bg); color:#16283d; overflow-x:hidden; }
 .teams-loading { display:flex; align-items:center; gap:.2rem; grid-column:1 / -1; margin:0; padding:1.4rem 1rem; border:1px dashed var(--tm-line, #d8e0ea); border-radius:.75rem; color:var(--tm-muted); font-size:.9rem; font-weight:600; }
 .teams-loading .button-spinner { color:var(--tm-orange, #f5820a); }
 .teams-load-error { color:#a4262c; border-color:#e8b4b6; }
+/* Atalho entre as equipes dos encarregados e as dos engenheiros (Equipes-Engenheiros.html) */
+.teams-heading-actions { display:flex; flex-wrap:wrap; gap:.6rem; }
+.teams-switch { display:inline-flex; align-items:center; text-decoration:none; }
+.teams-switch:hover { color:#fff; }
+.teams-switch[hidden] { display:none; }
+@media (max-width:600px) { .teams-heading-actions { width:100%; } }
+/* Equipes dos engenheiros: mais de uma conta com o mesmo nome (cadastro duplicado) */
+.foreman-badge-dup { color:#8a4300; background:#fff3e2; border:1px solid #f5cf9f; font-weight:700; white-space:normal; }

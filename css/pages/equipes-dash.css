@@ -82,3 +82,5 @@ body.dash.teams-page .team-item button { padding: .5rem .8rem; border-radius: va
 /* "Tirar selecionados" legível (botão claro com texto vermelho) */
 body.dash.teams-page .teams-button.teams-button-light { color: #8b2930; background: #fff; border: 1px solid #e0a2a6; }
 body.dash.teams-page .teams-button.teams-button-light:hover:not(:disabled) { background: #fff5f5; }
+/* Equipes e Equipes dos engenheiros: "‹ Voltar" acima do título, como no painel. */
+body.dash.teams-page .dash-back { text-decoration: none; }

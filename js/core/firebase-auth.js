@@ -40,6 +40,8 @@
       roleValue: profile.roleValue || "",
       especialidade: profile.especialidade || "",
       linkedForeman: profile.linkedForeman || "",
+      // Encarregado: engenheiro de cuja equipe ele faz parte (as liberações dele vão para esse engenheiro).
+      linkedEngineer: profile.linkedEngineer || "",
       // Privilégios dados pelo administrador: "gestor" (engenheiro) e "dp" (analista com acesso de DP).
       privileges: Array.isArray(profile.privileges) ? profile.privileges : [],
       photo: profile.photo || "",
@@ -282,6 +284,27 @@
     // Administrador: define (ou tira, com "") o encarregado a quem um estagiário/engenheiro/DP está vinculado.
     async setUserLinkedForeman(userId, foremanName) {
       await usersRef().doc(userId).update({ linkedForeman: foremanName || "", updatedAt: new Date().toISOString() });
+    },
+    // DP, administrador e engenheiro: põe (ou tira, com "") um encarregado na equipe de um engenheiro.
+    async setUserLinkedEngineer(userId, engineerName) {
+      await usersRef().doc(userId).update({ linkedEngineer: engineerName || "", updatedAt: new Date().toISOString() });
+    },
+    // Para qual engenheiro vai uma liberação: cada uma vai SÓ para o engenheiro da equipe do encarregado (não existe
+    // mais "todos os engenheiros"). As equipes dos engenheiros são montadas pelo DP e pelos engenheiros (Equipes-Engenheiros.html).
+    async getEngineerRouting() {
+      const directory = await this.getTeamDirectory();
+      const ofForeman = (name) => (name ? directory.foremen.find((user) => user.roleValue === "encarregado" && normalizeIdentity(user.name) === normalizeIdentity(name))?.linkedEngineer || "" : "");
+      const isEngineerLike = (user) => user?.roleValue === "engenheiro" || (user?.roleValue === "analista" && (user.privileges || []).includes("engenheiro"));
+      return {
+        ofForeman,
+        // Encarregado: o engenheiro da equipe dele. Engenheiro: ele mesmo. Estagiário (e quem mais estiver vinculado a
+        // um encarregado): o engenheiro desse encarregado. Senão (DP, administrador...): o do encarregado do colaborador.
+        forSender(session, employeeForeman = "") {
+          if (session?.roleValue === "encarregado") return ofForeman(session.name) || session.linkedEngineer || "";
+          if (isEngineerLike(session)) return session.name || "";
+          return ofForeman(session?.linkedForeman) || ofForeman(employeeForeman);
+        }
+      };
     },
     // Ao vivo: avisa quando alguém se vincula/desvincula ou um encarregado entra/sai.
     subscribeTeamDirectory(callback, onError) {
