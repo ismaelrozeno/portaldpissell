@@ -9,6 +9,19 @@
   const GREY = [85, 85, 85];
   const TONES = { yes: [22, 128, 60], no: [198, 40, 53], wait: [139, 85, 21] };
 
+  // Versões cada vez mais curtas de um nome: sobrenomes viram iniciais de trás para frente, mantendo o
+  // primeiro nome e os "da/de/do/dos/das/e" (igual à tela, em collective-release-sheet.js).
+  function abbreviations(name) {
+    const words = String(name || "").trim().split(/\s+/);
+    const out = [];
+    for (let i = words.length - 1; i > 0; i -= 1) {
+      if (/^(d[aeo]s?|e)$/i.test(words[i])) continue;
+      words[i] = `${words[i][0]}.`;
+      out.push(words.join(" "));
+    }
+    return out;
+  }
+
   const newDoc = () => new window.jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
 
   // Desenha uma folha a partir da página atual do documento (que deve estar em branco).
@@ -21,17 +34,23 @@
     };
     // Texto centralizado na vertical dentro de uma célula (até maxLines linhas, com quebra). Se não couber na
     // altura da célula (ex.: nome comprido numa linha baixa), a letra diminui até caber, sem passar das linhas.
-    const textIn = (value, x, y, w, h, { align = "left", size = 9, style = "normal", color, family, maxLines = 3, pad = 2 } = {}) => {
-      const text = String(value ?? "");
+    // abbreviate (nomes): antes de a letra ficar miúda, abrevia os sobrenomes em vez de deixar o nome passar da célula.
+    const textIn = (value, x, y, w, h, { align = "left", size = 9, style = "normal", color, family, maxLines = 3, pad = 2, abbreviate = false } = {}) => {
+      let text = String(value ?? "");
       const fits = (s) => {
         font(style, s, color, family);
         const all = doc.splitTextToSize(text, w - pad * 2);
         return all.length <= maxLines && all.length * s * 0.3528 * 1.2 <= h - 0.4 ? all : null;
       };
+      const start = size;
       let lines = null;
-      for (let s = size; s >= 4.5 && !lines; s -= 0.25) {
-        lines = fits(s);
-        if (lines) size = s;
+      for (const candidate of abbreviate ? [text, ...abbreviations(text)] : [text]) {
+        text = candidate;
+        for (let s = start; s >= (abbreviate ? 6 : 4.5) && !lines; s -= 0.25) {
+          lines = fits(s);
+          if (lines) size = s;
+        }
+        if (lines) break;
       }
       if (!lines) {
         size = 4.5;
@@ -58,7 +77,7 @@
       const tx = x + 3 + size / 1.2;
       textIn(`ASSINADO POR DIGITAL\n${bio.when}`, tx, y, 24, h, { size: 5.5, color: GREY, maxLines: 2, pad: 0 });
       // Nome do colaborador ao lado, como assinatura (igual à folha individual).
-      if (bio.name) textIn(bio.name, tx + 24, y, x + w - tx - 24, h, { size: 8.5, style: "italic", maxLines: 1, pad: 1 });
+      if (bio.name) textIn(bio.name, tx + 24, y, x + w - tx - 24, h, { size: 8.5, style: "italic", maxLines: 1, pad: 1, abbreviate: true });
     };
 
     // ---- Cabeçalho: logo | título | motivo + data
@@ -103,8 +122,15 @@
       textIn(String(name || "").toUpperCase(), M + 28, y, 62, rh, { size: 8, color: GREY, maxLines: 2 });
       textIn("Assinatura", M + 90, y, 28, rh, { align: "center", size: 8, style: "bold", color: GREY, family: "times" });
       if (signer) {
+        // Nome numa linha só: abrevia os sobrenomes e, se ainda não couber, diminui a letra (antes cortava palavras).
         font("italic", 10);
-        doc.text(doc.splitTextToSize(String(signer), 68)[0], M + 120, y + 4.6);
+        let shown = String(signer);
+        for (const short of abbreviations(shown)) {
+          if (doc.getTextWidth(shown) <= 68) break;
+          shown = short;
+        }
+        for (let s = 10; s > 6 && doc.getTextWidth(shown) > 68; s -= 0.5) font("italic", s - 0.5);
+        doc.text(shown, M + 120, y + 4.6);
         font("normal", 6, GREY);
         doc.text(String(time || ""), M + 120, y + 7.6);
       }
@@ -141,7 +167,7 @@
         line(0.25);
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
-        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 1 });
+        else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 1, abbreviate: true });
         else if (c === 3 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
         else if (c === 2 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
         else if (c === 4 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH, w);

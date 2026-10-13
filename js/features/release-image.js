@@ -9,6 +9,19 @@
   const SCRIPT = '"Segoe Script", "Bradley Hand", "Comic Sans MS", cursive';
   const TONES = { approved: "#16803c", denied: "#c62835", pending: "#8b5515" };
 
+  // Encurta um nome que não cabe: sobrenomes viram iniciais de trás para frente, mantendo o primeiro nome e os
+  // "da/de/do/dos/das/e" ("LUCIELDO PEREIRA DO NASCIMENTO" -> "LUCIELDO PEREIRA DO N."). Devolve a 1ª versão que cabe.
+  function shortName(name, maxWidth, measure) {
+    const words = String(name ?? "").trim().split(/\s+/);
+    let shown = words.join(" ");
+    for (let i = words.length - 1; i > 0 && measure(shown) > maxWidth; i -= 1) {
+      if (/^(d[aeo]s?|e)$/i.test(words[i])) continue;
+      words[i] = `${words[i][0]}.`;
+      shown = words.join(" ");
+    }
+    return shown;
+  }
+
   function line(ctx, x1, x2, y, style) {
     ctx.save();
     ctx.strokeStyle = style === "dashed" ? "#777" : "#222";
@@ -99,7 +112,8 @@
 
     // Colaborador e função
     text(ctx, "O Sr.:", left, 150, { font: bold(14) });
-    field(ctx, fields.name, left + 50, 150, 320, { font: `14px ${SANS}` });
+    ctx.font = `14px ${SANS}`;
+    field(ctx, shortName(fields.name, 316, (v) => ctx.measureText(v).width), left + 50, 150, 320, { font: `14px ${SANS}` });
     text(ctx, "Função:", 430, 150, { font: bold(14) });
     field(ctx, fields.role, 490, 150, right - 490, { font: `14px ${SANS}` });
     line(ctx, left, right, 168);
@@ -168,11 +182,15 @@
     columns.forEach(([title, name, when], index) => {
       const center = left + columnWidth * index + columnWidth / 2;
       text(ctx, title, center, 448, { font: bold(8.5), align: "center" });
-      // Nome numa linha só: a letra diminui até caber na coluna (nome muito comprido ainda leva reticências).
+      // Nome numa linha só: a letra diminui até caber na coluna; se ainda não couber, abrevia os sobrenomes.
       let size = 14;
+      const max = columnWidth - 8;
+      const measure = (v) => ctx.measureText(v).width;
       ctx.font = `${size}px ${SCRIPT}`;
-      while (size > 8 && ctx.measureText(name).width > columnWidth - 8) ctx.font = `${(size -= 0.5)}px ${SCRIPT}`;
-      const [row] = wrap(ctx, name, columnWidth - 8, 1);
+      while (size > 9 && measure(name) > max) ctx.font = `${(size -= 0.5)}px ${SCRIPT}`;
+      const short = shortName(name, max, measure);
+      while (size > 7 && measure(short) > max) ctx.font = `${(size -= 0.5)}px ${SCRIPT}`;
+      const [row] = wrap(ctx, short, max, 1);
       text(ctx, row, center, 472, { font: `${size}px ${SCRIPT}`, align: "center" });
       if (when) text(ctx, when, center, 492, { font: `9px ${SANS}`, color: "#444", align: "center" });
     });

@@ -100,7 +100,7 @@
 
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=36ebf30d");
+    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=048f3fa5");
   }
 
   // "Imprimir / salvar PDF": gera o mesmo PDF da exportação em lote (folha na metade de cima de uma A4) e abre

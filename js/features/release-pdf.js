@@ -6,6 +6,19 @@
   const HEIGHT = 559;
   const TONES = { approved: [22, 128, 60], denied: [198, 40, 53], pending: [139, 85, 21] };
 
+  // Encurta um nome que não cabe: sobrenomes viram iniciais de trás para frente, mantendo o primeiro nome e os
+  // "da/de/do/dos/das/e" ("LUCIELDO PEREIRA DO NASCIMENTO" -> "LUCIELDO PEREIRA DO N."). Devolve a 1ª versão que cabe.
+  function shortName(name, maxWidth, measure) {
+    const words = String(name ?? "").trim().split(/\s+/);
+    let shown = words.join(" ");
+    for (let i = words.length - 1; i > 0 && measure(shown) > maxWidth; i -= 1) {
+      if (/^(d[aeo]s?|e)$/i.test(words[i])) continue;
+      words[i] = `${words[i][0]}.`;
+      shown = words.join(" ");
+    }
+    return shown;
+  }
+
   function drawSheet(doc, fields, x0, y0, widthMm) {
     const k = widthMm / WIDTH; // mm por px de projeto
     const pt = (px) => px * k * (72 / 25.4); // px de projeto -> pontos
@@ -87,7 +100,8 @@
     // Colaborador e função
     font("bold", 14);
     text("O Sr.:", left, 150);
-    filled(fields.name, left + 50, 150, 320, 14);
+    font("normal", 14);
+    filled(shortName(fields.name, 316, width), left + 50, 150, 320, 14);
     font("bold", 14);
     text("Função:", 430, 150);
     filled(fields.role, 490, 150, right - 490, 14);
@@ -188,11 +202,14 @@
       const center = left + columnWidth * index + columnWidth / 2;
       font("bold", 8.5);
       text(title, center, 448, { align: "center" });
-      // Nome numa linha só: a letra diminui até caber na coluna (nome muito comprido ainda leva reticências).
+      // Nome numa linha só: a letra diminui até caber na coluna; se ainda não couber, abrevia os sobrenomes.
       let size = 14;
+      const max = columnWidth - 8;
       font("italic", size, [17, 17, 17], "times");
-      while (size > 8 && width(name) > columnWidth - 8) font("italic", (size -= 0.5), [17, 17, 17], "times");
-      text(fit(name, columnWidth - 8), center, 472, { align: "center" });
+      while (size > 9 && width(name) > max) font("italic", (size -= 0.5), [17, 17, 17], "times");
+      const short = shortName(name, max, width);
+      while (size > 7 && width(short) > max) font("italic", (size -= 0.5), [17, 17, 17], "times");
+      text(fit(short, max), center, 472, { align: "center" });
       if (when) {
         font("normal", 9, [68, 68, 68]);
         text(when, center, 492, { align: "center" });

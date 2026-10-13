@@ -246,14 +246,41 @@ O carimbo será removido.`)) return;
     });
   }
 
+  // Versões cada vez mais curtas de um nome: sobrenomes viram iniciais de trás para frente, mantendo o
+  // primeiro nome e os "da/de/do/dos/das/e" ("LUCIELDO PEREIRA DO NASCIMENTO" -> "LUCIELDO PEREIRA DO N." -> ...).
+  function abbreviations(name) {
+    const words = String(name || "").trim().split(/\s+/);
+    const out = [];
+    for (let i = words.length - 1; i > 0; i -= 1) {
+      if (/^(d[aeo]s?|e)$/i.test(words[i])) continue;
+      words[i] = `${words[i][0]}.`;
+      out.push(words.join(" "));
+    }
+    return out;
+  }
+
   // Nome, função e nome na assinatura ficam numa linha só: se não couber, a letra diminui até caber (como no PDF).
+  // Nome comprido: em vez de cortar, abrevia os sobrenomes (o nome inteiro fica no "title", ao passar o mouse).
   function fitOneLine(root) {
     root.querySelectorAll(".cs-list td.cs-name, .cs-list td.cs-role, .cs-list .cs-bio-name").forEach((el) => {
       el.style.fontSize = "";
+      const over = () => el.scrollWidth > el.clientWidth + 1;
       let size = parseFloat(getComputedStyle(el).fontSize) || 12;
-      while (el.scrollWidth > el.clientWidth + 1 && size > 7) {
-        size -= 0.5;
-        el.style.fontSize = `${size}px`;
+      const shrink = (min) => {
+        while (over() && size > min) {
+          size -= 0.5;
+          el.style.fontSize = `${size}px`;
+        }
+      };
+      const isName = !el.matches(".cs-role");
+      shrink(isName ? 9 : 7);
+      if (isName && over()) {
+        el.title = el.textContent;
+        for (const short of abbreviations(el.textContent)) {
+          el.textContent = short;
+          if (!over()) break;
+        }
+        shrink(7);
       }
     });
   }
@@ -280,7 +307,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=824f6fde");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=8ad22df7");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
