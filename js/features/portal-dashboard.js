@@ -231,13 +231,18 @@
       flowEl.querySelector("#dash-stations").innerHTML = stations.map((st) => {
         const n = st.list.length;
         const isMine = st.key === mine;
+        // Duas partes clicáveis embaixo: individuais e coletivas, cada uma leva à sua lista (com o filtro da estação).
+        const ind = st.list.filter((x) => x.kind === "ind").length;
+        const colN = st.list.filter((x) => x.kind === "col").length;
+        const part = (page, count, one, many) => `<button type="button" class="dash-station-part${count ? "" : " is-zero"}" data-flow-part="${st.key}" data-page="${page}">${esc(plural(count, one, many))}</button>`;
         return `<li class="dash-station${isMine ? " is-mine" : ""}${n ? "" : " is-zero"}${st.done ? " is-done" : ""}">
-          <button type="button" class="dash-station-btn" data-flow="${st.key}" aria-label="${esc(`${st.name}: ${n}, ${st.sub}${st.detail ? `. ${st.detail}` : ""}`)}">
+          <div class="dash-station-btn" data-flow="${st.key}" role="group" aria-label="${esc(`${st.name}: ${n}, ${st.sub}${st.detail ? `. ${st.detail}` : ""}`)}">
             <span class="dash-station-dot">${svg(st.icon)}</span>
             <span class="dash-station-name">${esc(st.name)}${isMine ? '<span class="dash-mine-tag">Sua vez</span>' : ""}</span>
             <span class="dash-station-sub">${esc(st.sub)}</span>${st.detail ? `<span class="dash-station-detail">${esc(st.detail)}</span>` : ""}
             <span class="dash-num">${n}</span>
-          </button></li>`;
+            <span class="dash-station-split">${part("individuais", ind, "individual", "individuais")}${part("coletivas", colN, "coletiva", "coletivas")}</span>
+          </div></li>`;
       }).join("");
       flowEl.querySelector("#dash-flow-note").textContent = `${plural(all.filter((x) => live(x.stage) && !["exited", "registered", "entered"].includes(x.stage)).length, "liberação em andamento", "liberações em andamento")}${own ? " na obra" : ""}`;
     }
@@ -317,13 +322,22 @@
   document.addEventListener("click", (event) => {
     const card = event.target.closest(".portal-stats .stat-card[data-stat]:not([data-stat='team']), [data-engineer-filter]");
     if (!card || card.disabled || body.dataset.page !== "overview") return;
+    // Cartão dividido: a parte clicada (Individuais | Coletivas) diz para qual lista ir; fora das partes, nada.
+    const part = event.target.closest("[data-page]");
+    if (card.classList.contains("is-split") && !part) return;
     setTimeout(() => {
-      if (window.portalFilterBar?.sharedStatus()) go(card.dataset.page || "individuais");
+      if (window.portalFilterBar?.sharedStatus()) go((part || card).dataset.page || "individuais");
     }, 60);
   });
 
   // Cliques na esteira e no "Para você agora"
   document.addEventListener("click", (event) => {
+    const stationPart = event.target.closest("[data-flow-part]");
+    if (stationPart) {
+      const status = (STATUS_FOR[roleKey(lastProfile)] || {})[stationPart.dataset.flowPart];
+      go(stationPart.dataset.page, status || "all");
+      return;
+    }
     const station = event.target.closest("[data-flow]");
     if (station) {
       const key = station.dataset.flow;

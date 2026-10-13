@@ -549,7 +549,7 @@
   // informam a obra toda; não levam para os filtros (a lista deles só tem o que eles pediram). DP e engenheiro: clicam.
   document.addEventListener("click", (event) => {
     if (!document.body.classList.contains("info-only")) return;
-    const card = event.target.closest(".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow]");
+    const card = event.target.closest(".portal-stats .stat-card:not([data-stat='team']), [data-engineer-filter], [data-flow], [data-flow-part]");
     if (card) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -558,6 +558,9 @@
   document.querySelector(".portal-stats").addEventListener("click", async (event) => {
     const card = event.target.closest(".stat-card");
     if (!card || card.disabled || !activeProfileKey) return;
+    // Cartão dividido (Individuais | Coletivas): só as partes clicam.
+    const part = event.target.closest("[data-page]");
+    if (card.classList.contains("is-split") && !part) return;
     const key = card.dataset.stat;
     if (key === "team") {
       if (foremanRoleValues.includes(activeProfileKey)) document.querySelector("#foreman-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -567,7 +570,7 @@
     // Perfil com barra de filtros: o cartão escolhe a Situação nas duas listas (individual e coletiva), cada uma na sua barra.
     const filterBar = window.portalFilterBar;
     if (filterBar?.active()) {
-      const next = filterBar.sharedStatus() === (filterBar.aliases()[key] || key) ? "all" : key;
+      const next = part ? key : filterBar.sharedStatus() === (filterBar.aliases()[key] || key) ? "all" : key;
       // Sai da lixeira/concluídas: o cartão filtra a lista principal.
       if (trashMode || doneMode) {
         trashMode = false;
@@ -821,14 +824,18 @@
         : plural(Math.floor(minutes / 1440), "dia", "dias");
     return `mais antiga esperando há ${age}`;
   }
-  function splitLabel(individual, collective) {
+  // Cartão dividido: Individuais | Coletivas, cada parte filtra e leva à sua lista (mesmo visual dos cartões dos
+  // engenheiros). hide: sem partes (ex.: portaria, que não vê esses números).
+  function statSplit(key, individual, collective, hide) {
+    const host = document.querySelector(`#stat-${key}-split`);
+    if (!host) return;
+    host.hidden = !!hide;
+    if (hide) { host.innerHTML = ""; return; }
     const people = collective.reduce((sum, sheet) => sum + (sheet.participants?.length || 0), 0);
-    return `${plural(individual.length, "individual", "individuais")} · ${plural(collective.length, "coletiva", "coletivas")}${collective.length ? ` (${plural(people, "pessoa", "pessoas")})` : ""}`;
-  }
-  // Lista que o cartão abre no clique (js/features/portal-dashboard.js): Coletivas quando só há coletivas nele.
-  function statPage(detailId, individual, collective) {
-    const card = document.querySelector(`#${detailId}`)?.closest(".stat-card");
-    if (card) card.dataset.page = !individual.length && collective.length ? "coletivas" : "individuais";
+    const part = (page, title, count, line) => `<button type="button" class="stat-engineer-part" data-page="${page}" aria-label="${escapeHtml(`${title}: ${count}`)}">
+        <span class="stat-engineer-part-title">${title}</span><span class="stat-engineer-part-num">${count}</span>${line ? `<span class="stat-engineer-part-line">${escapeHtml(line)}</span>` : ""}</button>`;
+    host.innerHTML = part("individuais", "Individuais", individual.length, "")
+      + part("coletivas", "Coletivas", collective.length, collective.length ? plural(people, "pessoa", "pessoas") : "");
   }
   const pendingNotes = { dp: "aguardando o DP", engenheiro: "aguardando seu abono", portaria: "não se aplica à portaria" };
 
@@ -939,8 +946,8 @@
 
     elements.pending.textContent = pending.length + col.pending.length;
     document.querySelector("#stat-pending-note").textContent = pendingNotes[profileKey] || "em andamento na obra (engenheiro ou DP)";
-    detail("stat-pending-detail", isPortaria ? [] : [splitLabel(pending, col.pending), waitingLabel([...pending, ...col.pending])]);
-    statPage("stat-pending-detail", pending, col.pending);
+    detail("stat-pending-detail", isPortaria ? [] : [waitingLabel([...pending, ...col.pending])]);
+    statSplit("pending", pending, col.pending, isPortaria);
 
     const stageCount = (stage) => approved.filter((release) => window.portalReleaseFlow.stageOf(release) === stage).length
       + col.approved.filter((sheet) => col.stageOf(sheet) === stage).length;
@@ -950,14 +957,13 @@
     elements.approved.textContent = approvedTotal;
     document.querySelector("#stat-approved-note").textContent = "autorizadas pelo DP hoje";
     detail("stat-approved-detail", [
-      approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited - entered} aguardando portaria${entered ? ` · ${plural(entered, "entrada", "entradas")}` : ""}` : "",
-      splitLabel(approved, col.approved)
+      approvedTotal ? `${plural(exited, "já saiu", "já saíram")} · ${approvedTotal - exited - entered} aguardando portaria${entered ? ` · ${plural(entered, "entrada", "entradas")}` : ""}` : ""
     ]);
-    statPage("stat-approved-detail", approved, col.approved);
+    statSplit("approved", approved, col.approved);
 
     elements.bonus.textContent = isPortaria ? profiles.portaria.bonus : bonus.length + col.bonus.length;
-    detail("stat-bonus-detail", isPortaria ? [] : [splitLabel(bonus, col.bonus), waitingLabel([...bonus, ...col.bonus])]);
-    statPage("stat-bonus-detail", bonus, col.bonus);
+    detail("stat-bonus-detail", isPortaria ? [] : [waitingLabel([...bonus, ...col.bonus])]);
+    statSplit("bonus", bonus, col.bonus, isPortaria);
     // "Abonadas por <engenheiro>": de todas as liberações que o perfil vê, as que o engenheiro marcou como abonadas.
     // O Administrador Analista (perfil de teste e correções) não entra nos cartões.
     const byAdmin = (record) => /administrador/i.test(`${record.engineerRole || ""} ${record.engineer || ""}`);
@@ -971,7 +977,8 @@
     const percent = abonados ? Math.round((launchedAll / abonados) * 100) : 0;
     elements.launched.textContent = isPortaria ? "—" : launchedAll;
     elements.launchedNote.textContent = isPortaria ? "carimbados pelo DP" : `${toLaunchAll} por lançar no RM`;
-    detail("stat-launched-detail", isPortaria ? [] : [`${launchedAll} de ${abonados} abonados (${percent}%)`, splitLabel(launched, col.launched || [])]);
+    detail("stat-launched-detail", isPortaria ? [] : [`${launchedAll} de ${abonados} abonados (${percent}%)`]);
+    statSplit("launched", launched, col.launched || [], isPortaria);
     elements.launchedProgress.hidden = isPortaria;
     elements.launchedBar.style.width = `${percent}%`;
     elements.launchedProgress.title = `${launchedAll} de ${abonados} abonos lançados no RM`;

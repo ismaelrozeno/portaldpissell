@@ -386,9 +386,10 @@ body.dash .portal-stats .stat-card-engineer { justify-content: flex-start; }
 .stat-engineer-total { display: block; margin-top: .3rem; color: var(--d-ink, #0e1f33); font-size: .82rem; }
 body.dash .portal-stats .stat-card-engineer .stat-engineer-approved small,
 body.dash .portal-stats .stat-card-engineer .stat-engineer-total small { display: inline; margin: 0; padding: 0; border: 0; color: var(--d-muted, #66768a); font-size: inherit; }
-/* Cartão do engenheiro dividido: Individuais | Coletivas, cada parte clicável leva à sua lista (js/pages/portal.js). */
-.portal-stats .stat-card-engineer.is-split { cursor: default; }
-@media (hover: hover) { .portal-stats .stat-card-engineer.is-split:hover { transform: none; border-color: transparent; } }
+/* Cartões divididos (engenheiros e resumo): Individuais | Coletivas, cada parte clicável leva à sua lista (js/pages/portal.js). */
+.portal-stats .stat-card.is-split { cursor: default; }
+@media (hover: hover) { .portal-stats .stat-card.is-split:hover:not(.is-active) { transform: none; border-color: transparent; } }
+.portal-stats .stat-card.is-split .stat-engineer-split[hidden] { display: none; }
 .stat-engineer-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .5rem; margin-top: .6rem; }
 .stat-engineer-part { display: flex; flex-direction: column; align-items: flex-start; gap: .05rem; min-width: 0; padding: .55rem .65rem; border: 1px solid var(--d-line, #dde3ea); border-radius: .6rem; color: var(--d-ink, #0e1f33); background: var(--d-surface-2, #f6f8fa); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .stat-engineer-part:hover { border-color: var(--d-accent, #f5820d); }
@@ -451,3 +452,22 @@ body.dash[data-page="concluidas"] #collective-section:not([hidden]) { display: b
    bastante para as duas partes caberem lado a lado. */
 body.dash .portal-stats.portal-stats-engineers { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 600px) { body.dash .portal-stats.portal-stats-engineers { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
+
+/* Esteira: individuais e coletivas de cada estação, clicáveis (js/features/portal-dashboard.js). */
+.dash-station-btn[data-flow] { cursor: pointer; }
+.dash-station-split { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .25rem; }
+.dash-station-part { padding: .18rem .55rem; border: 1px solid #2b4466; border-radius: 999px; color: #dbe5f0; background: rgba(255, 255, 255, .05); font: 600 .74rem/1.3 "Barlow", system-ui, sans-serif; cursor: pointer; transition: border-color .15s, background .15s; }
+.dash-station-part:hover { border-color: var(--d-accent, #ef7a0e); background: rgba(239, 122, 14, .12); }
+.dash-station-part:focus-visible { outline: 2px solid var(--d-accent, #ef7a0e); outline-offset: 2px; }
+.dash-station-part.is-zero { color: #7f93ad; }
+@media (min-width: 992px) { .dash-station-split { grid-column: 1; order: 6; } }
+
+/* Celular: nos cartões do resumo (dois por linha) as partes Individuais/Coletivas ficam uma embaixo da outra,
+   em linha: nome à esquerda, número à direita. Os cartões dos engenheiros (um por linha) continuam lado a lado. */
+@media (max-width: 599px) {
+  .portal-stats:not(.portal-stats-engineers) .stat-engineer-split { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
+  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .4rem; padding: .4rem .55rem; }
+  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-title { flex: 1; min-width: 0; font-size: .66rem; letter-spacing: .02em; }
+  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-num { font-size: 1.1rem; }
+  .portal-stats:not(.portal-stats-engineers) .stat-engineer-part .stat-engineer-part-line { flex-basis: 100%; font-size: .7rem; }
+}
