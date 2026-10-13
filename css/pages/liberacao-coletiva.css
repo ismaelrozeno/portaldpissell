@@ -10,14 +10,7 @@
 .collective-chosen li span { flex: 1; min-width: 0; }
 .collective-chosen small { display: block; color: var(--release-muted); font-size: .72rem; }
 .collective-chosen button { padding: .1rem .5rem; border: 0; border-radius: .3rem; color: #8b2930; background: #fde5e6; font-size: 1rem; line-height: 1.4; cursor: pointer; }
-.collective-history { margin-top: 1.5rem; }
-.collective-history-list { display: grid; gap: .6rem; margin: 1rem 0 0; padding: 0; list-style: none; }
-.collective-history-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .8rem 1rem; border: 1px solid var(--release-line); border-radius: .6rem; }
-.collective-history-list strong { display: block; color: var(--release-navy); }
-.collective-history-list small { color: var(--release-muted); }
-.collective-history-list button { padding: .5rem .75rem; border: 1px solid #1769aa; border-radius: .45rem; color: #1769aa; background: #f2f8fd; font-size: .78rem; font-weight: 700; cursor: pointer; }
-.collective-history-list button + button { margin-left: .4rem; border-color: #e0a2a6; color: #8b2930; background: #fff; }
-.collective-empty { color: var(--release-muted); }
+/* Lista "Folhas já enviadas": em liberacao.css (a individual usa a mesma). */
 
 /* Folha "Liberação coletiva" (A4 retrato) */
 .cs-overlay { position: fixed; inset: 0; z-index: 2000; overflow: auto; padding: 0 1rem 1rem; background: rgba(0, 20, 45, .94); }

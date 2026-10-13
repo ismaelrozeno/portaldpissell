@@ -16,7 +16,8 @@
 
   <link rel="stylesheet" href="css/site-overrides.css?v=16cde341">
 
-  <link rel="stylesheet" href="css/pages/liberacao.css?v=6b79fdbb">
+  <link rel="stylesheet" href="css/components/release-preview.css?v=e3d21a62">
+  <link rel="stylesheet" href="css/pages/liberacao.css?v=4d737982">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
@@ -206,6 +207,16 @@
 
       </section>
 
+      <section class="release-card collective-history" aria-labelledby="history-title">
+        <div class="release-heading">
+          <div>
+            <p class="release-kicker">Folhas já enviadas</p>
+            <h2 id="history-title">Liberações individuais recentes</h2>
+          </div>
+        </div>
+        <ul class="collective-history-list" id="history-list"><li class="collective-empty">Carregando…</li></ul>
+      </section>
+
     </div>
 
   </main>
@@ -231,7 +242,12 @@
   <script src="js/core/firebase-release-store.js?v=7a5a797e"></script>
   <script src="js/features/lunch-time.js?v=a388a30f"></script>
   <script src="js/features/retro-date-hint.js?v=f79a047d"></script>
-  <script src="js/pages/liberacao.js?v=1e3f411d"></script>
+  <script src="js/features/release-actions.js?v=505b9fb0"></script>
+  <script src="js/features/fingerprint-art.js?v=58448265"></script>
+  <script src="js/features/release-preview.js?v=7734c281"></script>
+  <script src="js/features/release-image.js?v=816b3f9d"></script>
+  <script src="js/core/pagination.js?v=c175d2ce"></script>
+  <script src="js/pages/liberacao.js?v=ef3d6a6f"></script>
 
   <!-- Menu do dashboard: barra de abas embaixo no celular e menu lateral no computador -->
   <script src="js/features/dash-shell.js?v=29b08d06"></script>

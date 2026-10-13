@@ -81,3 +81,32 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 /* Sem engenheiro vinculado: aviso no topo do formulário (o envio fica bloqueado até o DP ou o engenheiro vincular). */
 .release-no-engineer { margin: 0 0 1rem; padding: .75rem .9rem; border: 1px solid #e0a2a6; border-radius: .55rem; color: #8b2930; background: #fff4f4; font-size: .9rem; line-height: 1.4; }
 .release-no-engineer strong { display: block; margin-bottom: .15rem; }
+
+/* "Folhas já enviadas": liberações recentes, igual na individual e na coletiva. */
+.collective-history { margin-top: 1.5rem; }
+.collective-history-list { display: grid; gap: .6rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.collective-history-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .8rem 1rem; border: 1px solid var(--release-line); border-radius: .6rem; }
+.collective-history-list strong { display: block; color: var(--release-navy); }
+.collective-history-list small { color: var(--release-muted); }
+.collective-history-list button { padding: .5rem .75rem; border: 1px solid #1769aa; border-radius: .45rem; color: #1769aa; background: #f2f8fd; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.collective-history-list button + button { margin-left: .4rem; border-color: #e0a2a6; color: #8b2930; background: #fff; }
+.collective-empty { color: var(--release-muted); }
+/* Botão sempre à direita, do mesmo tamanho em todas as linhas (texto comprido quebra só o texto). No celular, embaixo em todas. */
+.collective-history-list li { flex-wrap: nowrap; }
+.collective-history-list li > div:first-child { flex: 1; min-width: 0; }
+.collective-history-list li > div:last-child { flex: none; display: flex; gap: .4rem; }
+.collective-history-list li > div:last-child button + button { margin-left: 0; }
+@media (max-width: 600px) { .collective-history-list li { flex-wrap: wrap; } .collective-history-list li > div:last-child { flex-basis: 100%; } }
+
+/* Paginação das "Folhas já enviadas" (js/core/pagination.js, mesmo visual do portal). */
+.pager { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.6rem 1rem; margin-top:.9rem; padding-top:.8rem; border-top:1px solid var(--release-line); color:var(--release-muted); font-size:.8rem; }
+.pager[hidden] { display:none; }
+.pager-info { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .9rem; }
+.pager-size-label { display:inline-flex; align-items:center; gap:.35rem; margin:0; }
+.pager-size { padding:.25rem .4rem; border:1px solid var(--release-line); border-radius:.4rem; color:#16283d; background:#fff; font-size:.8rem; }
+.pager-buttons { display:flex; flex-wrap:wrap; gap:.25rem; }
+.pager-btn { min-width:2.1rem; padding:.35rem .6rem; border:1px solid var(--release-line); border-radius:.4rem; color:#1769aa; background:#fff; font-size:.8rem; font-weight:700; cursor:pointer; }
+.pager-btn:hover:not(:disabled) { border-color:#1769aa; background:#f2f8fd; }
+.pager-btn.is-current { border-color:#00142d; color:#fff; background:#00142d; cursor:default; }
+.pager-btn:disabled:not(.is-current) { opacity:.45; cursor:default; }
+@media (max-width:600px) { .pager { flex-direction:column; align-items:stretch; } .pager-buttons { justify-content:center; } }

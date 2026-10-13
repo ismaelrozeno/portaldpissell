@@ -25,14 +25,16 @@
   // Engenheiro que recebe: o da equipe do encarregado escolhido (js/core/firebase-auth.js, getEngineerRouting), decidido
   // no envio, sem campo na tela. Não existe mais "todos os engenheiros": sem engenheiro vinculado, não dá para enviar.
   let routing = null;
-  const engineerFor = () => (routing ? routing.ofForeman(foremanSelect.value) || routing.forSender(session) : "");
+  // Mesma regra da liberação individual: engenheiro → ele mesmo; os demais → o engenheiro do encarregado escolhido.
+  const engineerFor = () => (!routing ? "" : routing.isEngineerLike(session) ? session.name || "" : routing.ofForeman(foremanSelect.value));
   // Encarregado escolhido que ainda não está na equipe de nenhum engenheiro: avisa já ao abrir/trocar, não só no envio.
   function warnNoEngineer() {
     form.querySelector(".release-no-engineer")?.remove();
-    if (!routing || engineerFor()) return;
+    if (!routing || routing.isEngineerLike(session) || engineerFor()) return;
     const foreman = foremanSelect.value.trim();
-    const own = !foreman || window.normalizeSearchText(foreman) === window.normalizeSearchText(session?.name || "");
-    const who = own ? "Você ainda não está" : `O encarregado ${foreman} ainda não está`;
+    if (!foreman) return;
+    const isMe = window.normalizeSearchText(foreman) === window.normalizeSearchText(session?.name || "");
+    const who = isMe ? "Você ainda não está" : `O encarregado ${foreman} ainda não está`;
     form.insertAdjacentHTML("afterbegin", `<p class="release-no-engineer" role="alert"><strong>${esc(who)} na equipe de nenhum engenheiro.</strong> Peça ao DP ou ao seu engenheiro para fazer o vínculo em "Equipes dos engenheiros". Sem isso, a liberação não pode ser enviada.</p>`);
   }
   foremanSelect.addEventListener("change", warnNoEngineer);
@@ -163,6 +165,8 @@
   let history = [];
   const historyList = document.querySelector("#history-list");
 
+  // Paginada (1 2 3 Próxima), como no portal e na liberação individual.
+  const historyPager = window.portalPagination?.create({ key: "coletiva-enviadas", after: historyList, onChange: () => renderHistory() });
   async function loadHistory() {
     try {
       const all = await window.portalCollectiveStore.getAll();
@@ -173,8 +177,12 @@
       historyList.innerHTML = '<li class="collective-empty">Não foi possível carregar as folhas anteriores.</li>';
       return;
     }
+    renderHistory();
+  }
+  function renderHistory() {
+    const pageItems = historyPager ? historyPager.slice(history) : history;
     historyList.innerHTML = history.length
-      ? history.map((item) => `<li><div><strong>${esc(item.motive || "Sem motivo")} · ${esc(String(item.date || "").split("-").reverse().join("/"))}</strong><small>${(item.participants || []).length} colaboradores · por ${esc(item.requester || "—")} · ${esc(window.portalCollectiveSheet.statusLabel(item))}</small></div><div><button type="button" data-view="${esc(item.id)}">Visualizar folha</button></div></li>`).join("")
+      ? pageItems.map((item) => `<li><div><strong>${esc(item.motive || "Sem motivo")} · ${esc(String(item.date || "").split("-").reverse().join("/"))}</strong><small>${(item.participants || []).length} colaboradores · por ${esc(item.requester || "—")} · ${esc(window.portalCollectiveSheet.statusLabel(item))}</small></div><div><button type="button" data-view="${esc(item.id)}">Visualizar folha</button></div></li>`).join("")
       : '<li class="collective-empty">Nenhuma liberação coletiva ainda.</li>';
   }
 

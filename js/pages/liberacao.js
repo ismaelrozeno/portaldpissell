@@ -200,9 +200,59 @@
     warnNoEngineer();
   }
 
+  // ---------- Folhas já enviadas (igual à coletiva) ----------
+  // Quem solicita (encarregado, estagiário, analista, segurança) vê as que ele mesmo enviou; DP, engenheiro e
+  // administrador veem as da obra (o engenheiro comum, só as enviadas a ele). Paginada (1 2 3 Próxima), como no portal.
+  const historyList = document.querySelector("#history-list");
+  let history = [];
+  const historyPager = historyList && window.portalPagination?.create({ key: "liberacao-enviadas", after: historyList, onChange: () => renderHistory() });
+  async function loadHistory() {
+    if (!historyList) return;
+    try {
+      const session = window.portalAuthDemo.getSession();
+      const fold = normalizeSearchText;
+      const requesterRoles = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
+      const ownOnly = requesterRoles.includes(session?.roleValue) && !window.portalAuthDemo.isDpDelegate?.()
+        && !(session?.roleValue === "analista" && (session.privileges || []).includes("engenheiro"));
+      const all = window.portalReleaseActions.visibleFor(await window.portalDemoStore.getReleases());
+      history = (ownOnly
+        ? all.filter((release) => (release.requesterUid ? release.requesterUid === session.uid : fold(release.requester) === fold(session.name)))
+        : all)
+        .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    } catch (error) {
+      console.error(error);
+      historyList.innerHTML = '<li class="collective-empty">Não foi possível carregar as liberações anteriores.</li>';
+      return;
+    }
+    renderHistory();
+  }
+  function renderHistory() {
+    const esc = window.escapeHtml;
+    const day = (value) => String(value || "").slice(0, 10).split("-").reverse().join("/");
+    const flow = window.portalReleaseFlow;
+    // Situação no mesmo formato da coletiva (js/features/collective-release-sheet.js, statusLabel).
+    const status = (release) => {
+      const stage = flow.stageOf(release);
+      if (stage === "foreman") return `Recusada por ${release.refusedBy || "engenheiro"}${release.refusalReason ? `: ${release.refusalReason}` : ""}`;
+      if (stage === "engineer") return `Aguardando engenheiro${release.targetEngineer ? ` (${release.targetEngineer})` : ""}`;
+      const abono = release.bonusStatus ? ` · ${release.bonusStatus === "approved" ? "Abonado" : "Não abonado"} por ${release.engineer || "engenheiro"}` : "";
+      return `${flow.stageLabel(release, stage)}${abono}`;
+    };
+    const pageItems = historyPager ? historyPager.slice(history) : history;
+    historyList.innerHTML = history.length
+      ? pageItems.map((release) => `<li><div><strong>${esc(release.name || "Sem colaborador")} · ${esc(day(release.date || release.createdAt))}</strong><small>${esc(release.role || "Função não informada")} · por ${esc(release.requester || "—")} · ${esc(status(release))}</small></div><div><button type="button" data-view="${esc(release.id)}">Visualizar folha</button></div></li>`).join("")
+      : '<li class="collective-empty">Nenhuma liberação individual ainda.</li>';
+  }
+  historyList?.addEventListener("click", (event) => {
+    const view = event.target.closest("[data-view]");
+    const release = view && history.find((item) => item.id === view.dataset.view);
+    if (release) window.portalReleasePreview?.show(release);
+  });
+
   updatePageCopy();
   await loadEngineers();
   await renderEmployees();
+  loadHistory();
 
   employeeSearch?.addEventListener("input", filterEmployees);
 
