@@ -354,7 +354,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=04cf528d", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=eecf1cad", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);
