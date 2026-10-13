@@ -141,7 +141,7 @@
         cell(x, y, w, rowH);
         if (c === 0) textIn(i + 1, x, y, w, rowH, { align: "center", size: 7, color: GREY, family: "times" });
         else if (c === 1 && person) textIn(person.nome, x, y, w, rowH, { size: 9, maxLines: 2 });
-        else if (c === 2 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, style: "bold", color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? TONES.yes : GREY });
+        else if (c === 2 && person) textIn(f.participantExit?.[i] || "-", x, y, w, rowH, { align: "center", size: 8, color: f.participantExit?.[i] && f.participantExit[i] !== "-" ? [17, 17, 17] : GREY });
         else if (c === 3 && person) textIn(String(person.funcao || "").toUpperCase(), x, y, w, rowH, { align: "center", size: 6.5, color: GREY, family: "times", maxLines: 2 });
         else if (c === 4 && f.participantBio?.[i]) drawBio(f.participantBio[i], x, y, rowH, w);
         x += w;

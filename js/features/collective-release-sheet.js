@@ -266,7 +266,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=e793f3a1");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=c3ba6af6");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -313,7 +313,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=db9bf755", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=d5793b4d", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);

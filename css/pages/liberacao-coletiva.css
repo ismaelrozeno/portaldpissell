@@ -50,7 +50,7 @@
 .cs-list .cs-role { width: 120px; color: #555; font-family: Georgia, serif; font-size: 11px; text-align: center; }
 .cs-list th:nth-child(5) { width: 36%; }
 /* Coluna "Saída": hora em que a portaria marcou a saída ("-" sem registro). */
-.cs-list .cs-exit-cell { width: 60px; color: #17613b; font-size: 12px; font-weight: 700; text-align: center; }
+.cs-list .cs-exit-cell { width: 60px; color: #111; font-size: 12px; font-weight: 600; text-align: center; }
 .cs-list .cs-bio-cell { padding: 1px 6px; }
 .cs-bio { display: flex; align-items: center; gap: 6px; }
 .cs-bio .fingerprint-art { flex: none; }
