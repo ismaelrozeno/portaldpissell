@@ -107,7 +107,8 @@
     // Horário
     text(ctx, "Está autorizado no dia de hoje a partir das:", left, 194, { font: bold(14) });
     field(ctx, fields.time, 370, 194, 130, { font: `14px ${SANS}` });
-    text(ctx, "hs", right, 194, { font: `14px ${SANS}`, align: "right" });
+    // "hs" colado no horário; sem horário ("Não bateu o ponto") não tem "hs".
+    if (!/não bateu/i.test(fields.time)) text(ctx, "hs", 370 + 130 + 6, 194, { font: `14px ${SANS}` });
     line(ctx, left, right, 210);
 
     // Movimentação e motivo

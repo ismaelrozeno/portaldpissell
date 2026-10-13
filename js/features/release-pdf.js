@@ -97,8 +97,9 @@
     font("bold", 14);
     text("Está autorizado no dia de hoje a partir das:", left, 194);
     filled(fields.time, 370, 194, 130, 14);
+    // "hs" colado no horário; sem horário ("Não bateu o ponto") não tem "hs".
     font("normal", 14);
-    text("hs", right, 194, { align: "right" });
+    if (!/não bateu/i.test(fields.time)) text("hs", 370 + 130 + 6, 194);
     rule(left, right, 210);
 
     // Movimentação e motivo (☒ / ☐ desenhados como caixas: a fonte padrão do PDF não tem esses símbolos)
