@@ -42,6 +42,9 @@
       linkedForeman: profile.linkedForeman || "",
       // Encarregado: engenheiro de cuja equipe ele faz parte (as liberações dele vão para esse engenheiro).
       linkedEngineer: profile.linkedEngineer || "",
+      // Fotos de perfil premium ganhas de presente do administrador, e os presentes ainda não vistos.
+      premiumAvatars: Array.isArray(profile.premiumAvatars) ? profile.premiumAvatars : [],
+      avatarGifts: Array.isArray(profile.avatarGifts) ? profile.avatarGifts : [],
       // Privilégios dados pelo administrador: "gestor" (engenheiro) e "dp" (analista com acesso de DP).
       privileges: Array.isArray(profile.privileges) ? profile.privileges : [],
       photo: profile.photo || "",
@@ -314,6 +317,27 @@
           return ofForeman(session?.linkedForeman) || ofForeman(employeeForeman);
         }
       };
+    },
+    // Administrador: presenteia uma foto de perfil premium. A pessoa vê o aviso "Foto desbloqueada" no próximo login.
+    async giftPremiumAvatar(userId, avatarId, giverName) {
+      const FieldValue = firebase.firestore.FieldValue;
+      await usersRef().doc(userId).update({
+        premiumAvatars: FieldValue.arrayUnion(avatarId),
+        avatarGifts: FieldValue.arrayUnion({ id: avatarId, by: giverName || "Administrador", at: new Date().toISOString() }),
+        updatedAt: new Date().toISOString()
+      });
+    },
+    // Administrador: retira a foto premium (se ela estava em uso, a pessoa volta para as iniciais).
+    async revokePremiumAvatar(userId, avatarId) {
+      const snapshot = await usersRef().doc(userId).get();
+      const data = snapshot.data() || {};
+      const changes = {
+        premiumAvatars: (data.premiumAvatars || []).filter((id) => id !== avatarId),
+        avatarGifts: (data.avatarGifts || []).filter((gift) => gift?.id !== avatarId),
+        updatedAt: new Date().toISOString()
+      };
+      if (data.avatar === avatarId) changes.avatar = "";
+      await usersRef().doc(userId).update(changes);
     },
     // Ao vivo: avisa quando alguém se vincula/desvincula ou um encarregado entra/sai.
     subscribeTeamDirectory(callback, onError) {

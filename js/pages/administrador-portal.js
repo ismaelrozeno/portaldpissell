@@ -159,11 +159,19 @@
     const items = defs.length
       ? `<li><h6 class="dropdown-header">Privilégios</h6></li>${defs.map((def) => `<li><button class="dropdown-item ${has(def) ? "text-danger fw-semibold" : ""}" type="button" data-privilege-user="${escapeHtml(user.id)}" data-privilege-key="${def.key}" data-privilege-grant="${has(def) ? "0" : "1"}">${has(def) ? def.revoke : def.grant}</button><span class="dropdown-item-text small text-muted pt-0">${def.note}</span></li>`).join("")}`
       : '<li><span class="dropdown-item-text small text-muted">Este perfil não tem privilégios para dar.</span></li>';
-    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem">${items}</ul></div>`;
+    // Fotos de perfil premium: o administrador presenteia (desbloqueia) ou tira, para qualquer perfil.
+    const owned = (id) => (user.premiumAvatars || []).includes(id);
+    const premiumItems = `<li><hr class="dropdown-divider"></li><li><h6 class="dropdown-header">Fotos de perfil premium</h6></li>${window.portalAvatars.premium.map((item) => `<li><button class="dropdown-item d-flex align-items-center gap-2 ${owned(item.id) ? "text-danger fw-semibold" : ""}" type="button" data-premium-user="${escapeHtml(user.id)}" data-premium-id="${item.id}" data-premium-grant="${owned(item.id) ? "0" : "1"}"><img src="${window.portalAvatars.url(item.id)}" alt="" width="28" height="28" style="border-radius:50%">${owned(item.id) ? `Tirar: ${escapeHtml(item.label)}` : `🎁 Presentear: ${escapeHtml(item.label)}`}</button></li>`).join("")}`;
+    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem">${items}${premiumItems}</ul></div>`;
   };
   const privilegeBadge = (user) => {
     const given = (PRIVILEGES[user.roleValue] || []).filter((def) => (user.privileges || []).includes(def.key));
-    return given.length ? `<small class="d-block mt-1">${given.map((def) => `<span class="badge text-bg-primary me-1">${def.label}</span>`).join("")}</small>` : "";
+    const premiumCount = (user.premiumAvatars || []).filter((id) => window.portalAvatars.isPremium(id)).length;
+    const badges = [
+      ...given.map((def) => `<span class="badge text-bg-primary me-1">${def.label}</span>`),
+      premiumCount ? `<span class="badge me-1" style="background:#ef6c00">🎁 ${premiumCount} foto${premiumCount > 1 ? "s" : ""} premium</span>` : ""
+    ].filter(Boolean);
+    return badges.length ? `<small class="d-block mt-1">${badges.join("")}</small>` : "";
   };
 
   async function renderRegisteredUsers() {
@@ -186,6 +194,34 @@
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
+
+  // Presentear / tirar foto de perfil premium (menu ⋮ de cada usuário).
+  registeredUsersList.addEventListener("click", async (event) => {
+    const item = event.target.closest("[data-premium-user]");
+    if (!item) return;
+    const avatar = window.portalAvatars.find(item.dataset.premiumId);
+    const users = await window.portalAuthDemo.getAllUsers();
+    const user = users.find((entry) => entry.id === item.dataset.premiumUser);
+    if (!avatar || !user) return;
+    const grant = item.dataset.premiumGrant === "1";
+    const feedback = document.querySelector("#privilege-feedback");
+    const say = (text, ok) => {
+      feedback.textContent = text;
+      feedback.className = `alert py-2 mt-3 mb-0 ${ok ? "alert-success" : "alert-danger"}`;
+      feedback.hidden = false;
+    };
+    try {
+      const admin = window.portalAuthDemo.getSession();
+      if (grant) await window.portalAuthDemo.giftPremiumAvatar(user.id, avatar.id, admin?.name || "Administrador");
+      else await window.portalAuthDemo.revokePremiumAvatar(user.id, avatar.id);
+    } catch (error) {
+      console.error("Não foi possível salvar a foto premium.", error);
+      say(`Não foi possível ${grant ? "presentear" : "tirar"} a foto de ${user.name} (${error.code || "erro"}). Verifique a internet e as regras do banco.`, false);
+      return;
+    }
+    say(grant ? `🎁 Foto "${avatar.label}" presenteada para ${user.name}. Ela aparece desbloqueada no próximo login ou ao atualizar a página.` : `Foto "${avatar.label}" retirada de ${user.name}.`, true);
+    await renderRegisteredUsers();
+  });
 
   registeredUsersList.addEventListener("click", async (event) => {
     const item = event.target.closest("[data-privilege-user]");
