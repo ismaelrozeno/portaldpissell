@@ -167,10 +167,13 @@
     columns.forEach(([title, name, when], index) => {
       const center = left + columnWidth * index + columnWidth / 2;
       text(ctx, title, center, 448, { font: bold(8.5), align: "center" });
-      ctx.font = `14px ${SCRIPT}`;
-      const rows = wrap(ctx, name, columnWidth - 12, 2);
-      rows.forEach((row, i) => text(ctx, row, center, 472 + i * 16, { font: `14px ${SCRIPT}`, align: "center" }));
-      if (when) text(ctx, when, center, 472 + rows.length * 16 + 4, { font: `9px ${SANS}`, color: "#444", align: "center" });
+      // Nome numa linha só: a letra diminui até caber na coluna (nome muito comprido ainda leva reticências).
+      let size = 14;
+      ctx.font = `${size}px ${SCRIPT}`;
+      while (size > 8 && ctx.measureText(name).width > columnWidth - 8) ctx.font = `${(size -= 0.5)}px ${SCRIPT}`;
+      const [row] = wrap(ctx, name, columnWidth - 8, 1);
+      text(ctx, row, center, 472, { font: `${size}px ${SCRIPT}`, align: "center" });
+      if (when) text(ctx, when, center, 492, { font: `9px ${SANS}`, color: "#444", align: "center" });
     });
 
     // Carimbo "lançado no RM"

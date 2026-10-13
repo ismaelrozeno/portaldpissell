@@ -187,12 +187,14 @@
       const center = left + columnWidth * index + columnWidth / 2;
       font("bold", 8.5);
       text(title, center, 448, { align: "center" });
-      font("italic", 14, [17, 17, 17], "times");
-      const rows = wrap(name, columnWidth - 12, 2);
-      rows.forEach((row, i) => text(row, center, 472 + i * 16, { align: "center" }));
+      // Nome numa linha só: a letra diminui até caber na coluna (nome muito comprido ainda leva reticências).
+      let size = 14;
+      font("italic", size, [17, 17, 17], "times");
+      while (size > 8 && width(name) > columnWidth - 8) font("italic", (size -= 0.5), [17, 17, 17], "times");
+      text(fit(name, columnWidth - 8), center, 472, { align: "center" });
       if (when) {
         font("normal", 9, [68, 68, 68]);
-        text(when, center, 472 + rows.length * 16 + 4, { align: "center" });
+        text(when, center, 492, { align: "center" });
       }
     });
 
