@@ -386,6 +386,20 @@ body.dash .portal-stats .stat-card-engineer { justify-content: flex-start; }
 .stat-engineer-total { display: block; margin-top: .3rem; color: var(--d-ink, #0e1f33); font-size: .82rem; }
 body.dash .portal-stats .stat-card-engineer .stat-engineer-approved small,
 body.dash .portal-stats .stat-card-engineer .stat-engineer-total small { display: inline; margin: 0; padding: 0; border: 0; color: var(--d-muted, #66768a); font-size: inherit; }
+/* Cartão do engenheiro dividido: Individuais | Coletivas, cada parte clicável leva à sua lista (js/pages/portal.js). */
+.portal-stats .stat-card-engineer.is-split { cursor: default; }
+@media (hover: hover) { .portal-stats .stat-card-engineer.is-split:hover { transform: none; border-color: transparent; } }
+.stat-engineer-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .5rem; margin-top: .6rem; }
+.stat-engineer-part { display: flex; flex-direction: column; align-items: flex-start; gap: .05rem; min-width: 0; padding: .55rem .65rem; border: 1px solid var(--d-line, #dde3ea); border-radius: .6rem; color: var(--d-ink, #0e1f33); background: var(--d-surface-2, #f6f8fa); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.stat-engineer-part:hover { border-color: var(--d-accent, #f5820d); }
+.stat-engineer-part:focus-visible { outline: 2px solid var(--d-accent, #f5820d); outline-offset: 2px; }
+.stat-engineer-part.is-active { border-color: var(--d-accent, #f5820d); box-shadow: 0 0 0 3px var(--d-accent-ring, rgba(245, 130, 13, .25)); }
+.portal-stats .stat-engineer-part .stat-engineer-part-title { display: block; color: var(--d-muted, #66768a); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.portal-stats .stat-engineer-part .stat-engineer-part-num { display: block; margin: 0; color: var(--d-ink, #0e1f33); font-size: 1.4rem; font-weight: 700; line-height: 1.15; }
+.portal-stats .stat-engineer-part .stat-engineer-part-line { display: block; color: var(--d-muted, #66768a); font-size: .76rem; line-height: 1.35; }
+.portal-stats .stat-engineer-part .stat-engineer-part-line b { color: var(--d-ok, #1e9e5a); }
+body.dash .portal-stats .stat-card-engineer.is-split .stat-engineer-total { margin-top: .55rem; }
+
 /* Etiqueta "Gestor" ao lado do nome do engenheiro gestor */
 .stat-engineer-tag { display: inline-block; margin-left: .3rem; padding: .05rem .45rem; border-radius: 999px; color: var(--d-ink-2, #3b4d63); background: #e8edf2; font: 600 .68rem/1.5 "Barlow", sans-serif; font-style: normal; vertical-align: 2px; }
 
@@ -432,3 +446,8 @@ body.dash[data-page="concluidas"] #collective-section:not([hidden]) { display: b
   body.dash #records-toolbar [data-toolbar="open-trash"],
   body.dash #records-toolbar [data-toolbar="open-done"] { display: none; }
 }
+
+/* Cartões dos engenheiros divididos (Individuais | Coletivas): um por linha no celular; no computador, largos o
+   bastante para as duas partes caberem lado a lado. */
+body.dash .portal-stats.portal-stats-engineers { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { body.dash .portal-stats.portal-stats-engineers { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
