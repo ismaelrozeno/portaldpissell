@@ -19,10 +19,25 @@
     const cell = (x, y, w, h, fill) => {
       if (fill) { doc.setFillColor(...fill); doc.rect(x, y, w, h, "FD"); } else doc.rect(x, y, w, h);
     };
-    // Texto centralizado na vertical dentro de uma célula (até maxLines linhas, com quebra).
+    // Texto centralizado na vertical dentro de uma célula (até maxLines linhas, com quebra). Se não couber na
+    // altura da célula (ex.: nome comprido numa linha baixa), a letra diminui até caber, sem passar das linhas.
     const textIn = (value, x, y, w, h, { align = "left", size = 9, style = "normal", color, family, maxLines = 3, pad = 2 } = {}) => {
-      font(style, size, color, family);
-      const lines = doc.splitTextToSize(String(value ?? ""), w - pad * 2).slice(0, maxLines);
+      const text = String(value ?? "");
+      const fits = (s) => {
+        font(style, s, color, family);
+        const all = doc.splitTextToSize(text, w - pad * 2);
+        return all.length <= maxLines && all.length * s * 0.3528 * 1.2 <= h - 0.4 ? all : null;
+      };
+      let lines = null;
+      for (let s = size; s >= 4.5 && !lines; s -= 0.25) {
+        lines = fits(s);
+        if (lines) size = s;
+      }
+      if (!lines) {
+        size = 4.5;
+        font(style, size, color, family);
+        lines = doc.splitTextToSize(text, w - pad * 2).slice(0, maxLines);
+      }
       const lh = size * 0.3528 * 1.2;
       const top = y + (h - lines.length * lh) / 2 + lh * 0.78;
       lines.forEach((l, i) => doc.text(l, align === "center" ? x + w / 2 : x + pad, top + i * lh, { align }));
