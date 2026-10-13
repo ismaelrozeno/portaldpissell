@@ -157,16 +157,21 @@
         const corners = [at(-hx, -hy2), at(hx, -hy2), at(hx, hy2), at(-hx, hy2)];
         corners.forEach((point, i) => { const next = corners[(i + 1) % 4]; doc.line(point[0], point[1], next[0], next[1]); });
       };
-      box(25, 11, 0.6);
-      box(24, 10, 0.2);
-      const centered = (value, dy, size) => {
+      box(25, 13, 0.6);
+      box(24, 12, 0.2);
+      // maxWidth: diminui a letra até caber dentro da borda (nomes compridos saíam para fora do carimbo).
+      const centered = (value, dy, size, maxWidth = 0) => {
         font("bold", size, red);
+        while (maxWidth && size > 4 && doc.getTextWidth(String(value)) > maxWidth) font("bold", (size -= 0.5), red);
         const [px, py] = at(-doc.getTextWidth(String(value)) / 2, dy);
         doc.text(String(value), px, py, { angle: 14 });
       };
-      centered("LANÇADO", -0.5, 26);
-      centered("NO RM", 5.2, 15);
-      centered(String(f.stampDetail || "").toUpperCase(), 8.6, 6.5);
+      // Data numa linha e quem lançou na outra.
+      const [launchDay, launchBy = ""] = String(f.stampDetail || "").toUpperCase().split(" · ");
+      centered("LANÇADO", -3, 26);
+      centered("NO RM", 2.7, 15);
+      centered(launchDay, 6.8, 6.5, 45);
+      centered(launchBy, 10, 6, 45);
       doc.setPage(doc.getNumberOfPages());
     }
 

@@ -157,7 +157,7 @@
         <tbody>${body}</tbody>
       </table>
       <p class="cs-foot">Obra 369 · ${esc(movementLabel(sheet))}${sheet.time && !hasBoth(sheet) ? ` a partir das ${esc(sheet.time)} hs` : hasBoth(sheet) ? " · não bateu o ponto" : ""}</p>
-      ${sheet.abonoLaunchedAt ? `<div class="cs-stamp" aria-label="Abono lançado no RM"><strong>LANÇADO</strong><span>NO RM</span><small>${esc(stampDetail(sheet))}</small></div>` : ""}`;
+      ${sheet.abonoLaunchedAt ? `<div class="cs-stamp" aria-label="Abono lançado no RM"><strong>LANÇADO</strong><span>NO RM</span><small>${esc(stampDetail(sheet).replace(" · ", "\n"))}</small></div>` : ""}`;
   }
 
   let overlay = null;
@@ -257,7 +257,7 @@ O carimbo será removido.`)) return;
   }
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=ade1b44e");
+    if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=1c4637fd");
   }
 
   // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
@@ -304,7 +304,7 @@ O carimbo será removido.`)) return;
       window.alert("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente de novo.");
       return;
     }
-    const css = new URL("css/pages/liberacao-coletiva.css?v=18c6d4d9", document.baseURI).href;
+    const css = new URL("css/pages/liberacao-coletiva.css?v=1edfb089", document.baseURI).href;
     win.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Liberação coletiva · Obra 369</title>
       <link rel="stylesheet" href="${css}"></head>
       <body style="margin:0;background:#fff"><div class="cs-overlay" id="collective-preview" style="position:static;background:#fff;padding:0"><section class="cs-dialog"><article class="cs-sheet" style="box-shadow:none;margin:0 auto">${sheetHtml(current)}</article></section></div></body></html>`);

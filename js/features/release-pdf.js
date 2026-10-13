@@ -200,7 +200,7 @@
     if (fields.launched) {
       const angle = (-14 * Math.PI) / 180;
       const cx = 640;
-      const cy = 358;
+      const cy = 334; // no espaço vazio à direita do motivo, sem cobrir a assinatura do colaborador
       const at = (dx, dy) => [X(cx + dx * Math.cos(angle) - dy * Math.sin(angle)), Y(cy + dx * Math.sin(angle) + dy * Math.cos(angle))];
       const red = [198, 40, 53];
       doc.setDrawColor(...red);
@@ -210,17 +210,22 @@
         const corners = [at(-hx, -hy), at(hx, -hy), at(hx, hy), at(-hx, hy)];
         corners.forEach((point, i) => { const next = corners[(i + 1) % 4]; doc.line(point[0], point[1], next[0], next[1]); });
       };
-      box(92, 38, 0.5);
-      box(88, 34, 0.15);
-      const centered = (value, dy, style, size, family) => {
+      box(92, 47, 0.5);
+      box(88, 43, 0.15);
+      // maxWidth: diminui a letra até caber dentro da borda (nomes compridos saíam para fora do carimbo).
+      const centered = (value, dy, style, size, family, maxWidth = 0) => {
         font(style, size, red, family);
+        while (maxWidth && size > 5 && width(value) > maxWidth) font(style, (size -= 0.5), red, family);
         const half = width(value) / 2;
         const [px, py] = at(-half, dy);
         doc.text(String(value), px, py, { angle: 14 });
       };
-      centered("LANÇADO", 0, "bold", 32, "helvetica");
-      centered("NO RM", 20, "bold", 19, "helvetica");
-      centered(String(fields.stampDetail || "").toUpperCase(), 31, "bold", 9, "helvetica");
+      // Data numa linha e quem lançou na outra.
+      const [launchDay, launchBy = ""] = String(fields.stampDetail || "").toUpperCase().split(" · ");
+      centered("LANÇADO", -8, "bold", 30, "helvetica");
+      centered("NO RM", 15, "bold", 18, "helvetica");
+      centered(launchDay, 28, "bold", 9, "helvetica", 156);
+      centered(launchBy, 38, "bold", 8.5, "helvetica", 156);
     }
   }
 

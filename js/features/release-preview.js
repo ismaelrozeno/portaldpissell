@@ -100,7 +100,7 @@
 
   async function ensurePdfTools() {
     if (!window.jspdf?.jsPDF) await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
-    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=16f75ee8");
+    if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=b468ca69");
   }
 
   // "Imprimir / salvar PDF": gera o mesmo PDF da exportação em lote (folha na metade de cima de uma A4) e abre
@@ -185,7 +185,8 @@
     const launched = !!release.abonoLaunchedAt;
     if (launched) {
       const when = new Date(release.abonoLaunchedAt);
-      overlay.querySelector("#stamp-detail").textContent = `${when.toLocaleDateString("pt-BR")} · ${release.abonoLaunchedBy || "DP"}`;
+      // Data numa linha e quem lançou na outra (white-space: pre-line), para nome comprido não sair do carimbo.
+      overlay.querySelector("#stamp-detail").textContent = `${when.toLocaleDateString("pt-BR")}\n${release.abonoLaunchedBy || "DP"}`;
     }
     const wasHidden = stamp.hidden;
     stamp.hidden = !launched;

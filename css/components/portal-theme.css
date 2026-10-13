@@ -1,0 +1,411 @@
+/* =====================================================================
+   Tema do Meu portal (e das páginas com o menu do dashboard: liberações, Equipes, Administração,
+   Fechamento, Backup, Biometria, Aplicativo). Carregado por último, só nessas páginas: a Página Inicial
+   e as Ferramentas de Automação não usam este arquivo.
+   Só visual: nenhuma regra aqui esconde ou mostra conteúdo.
+   Ideia: topo e menu numa peça escura só (em "L"), conteúdo claro com cartões elevados por sombra
+   azulada (não preta), laranja como a única cor de destaque, números em algarismos tabulares.
+   ===================================================================== */
+body.dash {
+  --d-page: #f1f3f6;
+  --d-surface: #ffffff;
+  --d-surface-2: #f7f9fb;
+  --d-ink: #0d1d30;
+  --d-ink-2: #3a4b60;
+  --d-muted: #6a7a8e;
+  --d-line: #e2e7ed;
+  --d-line-strong: #cfd8e3;
+  --d-nav: #0a1626;
+  --d-nav-2: #12233a;
+  --d-nav-text: #a9b8ca;
+  --d-accent: #ef7a0e;
+  --d-accent-hover: #d96a05;
+  --d-accent-soft: #fff2e5;
+  --d-accent-ring: rgba(239, 122, 14, .22);
+  --d-radius-lg: 16px;
+  --d-radius: 12px;
+  --d-radius-sm: 9px;
+  --d-shadow-sm: 0 1px 2px rgba(13, 29, 48, .05), 0 1px 1px rgba(13, 29, 48, .03);
+  --d-shadow: 0 1px 2px rgba(13, 29, 48, .04), 0 10px 28px -14px rgba(13, 29, 48, .18);
+  --d-shadow-lg: 0 2px 4px rgba(13, 29, 48, .05), 0 22px 44px -18px rgba(13, 29, 48, .28);
+  --d-ease: cubic-bezier(.2, .7, .2, 1);
+  background: var(--d-page);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+body.dash h1, body.dash h2, body.dash h3 { text-wrap: balance; }
+
+/* Cabeçalho e rodapé: iguais em todas as páginas, em css/site-overrides.css ("Cabeçalho e rodapé únicos"). */
+@media (min-width: 992px) {
+  /* O "L" escuro: o menu continua o topo sem emenda de cor */
+  body.dash .dash-shell { min-height: calc(100vh - 65px); }
+}
+
+/* ---------- Menu lateral (computador) ---------- */
+@media (min-width: 992px) {
+  body.dash { --d-nav-w: 252px; }
+  body.dash .dash-nav { padding: 1.4rem 1rem 1.2rem; border-right: 1px solid rgba(255, 255, 255, .05); }
+  body.dash .dash-nav-brand { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; column-gap: .7rem; margin-bottom: .4rem; padding: 0 .55rem 1.2rem; border-bottom: 1px solid rgba(255, 255, 255, .07); }
+  body.dash .dash-nav-brand::before { content: "DP"; grid-row: 1 / span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: #fff; background: linear-gradient(145deg, #f6922f, var(--d-accent)); box-shadow: 0 6px 14px -6px rgba(239, 122, 14, .7); font: 700 .95rem/1 "Barlow Semi Condensed", sans-serif; letter-spacing: .02em; }
+  body.dash .dash-nav-brand strong { font-size: 1.12rem; letter-spacing: -.005em; }
+  body.dash .dash-nav-brand small { margin-top: .15rem; font-size: .78rem; color: var(--d-nav-text); }
+  body.dash .dash-nav-list { margin-top: .8rem; }
+  body.dash .dash-nav-list::before, body.dash .dash-nav-more::before { display: block; padding: 0 .75rem .45rem; color: #5f7590; font: 600 .7rem/1 "Barlow", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  body.dash .dash-nav-list::before { content: "Portal"; }
+  body.dash .dash-nav-more::before { content: "Outras áreas"; }
+  body.dash .dash-nav-more { margin-top: 1rem; padding-top: 1rem; border-top-color: rgba(255, 255, 255, .07); }
+  body.dash .dash-nav-item { height: 42px; color: var(--d-nav-text); font-size: .94rem; transition: background .18s var(--d-ease), color .18s var(--d-ease); }
+  body.dash .dash-nav-item svg { width: 20px; height: 20px; transition: color .18s var(--d-ease); }
+  body.dash .dash-nav-item:hover { background: rgba(255, 255, 255, .05); color: #fff; }
+  body.dash .dash-nav-item.is-active { background: rgba(239, 122, 14, .13); color: #fff; font-weight: 600; }
+  body.dash .dash-nav-item.is-active svg { color: var(--d-accent); }
+  body.dash .dash-nav-item.is-active::before { top: 11px; bottom: 11px; left: -1rem; width: 3px; border-radius: 0 3px 3px 0; }
+  body.dash .dash-badge { min-width: 22px; height: 20px; border-radius: 6px; font-size: .7rem; line-height: 20px; }
+  /* Os dois botões de criar: o individual cheio, o coletivo contornado (antes eram dois blocos laranja iguais) */
+  body.dash .dash-nav-actions { gap: .45rem; margin-top: 1.2rem; padding-top: 1.2rem; border-top-color: rgba(255, 255, 255, .07); }
+  body.dash .dash-nav-actions a { display: flex; align-items: center; justify-content: center; gap: .45rem; padding: .66rem .6rem; border: 1px solid transparent; border-radius: 10px; font-size: .88rem; font-weight: 600; transition: background .18s var(--d-ease), border-color .18s var(--d-ease), transform .12s var(--d-ease); }
+  body.dash .dash-nav-actions a::before { content: "+"; font-size: 1.15rem; font-weight: 500; line-height: 0; }
+  body.dash .dash-nav-actions a:first-child { background: var(--d-accent); box-shadow: 0 8px 18px -10px rgba(239, 122, 14, .9); }
+  body.dash .dash-nav-actions a:first-child:hover { background: var(--d-accent-hover); filter: none; }
+  body.dash .dash-nav-actions a + a { border-color: rgba(255, 255, 255, .16); background: transparent; }
+  body.dash .dash-nav-actions a + a:hover { border-color: rgba(239, 122, 14, .6); background: rgba(239, 122, 14, .08); filter: none; }
+  body.dash .dash-nav-actions a:active { transform: scale(.98); }
+  body.dash .dash-nav-foot { color: #5f7590; font-size: .74rem; }
+  /* Sem barra de rolagem própria no menu (aparecia em telas mais baixas por poucos pixels).
+     Se o menu não couber, ele ainda rola com a roda do mouse. */
+  body.dash .dash-nav { scrollbar-width: none; }
+  body.dash .dash-nav::-webkit-scrollbar { display: none; }
+}
+/* Telas baixas (notebook): menu mais compacto e sem o texto "Fluxo: ..." no pé */
+@media (min-width: 992px) and (max-height: 820px) {
+  body.dash .dash-nav { padding-top: 1.1rem; padding-bottom: .9rem; }
+  body.dash .dash-nav-brand { padding-bottom: .9rem; }
+  body.dash .dash-nav-list { margin-top: .6rem; }
+  body.dash .dash-nav-item { height: 38px; }
+  body.dash .dash-nav-more { margin-top: .7rem; padding-top: .7rem; }
+  body.dash .dash-nav-actions { margin-top: .8rem; padding-top: .8rem; }
+  body.dash .dash-nav-foot { display: none; }
+}
+
+/* ---------- Barra de abas (celular) ---------- */
+@media (max-width: 991.98px) {
+  /* Sólida, no mesmo azul do cabeçalho (semitransparente ela ficava acinzentada sobre o fundo claro e parecia sumir) */
+  body.dash .dash-nav { background: var(--site-bar, #0a1626); box-shadow: 0 -8px 24px -12px rgba(10, 22, 38, .45); }
+  body.dash .dash-nav-item { color: #8597ad; }
+  body.dash .dash-nav-item svg { padding: 3px 14px; width: 50px; height: 28px; border-radius: 999px; transition: background .2s var(--d-ease), color .2s var(--d-ease); box-sizing: border-box; }
+  body.dash .dash-nav-item.is-active::before { display: none; }
+  body.dash .dash-nav-item.is-active svg { color: var(--d-accent); background: rgba(239, 122, 14, .16); }
+  body.dash .dash-badge { top: 4px; left: calc(50% + 10px); }
+  body.dash .dash-fab { box-shadow: 0 12px 26px -8px rgba(239, 122, 14, .75); transition: transform .2s var(--d-ease), background .2s var(--d-ease); }
+  body.dash .dash-fab:active { transform: scale(.94); }
+}
+
+/* ---------- Conteúdo ---------- */
+@media (min-width: 992px) {
+  body.dash .dash-main { padding: 2rem 2.5rem 3.5rem; }
+}
+body.dash .portal-heading { margin: .2rem 0 1.4rem; }
+body.dash .portal-heading h1 { font-size: clamp(1.6rem, 4.6vw, 2.35rem); letter-spacing: -.02em; }
+body.dash .portal-heading p { color: var(--d-muted); }
+body.dash .portal-context { display: inline-flex; align-items: center; padding: .4rem .8rem; border-color: var(--d-line); box-shadow: var(--d-shadow-sm); }
+body.dash .portal-subtle-link { color: var(--d-ink-2); text-wrap: pretty; border-bottom-style: solid; border-bottom-color: var(--d-line-strong); transition: color .2s, border-color .2s; }
+body.dash .portal-subtle-link:hover { color: var(--d-accent-hover); border-bottom-color: var(--d-accent); }
+
+/* "Acessar como": ferramenta do administrador, com cara de ferramenta (borda tracejada), não de conteúdo */
+body.dash .demo-switcher { border: 1px dashed var(--d-line-strong); background: var(--d-surface-2); box-shadow: none; }
+
+/* ---------- Esteira do fluxo ---------- */
+body.dash .dash-flow { position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, .05); background: radial-gradient(120% 160% at 0% 0%, #172c47 0%, var(--d-nav) 55%), var(--d-nav); box-shadow: var(--d-shadow-lg); }
+body.dash .dash-flow::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px); background-size: 18px 18px; mask-image: linear-gradient(90deg, transparent, #000 40%, #000 70%, transparent); }
+body.dash .dash-flow > * { position: relative; z-index: 1; }
+body.dash .dash-flow-head h2 { letter-spacing: -.01em; }
+body.dash .dash-station-btn { transition: background .2s var(--d-ease), box-shadow .2s var(--d-ease), transform .2s var(--d-ease); }
+body.dash .dash-station-dot { border-color: #2b4466; background: #0e1d31; transition: border-color .2s, color .2s; }
+body.dash .dash-station-btn:hover .dash-station-dot { border-color: #4b6a92; color: #dbe5f0; }
+body.dash .dash-station.is-mine .dash-station-btn { background: linear-gradient(180deg, rgba(239, 122, 14, .16), rgba(239, 122, 14, .06)); box-shadow: inset 0 0 0 1px rgba(239, 122, 14, .5), 0 18px 36px -18px rgba(239, 122, 14, .55); }
+body.dash .dash-station.is-mine .dash-station-dot { box-shadow: 0 0 0 5px rgba(239, 122, 14, .18); }
+body.dash .dash-station.is-done .dash-station-dot { box-shadow: 0 0 0 5px rgba(30, 158, 90, .14); }
+body.dash .dash-station .dash-num { letter-spacing: -.02em; }
+@media (min-width: 992px) {
+  body.dash .dash-flow { padding: 1.4rem 1.5rem 1.2rem; }
+  body.dash .dash-station .dash-num { font-size: 3.1rem; }
+  body.dash .dash-station-btn:hover { transform: translateY(-2px); }
+}
+
+/* ---------- Para você agora ---------- */
+body.dash .dash-now h2 { font-size: 1.2rem; letter-spacing: -.01em; }
+body.dash .dash-now-item { position: relative; overflow: hidden; padding: .95rem 1rem .95rem 1.15rem; border-color: var(--d-line); box-shadow: var(--d-shadow-sm); transition: box-shadow .22s var(--d-ease), transform .22s var(--d-ease), border-color .22s; }
+body.dash .dash-now-item::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--d-accent); }
+body.dash .dash-now-item.is-calm::before { background: var(--d-line-strong); }
+body.dash .dash-now-item .dash-num { font-size: 2rem; letter-spacing: -.02em; }
+body.dash .dash-now-go svg { transition: transform .22s var(--d-ease); }
+@media (hover: hover) {
+  body.dash .dash-now-item:hover { border-color: var(--d-line); box-shadow: var(--d-shadow); transform: translateY(-2px); }
+  body.dash .dash-now-item:hover .dash-now-go { color: var(--d-accent); }
+  body.dash .dash-now-item:hover .dash-now-go svg { transform: translateX(3px); }
+}
+
+/* ---------- Cartões de números ---------- */
+body.dash .portal-stats .stat-card { position: relative; overflow: hidden; padding: 1rem 1.05rem; border-color: var(--d-line); box-shadow: var(--d-shadow-sm); transition: box-shadow .22s var(--d-ease), transform .22s var(--d-ease), border-color .22s; }
+body.dash .portal-stats .stat-card::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--d-accent); transform: scaleX(0); transform-origin: left; transition: transform .3s var(--d-ease); }
+body.dash .portal-stats .stat-card > span:first-child { color: var(--d-muted); font-size: .8rem; font-weight: 500; }
+body.dash .portal-stats strong { font-size: 2.2rem; letter-spacing: -.02em; }
+body.dash .portal-stats .stat-card-engineer strong { font-size: 1.95rem; }
+body.dash .portal-stats .stat-card-engineer .stat-engineer-name { font-size: 1rem; font-weight: 600; }
+@media (hover: hover) {
+  body.dash .portal-stats .stat-card:hover { border-color: var(--d-line); box-shadow: var(--d-shadow); transform: translateY(-2px); }
+  body.dash .portal-stats .stat-card:hover::after { transform: scaleX(1); }
+  body.info-only.dash .portal-stats .stat-card:not([data-stat="team"]):hover { box-shadow: var(--d-shadow-sm); }
+  body.info-only.dash .portal-stats .stat-card:not([data-stat="team"]):hover::after { transform: scaleX(0); }
+}
+body.dash .portal-stats .stat-card:active { transform: translateY(0) scale(.99); }
+body.dash .portal-stats .stat-card.is-active { border-color: var(--d-accent); box-shadow: 0 0 0 3px var(--d-accent-ring), var(--d-shadow); }
+body.dash .portal-stats .stat-card.is-active::after { transform: scaleX(1); }
+body.dash .stat-progress { height: 6px; background: #e9edf2; }
+body.dash .stat-progress b { background: linear-gradient(90deg, #1e9e5a, #34b874); }
+
+/* ---------- Cartões grandes (listas, histórico, atalhos) ---------- */
+body.dash .portal-card, body.dash .foreman-summary { border-color: var(--d-line); box-shadow: var(--d-shadow); }
+@media (min-width: 992px) { body.dash .portal-card { padding: 1.4rem 1.5rem; } }
+body.dash .card-heading h2, body.dash .portal-card h2 { letter-spacing: -.01em; }
+body.dash .portal-card-alert { border-left: 1px solid #f4dcc0; background: linear-gradient(135deg, #fffaf3, #fff); }
+
+/* Busca com lupa */
+body.dash .search-input { min-height: 46px; padding-left: 2.7rem; border-color: var(--d-line-strong); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a7a8e' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat .95rem center / 18px; border-radius: 10px; transition: border-color .2s, box-shadow .2s; }
+body.dash .search-input:hover { border-color: #b9c5d3; }
+body.dash .search-input:focus { border-color: var(--d-accent); outline: none; box-shadow: 0 0 0 4px var(--d-accent-ring); }
+
+/* Filtros e seletores */
+body.dash :is(.filter-bar-select, .sort-filter-select, .pager-size, .demo-switcher select, .dash-export-form select) { min-height: 36px; border-color: var(--d-line-strong); border-radius: 8px; transition: border-color .2s, box-shadow .2s; }
+body.dash :is(.filter-bar-select, .sort-filter-select, .pager-size, .demo-switcher select, .dash-export-form select):focus { border-color: var(--d-accent); outline: none; box-shadow: 0 0 0 3px var(--d-accent-ring); }
+body.dash .filter-bar-field { color: var(--d-muted); }
+
+/* Barra da lista (Lixeira / Concluídas / Apagar tudo) */
+body.dash .records-toolbar button { border-radius: 8px; transition: background .2s, border-color .2s, transform .12s; }
+body.dash .records-toolbar button:active:not(:disabled) { transform: scale(.97); }
+
+/* ---------- Tabela de liberações ---------- */
+body.dash .portal-table th { padding: .7rem .75rem; border-bottom: 1px solid var(--d-line); color: var(--d-muted); background: var(--d-surface-2); font-size: .7rem; font-weight: 600; letter-spacing: .06em; }
+body.dash .portal-table th:first-child { border-radius: 8px 0 0 8px; }
+body.dash .portal-table th:last-child { border-radius: 0 8px 8px 0; }
+body.dash .portal-table td { padding: 1.05rem .75rem; border-top-color: var(--d-line); }
+body.dash .portal-table tbody tr:first-child td { border-top: 0; }
+@media (hover: hover) and (min-width: 761px) {
+  body.dash .portal-table tbody tr { transition: background .15s; }
+  body.dash .portal-table tbody tr:hover { background: #fafbfd; }
+}
+body.dash .portal-table .col-who strong { font-size: .95rem; letter-spacing: -.005em; }
+
+/* Situação: etiqueta clara (a cor já diz a situação) */
+body.dash .status-badge { display: inline-flex; align-items: center; padding: .32rem .65rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
+
+/* ---------- Cartão da liberação (coluna Colaborador) ----------
+   Antes: seis "comprimidos" de cores diferentes (roxo, laranja, azul, verde, tracejado) e caixa-alta. Agora a cor
+   só aparece onde significa algo (✓ assinou, ✕ recusou); o resto é texto em dois tons, como numa ficha. */
+/* Tarefa / Particular: palavra em negrito antes do motivo, sem etiqueta colorida */
+body.dash .reason-tag { padding: 0; border-radius: 0; color: var(--d-ink); background: none; font-size: .8rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+body.dash .reason-tag::after { content: " ·"; color: var(--d-muted); font-weight: 400; }
+body.dash .portal-table .col-who small.row-reason { margin-top: .35rem; color: var(--d-ink-2); font-size: .8rem; font-weight: 500; }
+/* Linhas de detalhe: todas no mesmo tom (rótulo cinza, valor escuro) */
+body.dash .portal-table .col-who :is(small.row-role, small.row-who, small.row-date, small.row-clock, .row-movement) { color: var(--d-muted); font-size: .76rem; font-weight: 500; }
+body.dash .portal-table .col-who :is(small.row-date, small.row-clock, .row-movement) b { color: var(--d-ink-2); font-weight: 600; }
+body.dash .portal-table .col-who small.row-role { margin-top: .1rem; }
+/* "Criada" continua na caixa laranja com relógio (portal.css): precisa ser achada num relance */
+body.dash .portal-table .col-who small.row-created { border-radius: 6px; }
+/* Acompanhamento das assinaturas (computador): "Etapa: situação", cada item com a bolinha da situação, igual ao
+   celular (portal.css): verde assinou/concluiu, vermelha recusou/negou, cinza aguardando, azul informação,
+   amarela aviso. Rótulo cinza e situação escura; recusa/devolução em vermelho. */
+@media (min-width: 761px) {
+  body.dash .sig-chips { gap: .35rem 1.3rem; margin-top: .7rem; padding-top: .65rem; border-top: 1px solid var(--d-line); }
+  body.dash .sig-chip { position: relative; padding: 0 0 0 .95rem; border: 0; border-radius: 0; color: var(--d-muted); background: none; font-size: .78rem; font-weight: 500; line-height: 1.35; }
+  body.dash .sig-chip::before { content: ""; position: absolute; left: 0; top: .38em; width: .55rem; height: .55rem; border-radius: 50%; background: #c2ccd8; }
+  body.dash .sig-yes::before { background: #1e9e5a; }
+  body.dash .sig-no::before { background: #d33a46; }
+  body.dash .sig-info::before { background: #1769aa; }
+  body.dash .sig-off::before { background: #d99a1e; }
+  body.dash .sig-chip b { color: var(--d-ink); font-weight: 600; }
+  body.dash .sig-no, body.dash .sig-no b { color: #a3343e; }
+}
+/* Dados de cima no padrão rótulo cinza / valor escuro; o aviso "Não bateu o ponto" / "Só entrada" junto deles */
+body.dash .portal-table .col-who :is(small.row-who, small.row-flag) { display: block; color: var(--d-muted); font-size: .76rem; font-weight: 500; }
+body.dash .portal-table .col-who :is(small.row-who, small.row-flag) b { color: var(--d-ink-2); font-weight: 600; }
+@media (min-width: 761px) { body.dash .portal-table .col-who > strong { font-size: 1.02rem; } }
+/* "Batida do ponto" sempre visível (computador e celular), junto da data da liberação */
+body.dash .portal-table .col-who small.row-clock { display: block; }
+
+/* Botões de ação da linha */
+body.dash .row-actions button, body.dash .row-actions .table-action, body.dash .gate-confirm-btn { border-radius: 8px; transition: background .18s, border-color .18s, color .18s, box-shadow .18s, transform .12s; }
+body.dash .row-actions button:active:not(:disabled), body.dash .gate-confirm-btn:active { transform: scale(.97); }
+body.dash .row-bio-btn { border-color: var(--d-nav); background: var(--d-nav); box-shadow: 0 6px 14px -8px rgba(10, 22, 38, .8); }
+body.dash .row-bio-btn:hover:not(:disabled) { border-color: var(--d-accent); background: var(--d-accent); }
+body.dash .row-actions .release-view-btn { border-color: var(--d-line-strong); color: var(--d-ink); background: #fff; }
+body.dash .row-actions .release-view-btn:hover { border-color: var(--d-ink-2); background: var(--d-surface-2); }
+body.dash .row-delete-btn { border-color: transparent; color: #a3434b; background: transparent; }
+body.dash .row-delete-btn:hover { border-color: #f1c4c7; background: #fff5f5; }
+
+/* Paginação */
+body.dash .pager { border-top-color: var(--d-line); }
+body.dash .pager-btn { min-width: 2.2rem; min-height: 2.2rem; border-color: var(--d-line); border-radius: 8px; color: var(--d-ink-2); transition: background .15s, border-color .15s; }
+body.dash .pager-btn:hover:not(:disabled) { border-color: var(--d-line-strong); color: var(--d-ink); background: var(--d-surface-2); }
+body.dash .pager-btn.is-current { border-color: var(--d-ink); color: #fff; background: var(--d-ink); }
+
+/* Histórico recente: linha do tempo */
+body.dash .activity-list { position: relative; gap: 1.1rem; }
+body.dash .activity-list li { position: relative; }
+body.dash .activity-list li:not(:last-child)::after { content: ""; position: absolute; top: 1.05rem; bottom: -1.1rem; left: calc(.275rem - 1px); width: 2px; background: var(--d-line); }
+body.dash .activity-dot { position: relative; z-index: 1; box-shadow: 0 0 0 4px #fff; }
+
+/* Atalhos */
+body.dash .shortcut-item { border-color: var(--d-line); border-radius: 10px; transition: border-color .2s, box-shadow .2s, transform .2s var(--d-ease); }
+body.dash .shortcut-item:hover, body.dash .shortcut-item:focus-visible { border-color: var(--d-line); color: var(--d-ink); box-shadow: var(--d-shadow); transform: translateX(2px); }
+body.dash .shortcut-icon { border-radius: 8px; background: var(--d-nav); }
+body.dash .shortcut-item:hover .shortcut-icon { background: var(--d-accent); }
+
+/* Botões genéricos do portal */
+body.dash .portal-button { border-radius: 9px; transition: background .18s, box-shadow .18s, transform .12s; }
+body.dash .portal-button:active { transform: scale(.98); }
+body.dash .portal-button-primary:hover { background: var(--d-accent-hover); }
+body.dash .dash-export-btn { transition: background .18s, transform .12s; }
+body.dash .dash-export-btn:hover:not(:disabled) { background: var(--d-accent-hover); }
+
+/* ---------- Formulários de nova liberação ---------- */
+body.dash.release-page .release-back { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .65rem .3rem .45rem; border-radius: 999px; color: var(--d-ink-2); transition: background .2s, color .2s; }
+body.dash.release-page .release-back:hover { color: var(--d-ink); background: #e3e8ee; }
+body.dash .release-card { border-color: var(--d-line); border-radius: 18px; box-shadow: var(--d-shadow-lg); }
+body.dash .release-heading h1 { letter-spacing: -.02em; }
+body.dash .release-kicker { color: var(--d-muted); letter-spacing: .08em; }
+body.dash .release-notice { border: 1px solid #f6dcbc; border-left: 4px solid var(--d-accent); border-radius: 10px; background: linear-gradient(135deg, #fff8ee, #fffcf8); }
+body.dash .release-field label, body.dash .release-field legend { color: var(--d-ink); font-weight: 600; }
+body.dash .release-field :is(input[type="date"], input[type="time"], input[type="text"], input[type="search"], select, textarea) { min-height: 46px; border-color: var(--d-line-strong); border-radius: 10px; transition: border-color .2s, box-shadow .2s; }
+body.dash .release-field :is(input, select, textarea):hover { border-color: #b9c5d3; }
+body.dash .release-field :is(input, select, textarea):focus { border-color: var(--d-accent); outline: none; box-shadow: 0 0 0 4px var(--d-accent-ring); }
+/* Escolhas (Entrada/Saída, Tarefa/Particular, Abonado/Não abonado) como blocos clicáveis */
+body.dash .release-options { gap: .5rem; }
+body.dash .release-options label { min-height: 46px; padding: .6rem 1rem .6rem .8rem; border-color: var(--d-line-strong); border-radius: 10px; background: #fff; transition: border-color .18s, background .18s, box-shadow .18s, transform .12s; }
+body.dash .release-options label:hover { border-color: #b9c5d3; background: var(--d-surface-2); }
+body.dash .release-options label:active { transform: scale(.98); }
+body.dash .release-options label:has(input:checked) { border-color: var(--d-accent); color: #8a4300; background: var(--d-accent-soft); box-shadow: 0 0 0 3px var(--d-accent-ring); }
+body.dash .release-options-highlight label:has(input:checked) { border-color: #4fb27c; color: #17613b; background: #eefaf3; box-shadow: 0 0 0 3px rgba(30, 158, 90, .16); }
+body.dash .release-options input { width: 1.05rem; height: 1.05rem; }
+body.dash .signature-box { border-color: var(--d-line); border-radius: 12px; background: var(--d-surface-2); }
+body.dash .signature-box:has(input:checked) { border-color: #9fd6b7; background: #f1fbf5; }
+body.dash .release-submit { padding: .8rem 1.4rem; border-radius: 10px; box-shadow: 0 10px 22px -12px rgba(239, 122, 14, .9); transition: background .18s, transform .12s; }
+body.dash .release-submit:hover { background: var(--d-accent-hover); }
+body.dash .release-submit:active { transform: scale(.98); }
+body.dash .release-secondary { border-radius: 10px; color: var(--d-ink-2); transition: background .18s; }
+body.dash .release-secondary:hover { color: var(--d-ink); background: #eef1f5; }
+
+/* ---------- Foco visível para teclado ---------- */
+body.dash :is(a, button, select, input, [tabindex]):focus-visible { outline: 2px solid var(--d-accent); outline-offset: 2px; }
+
+/* ---------- Entrada suave dos blocos (também ao trocar de aba) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  body.dash .dash-main > :is(section, article, div):not(.dash-page-loading),
+  body.dash .portal-grid > * { animation: dash-rise .45s var(--d-ease) both; }
+  body.dash .dash-main > :nth-child(3) { animation-delay: .03s; }
+  body.dash .dash-main > :nth-child(4) { animation-delay: .06s; }
+  body.dash .dash-main > :nth-child(5) { animation-delay: .09s; }
+  body.dash .dash-main > :nth-child(6) { animation-delay: .12s; }
+  body.dash .dash-main > :nth-child(n+7) { animation-delay: .15s; }
+}
+@keyframes dash-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Sem faixa clara entre o menu e o rodapé ----------
+   O <main> das páginas antigas (Equipes, Administração...) tinha espaço embaixo, fora da área do menu escuro. */
+body.dash main:has(> .dash-shell) { padding-bottom: 0; }
+
+/* =====================================================================
+   Administração, Importar, Cadastrar colaborador e Biometria (body.import-page).
+   Essas telas usam peças do Bootstrap (selos, botões, listas, campos): aqui elas ganham o visual do portal.
+   ===================================================================== */
+body.dash.import-page .import-heading { margin-bottom: 1.4rem; }
+body.dash.import-page .import-heading h1 { color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-weight: 700; letter-spacing: -.02em; }
+body.dash.import-page .import-kicker, body.dash.import-page .import-eyebrow { color: var(--d-muted); letter-spacing: .08em; }
+body.dash.import-page .import-heading p { color: var(--d-muted); }
+body.dash.import-page .import-security { font-weight: 700; }
+
+body.dash .import-card { padding: 1.4rem 1.5rem; border-color: var(--d-line); border-radius: var(--d-radius-lg); box-shadow: var(--d-shadow); }
+body.dash .import-card h2 { color: var(--d-ink); font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; }
+body.dash .import-card .text-muted { color: var(--d-muted) !important; }
+body.dash .import-policy { border-top: 1px solid var(--d-line); }
+
+/* Selos (pendentes, cadastrados, Aprovado...): pílula clara com bolinha, no lugar dos blocos coloridos do Bootstrap */
+body.dash.import-page .badge { display: inline-flex; align-self: flex-start; align-items: center; padding: .32rem .65rem; border-radius: 999px; font-size: .73rem; font-weight: 600; line-height: 1.25; }
+body.dash.import-page .badge.text-bg-success { color: #17613b !important; background: #e3f5ea !important; }
+body.dash.import-page .badge.text-bg-warning { color: #8a5300 !important; background: #fff1d6 !important; }
+body.dash.import-page .badge.text-bg-danger { color: #8b2930 !important; background: #fde5e6 !important; }
+body.dash.import-page .badge.text-bg-primary { color: #0b4a7a !important; background: #e3f0fb !important; }
+body.dash.import-page .badge.text-bg-secondary, body.dash.import-page .badge.text-bg-light { color: var(--d-ink-2) !important; background: #eaeef3 !important; }
+
+/* Campos */
+body.dash.import-page :is(.form-control, .form-select) { min-height: 42px; border-color: var(--d-line-strong); border-radius: 10px; color: var(--d-ink); font-size: .92rem; transition: border-color .2s, box-shadow .2s; }
+body.dash.import-page :is(.form-control, .form-select).form-control-sm, body.dash.import-page .form-select-sm { min-height: 36px; border-radius: 8px; font-size: .86rem; }
+body.dash.import-page :is(.form-control, .form-select):hover { border-color: #b9c5d3; }
+body.dash.import-page :is(.form-control, .form-select):focus { border-color: var(--d-accent); box-shadow: 0 0 0 4px var(--d-accent-ring); }
+body.dash.import-page input.form-control[type="search"] { min-height: 46px; padding-left: 2.7rem; border-radius: 10px; font-size: .95rem; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a7a8e' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat .95rem center / 18px; }
+body.dash .manual-employee-form label { color: var(--d-ink); font-weight: 600; }
+body.dash .manual-employee-form input { min-height: 46px; border-color: var(--d-line-strong); border-radius: 10px; transition: border-color .2s, box-shadow .2s; }
+body.dash .manual-employee-form input:focus { border-color: var(--d-accent); outline: none; box-shadow: 0 0 0 4px var(--d-accent-ring); }
+
+/* Botões: neutros e discretos; o laranja fica só para a ação principal (import-submit) */
+body.dash.import-page .btn { border-radius: 8px; font-weight: 600; transition: background .18s, border-color .18s, color .18s, transform .12s; }
+body.dash.import-page .btn:active { transform: scale(.97); }
+body.dash.import-page .btn-outline-primary, body.dash.import-page .btn-outline-secondary { border-color: var(--d-line-strong); color: var(--d-ink); background: #fff; }
+body.dash.import-page :is(.btn-outline-primary, .btn-outline-secondary):hover, body.dash.import-page :is(.btn-outline-primary, .btn-outline-secondary)[aria-expanded="true"] { border-color: var(--d-ink-2); color: var(--d-ink); background: var(--d-surface-2); }
+body.dash.import-page .btn-outline-danger { border-color: transparent; color: #a3434b; background: transparent; }
+body.dash.import-page .btn-outline-danger:hover { border-color: #f1c4c7; color: #8b2930; background: #fff5f5; }
+body.dash.import-page .btn-outline-success { border-color: #b6e2c8; color: #17613b; background: #f1fbf5; }
+body.dash.import-page .btn-outline-success:hover { border-color: #4fb27c; color: #17613b; background: #e3f5ea; }
+body.dash.import-page .btn-danger { border-color: #c8414c; background: #c8414c; }
+body.dash.import-page .btn-danger:hover { border-color: #a9343e; background: #a9343e; }
+body.dash .import-submit { padding: .75rem 1.2rem; border-radius: 10px; background: var(--d-accent); box-shadow: 0 10px 22px -12px rgba(239, 122, 14, .9); transition: background .18s, transform .12s; }
+body.dash .import-submit:hover { background: var(--d-accent-hover); }
+body.dash .import-submit:active { transform: scale(.98); }
+body.dash .import-secondary { border-color: var(--d-line-strong); border-radius: 10px; color: var(--d-ink); }
+
+/* Cartões dentro dos cartões (ex.: pedido de porteiro) e listas */
+body.dash.import-page .import-card article.border { border-color: var(--d-line) !important; border-radius: 12px !important; background: var(--d-surface-2); }
+body.dash.import-page .list-group-item { padding: .95rem .25rem; border-color: var(--d-line); color: var(--d-ink); background: transparent; }
+@media (hover: hover) { body.dash.import-page .list-group-item:hover { background: #fafbfd; } }
+body.dash.import-page .list-group-item strong { font-weight: 600; letter-spacing: -.005em; }
+body.dash.import-page .user-avatar { border-radius: 12px; }
+
+/* Menus "⋮" e avisos */
+body.dash.import-page .dropdown-menu { padding: .4rem; border-color: var(--d-line); border-radius: 12px; box-shadow: var(--d-shadow-lg); }
+body.dash.import-page .dropdown-item { border-radius: 8px; font-size: .9rem; }
+body.dash.import-page .dropdown-item:hover, body.dash.import-page .dropdown-item:focus { background: var(--d-accent-soft); color: var(--d-ink); }
+body.dash.import-page .dropdown-header { color: var(--d-muted); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+body.dash.import-page .alert { border-radius: 10px; }
+body.dash .import-result { border-radius: 10px; }
+body.dash .import-dropzone { border-color: var(--d-line-strong); border-radius: 14px; transition: border-color .2s, background .2s; }
+/* Selects dos formulários (Liberar matrícula, Cadastrar colaborador): mesmos campos dos inputs ao lado */
+body.dash .manual-employee-form select { width: 100%; min-height: 46px; padding: .7rem 2.4rem .7rem .85rem; border: 1px solid var(--d-line-strong); border-radius: 10px; color: var(--d-ink); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a4b60' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .8rem center / 18px; font: inherit; appearance: none; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+body.dash .manual-employee-form select:hover { border-color: #b9c5d3; }
+body.dash .manual-employee-form select:focus { border-color: var(--d-accent); outline: none; box-shadow: 0 0 0 4px var(--d-accent-ring); }
+body.dash .import-submit { font-size: .95rem; font-weight: 600; }
+
+/* Paginação nas listas da Administração (o resto do visual da paginação está mais acima, em "Paginação").
+   O portal.css (onde fica a base da paginação) não é carregado nessas páginas. */
+body.dash.import-page .pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--d-line); color: var(--d-muted); font-size: .82rem; }
+body.dash.import-page .pager[hidden] { display: none; }
+body.dash.import-page .pager-info { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; }
+body.dash.import-page .pager-size-label { display: inline-flex; align-items: center; gap: .35rem; margin: 0; }
+body.dash.import-page .pager-size { padding: .25rem .4rem; background: #fff; font-size: .82rem; }
+body.dash.import-page .pager-buttons { display: flex; flex-wrap: wrap; gap: .25rem; }
+body.dash.import-page .pager-btn:not(.is-current) { background: #fff; }
+body.dash.import-page .pager-btn { border: 1px solid var(--d-line); border-radius: 8px; padding: .35rem .6rem; font-size: .82rem; font-weight: 600; cursor: pointer; }
+body.dash.import-page .pager-btn:disabled:not(.is-current) { opacity: .45; cursor: default; }
+body.dash.import-page .pager-btn.is-current { border-color: var(--d-ink); cursor: default; }
+@media (max-width: 600px) { body.dash.import-page .pager { flex-direction: column; align-items: stretch; } body.dash.import-page .pager-buttons { justify-content: center; } }
+
+/* Celular: cada liberação é um cartão (portal.css). O espaçamento das células da tabela do computador não vale aqui
+   (deixava um vão entre a situação e o nome), e a borda fica visível para fechar o cartão. */
+@media (max-width: 760px) {
+  body.dash .portal-table td { padding: 0; border-top: 0; }
+  body.dash .portal-table td.col-status { margin-bottom: .5rem; }
+  body.dash .portal-table td.col-actions { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--d-line); }
+  body.dash .portal-table tbody tr { margin-bottom: .8rem; border: 1px solid var(--d-line-strong); border-radius: 14px; background: #fff; box-shadow: var(--d-shadow-sm); }
+}
+/* Motivo: o texto continua na mesma linha do "Tarefa ·" / "Particular ·" (antes, motivo comprido descia inteiro) */
+body.dash .portal-table .col-who small.row-reason { display: block; }
+body.dash .portal-table .col-who small.row-reason .row-movement { display: block; margin-top: .1rem; }

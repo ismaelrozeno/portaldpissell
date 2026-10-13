@@ -18,3 +18,12 @@ body.profile-page { background:#f4f7fb; color:#16283d; }.profile-page .site-head
 .profile-card.is-loading > :not(.profile-loading) { visibility: hidden; }
 .profile-card.is-loading .profile-loading { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; gap: .7rem; padding-top: 6rem; color: #2c3e55; font-weight: 700; }
 .profile-loading .button-spinner { width: 1.4rem; height: 1.4rem; margin: 0; color: #f5820a; border-width: .18rem; }
+
+/* Botão "Voltar" acima do cartão (js/pages/perfil.js volta para a página anterior do site) */
+.profile-back { display:flex; align-items:center; gap:.25rem; width:fit-content; max-width:520px; margin:0 auto .9rem; padding:.3rem .65rem .3rem .4rem; border-radius:999px; color:#3a4b60; font-size:.92rem; font-weight:600; text-decoration:none; transition:background .2s, color .2s; }
+.profile-back svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.profile-back:hover { color:#0d1d30; background:#e3e8ee; }
+.profile-back:focus-visible { outline:2px solid #ef7a0e; outline-offset:2px; }
+.profile-content > .container { max-width:520px; }
+.profile-content > .container .profile-back { margin-left:0; }
+.profile-content { padding-top:2rem; }

@@ -63,12 +63,17 @@
     if (foremen.some((foreman) => foreman.name === currentValue)) foremanSelect.value = currentValue;
   }
 
+  // Listas paginadas (js/core/pagination.js), como no Meu portal: sem elas a página virava um rolo de milhares de
+  // pixels (centenas de colaboradores). Buscar volta para a página 1; cada lista guarda o "por página" escolhido.
+  const pagers = {};
+  const pagerFor = (key, list, search, render) => pagers[key] || (pagers[key] = window.portalPagination.create({ key: `admin-${key}`, after: list, search, onChange: render }));
+
   async function renderAllowed() {
     const registrations = await window.portalEmployeeStore.getAllowedRegistrations();
     const query = window.normalizeSearchText(allowedSearch?.value || "");
-    const visible = query
+    const visible = pagerFor("matriculas", allowedList, allowedSearch, renderAllowed).slice(query
       ? registrations.filter((item) => window.normalizeSearchText(`${item.nome} ${item.matricula}`).includes(query))
-      : registrations;
+      : registrations);
     allowedList.innerHTML = visible.length
       ? visible.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · Perfil: ${escapeHtml(item.role) || "Acesso"}</small></span><span class="text-end"><small class="d-block">${item.status === "ativo" ? "Permitida" : "Inativa"}</small><button class="btn btn-sm btn-outline-primary" type="button" data-allowed-action="edit" data-allowed-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-allowed-action="delete" data-allowed-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhuma matrícula liberada."}</li>`;
@@ -94,8 +99,9 @@
     document.querySelector("#employee-count").textContent = `${employees.length} de ${allEmployees.length} colaboradores`;
     const foremanOptions = (selected) => '<option value="">Sem encarregado</option>' +
       foremen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === selected ? " selected" : ""}>${escapeHtml(foreman.name)}</option>`).join("");
-    employeeList.innerHTML = employees.length
-      ? employees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · ${escapeHtml(item.funcao) || "Função não informada"} · ${escapeHtml(item.setor) || "Setor não informado"}</small><small class="d-block text-muted">Encarregado: ${escapeHtml(item.encarregado) || "Não vinculado"}</small></span><span class="d-flex align-items-center gap-2 flex-wrap justify-content-end"><select class="form-select form-select-sm" style="width:auto" data-foreman-select="${escapeHtml(item.matricula)}">${foremanOptions(item.encarregado)}</select><button class="btn btn-sm btn-outline-success" type="button" data-employee-action="link-foreman" data-employee-id="${escapeHtml(item.matricula)}">Vincular encarregado</button><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
+    const pageEmployees = pagerFor("colaboradores", employeeList, document.querySelector("#employee-search"), renderEmployees).slice(employees);
+    employeeList.innerHTML = pageEmployees.length
+      ? pageEmployees.map((item) => `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span><strong>${escapeHtml(item.nome) || "Nome não informado"}</strong><small class="d-block text-muted">Matrícula: ${escapeHtml(item.matricula)} · ${escapeHtml(item.funcao) || "Função não informada"} · ${escapeHtml(item.setor) || "Setor não informado"}</small><small class="d-block text-muted">Encarregado: ${escapeHtml(item.encarregado) || "Não vinculado"}</small></span><span class="d-flex align-items-center gap-2 flex-wrap justify-content-end"><select class="form-select form-select-sm" style="width:auto" data-foreman-select="${escapeHtml(item.matricula)}">${foremanOptions(item.encarregado)}</select><button class="btn btn-sm btn-outline-success" type="button" data-employee-action="link-foreman" data-employee-id="${escapeHtml(item.matricula)}">Vincular encarregado</button><button class="btn btn-sm btn-outline-primary" type="button" data-employee-action="edit" data-employee-id="${escapeHtml(item.matricula)}">Editar</button> <button class="btn btn-sm btn-outline-danger" type="button" data-employee-action="delete" data-employee-id="${escapeHtml(item.matricula)}">Apagar</button></span></li>`).join("")
       : `<li class="list-group-item text-muted">${allEmployees.length ? "Nenhum colaborador encontrado para este filtro." : "Nenhum colaborador cadastrado."}</li>`;
   }
 
@@ -104,9 +110,9 @@
     const pending = requests.filter((request) => request.status === "pending-dp");
     porterPendingCount.textContent = `${pending.length} pendentes`;
     const query = window.normalizeSearchText(porterSearch?.value || "");
-    const visible = query
+    const visible = pagerFor("porteiros", porterList, porterSearch, renderPorterRequests).slice(query
       ? requests.filter((request) => window.normalizeSearchText(`${request.name} ${request.email}`).includes(query))
-      : requests;
+      : requests);
     porterList.innerHTML = visible.length
       ? visible.map((request) => `
         <article class="border rounded p-3 mb-2">
@@ -169,9 +175,9 @@
     const helperSelect = (user) => `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="${roleWords[user.roleValue] || "Usuário"} vinculado a qual encarregado"><option value="">Sem vínculo com encarregado</option>${helperForemen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === user.linkedForeman ? " selected" : ""}>${roleWords[user.roleValue] || "Vinculado"} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>`;
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
     const query = window.normalizeSearchText(registeredUsersSearch?.value || "");
-    const visible = query
+    const visible = pagerFor("usuarios", registeredUsersList, registeredUsersSearch, renderRegisteredUsers).slice(query
       ? eligible.filter((user) => window.normalizeSearchText(`${user.name} ${user.email} ${user.matricula || ""}`).includes(query))
-      : eligible;
+      : eligible);
     registeredUsersList.innerHTML = visible.length
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
@@ -387,7 +393,7 @@
     allowSubmit.textContent = "Adicionar matrícula permitida";
   });
   document.querySelector("#employee-search").addEventListener("input", renderEmployees);
-  document.querySelector("#employee-filter").addEventListener("change", renderEmployees);
+  document.querySelector("#employee-filter").addEventListener("change", () => { pagers.colaboradores?.reset(); renderEmployees(); });
   document.querySelector("#employee-list")?.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-employee-action]");
     if (!button) return;

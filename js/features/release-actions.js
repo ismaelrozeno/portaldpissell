@@ -444,7 +444,7 @@ Os outros perfis não são afetados.`;
   function emptyQuestion(count, single, dpContext) {
     const what = single ? `a liberação de ${single.name}` : `${count} liberação(ões)`;
     if (canHardDelete(dpContext)) {
-      return `⚠ ATENÇÃO — APAGAR DO BANCO DE DADOS ⚠
+      return `⚠ ATENÇÃO: APAGAR DO BANCO DE DADOS ⚠
 
 Você vai apagar DEFINITIVAMENTE ${what} do BANCO DE DADOS.
 

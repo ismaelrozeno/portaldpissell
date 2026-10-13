@@ -213,7 +213,7 @@
     const chip = (tone, html, hint) => `<span class="sig-chip sig-${tone}"${hint ? ` title="${escapeHtml(hint)}"` : ""}>${html}</span>`;
     const chips = [];
     if (stage === "foreman") {
-      chips.push(chip("no", `Recusada por <b>${short(release.refusedBy)}</b>${release.refusalReason ? ` · ${escapeHtml(release.refusalReason)}` : ""}`));
+      chips.push(chip("no", `Recusada por: <b>${short(release.refusedBy)}</b>${release.refusalReason ? ` · ${escapeHtml(release.refusalReason)}` : ""}`));
     } else {
       // Pedido do encarregado (o que ele marcou no formulário) aparece sempre que existir, mesmo depois de
       // o engenheiro decidir, para dar para comparar o que foi pedido com o que foi assinado.
@@ -223,40 +223,49 @@
       // Devolvida pelo DP: o engenheiro vê o motivo e o que tinha marcado, até decidir de novo.
       if (stage === "engineer" && !release.bonusStatus && release.dpReturnReason) {
         const prev = release.dpReturnPrevBonus === "approved" ? " · estava abonado" : release.dpReturnPrevBonus === "denied" ? " · estava não abonado" : "";
-        chips.push(chip("no", `Devolvida pelo DP <b>${short(release.dpReturnBy)}</b>: ${escapeHtml(release.dpReturnReason)}${prev}`));
+        chips.push(chip("no", `Devolvida pelo DP: <b>${short(release.dpReturnBy)}</b> · ${escapeHtml(release.dpReturnReason)}${prev}`));
       }
       if (release.engineer && release.bonusStatus) {
-        chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Eng. <b>${short(release.engineer)}</b> · ${release.bonusStatus === "approved" ? "assinou como abonado" : "assinou como não abonado"}`));
+        chips.push(chip(release.bonusStatus === "approved" ? "yes" : "no", `Engenheiro: <b>${release.bonusStatus === "approved" ? "abonado" : "não abonado"}</b> · ${short(release.engineer)}`));
       } else {
         // Mostra para qual engenheiro foi enviada (como na coletiva); sem destino, foi para todos.
-        chips.push(chip("wait", `Engenheiro: aguardando${release.targetEngineer ? ` (${short(release.targetEngineer)})` : ""}`));
+        chips.push(chip("wait", `Engenheiro: <b>aguardando</b>${release.targetEngineer ? ` · ${short(release.targetEngineer)}` : ""}`));
       }
     }
     if (stage !== "foreman") {
       if (release.dpSigner) {
-        chips.push(chip(stage === "closed" ? "no" : "yes", `DP <b>${short(release.dpSigner)}</b> · ${stage === "closed" ? "negou" : "assinou"}`));
-      } else if (window.portalReleaseFlow.isRetroactive(release)) {
-        // Data anterior ao dia em que foi criada: o colaborador já saiu, não há saída para autorizar nem confirmar.
-        chips.push(chip("info", `${window.portalReleaseFlow.hasBothMovements(release) ? "Não bateu o ponto" : "Retroativa"} · sem autorização de saída nem portaria`, "A data da liberação é anterior ao dia em que ela foi criada, ou entrada e saída foram marcadas juntas (o colaborador não bateu o ponto). Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."));
-      } else {
-        chips.push(chip("wait", stage === "engineer" ? "DP: aguardando o engenheiro assinar" : "DP: aguardando"));
+        chips.push(chip(stage === "closed" ? "no" : "yes", `DP: <b>${stage === "closed" ? "negou" : "assinou"}</b> · ${short(release.dpSigner)}`));
+      } else if (!window.portalReleaseFlow.isRetroactive(release)) {
+        // Retroativa / não bateu o ponto não passa pelo DP para autorizar: o aviso fica nos dados da liberação (flagLine).
+        chips.push(chip("wait", `DP: <b>${stage === "engineer" ? "aguardando o engenheiro" : "aguardando"}</b>`));
       }
       // Lançamento do abono no RM (igual à coletiva): quem lançou; para o DP, o que ainda falta lançar.
-      if (release.abonoLaunchedAt) chips.push(chip("yes", `Abono lançado no RM · <b>${short(release.abonoLaunchedBy || "DP")}</b>`));
-      else if (release.bonusStatus === "approved" && activeProfileKey === "dp") chips.push(chip("wait", "Abono: por lançar no RM"));
+      if (release.abonoLaunchedAt) chips.push(chip("yes", `Abono no RM: <b>lançado</b> · ${short(release.abonoLaunchedBy || "DP")}`));
+      else if (release.bonusStatus === "approved" && activeProfileKey === "dp") chips.push(chip("wait", "Abono no RM: <b>por lançar</b>"));
       if (release.exitConfirmedBy) {
-        chips.push(chip("info", `Portaria <b>${short(release.exitConfirmedBy)}</b> · assinou`));
+        chips.push(chip("yes", `Portaria: <b>assinou</b> · ${short(release.exitConfirmedBy)}`));
       } else if (stage === "gate") {
-        chips.push(chip("wait", "Portaria: aguardando saída"));
-      } else if (window.portalReleaseFlow.isEntryOnly(release) && !window.portalReleaseFlow.isRetroactive(release)) {
-        // Só entrada: o colaborador está chegando, não há saída para a portaria assinar.
-        chips.push(chip("info", "Só entrada · sem portaria", "O colaborador está chegando: o DP autoriza a entrada e não há saída para a portaria confirmar."));
+        chips.push(chip("wait", "Portaria: <b>aguardando saída</b>"));
       }
       // Digital do colaborador (como o "Digitais: X de Y" da coletiva): o DP sempre vê; os outros, só depois de assinada.
-      if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", `Colaborador <b>${short(release.employeeSignature.nome || release.name)}</b> · assinou por digital`));
-      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: aguardando", "O colaborador assina com a digital no DP, inclusive depois que a portaria confirmou a saída."));
+      if (release.employeeSignature?.method === "biometria") chips.push(chip("yes", "Digital do colaborador: <b>assinada</b>"));
+      else if (activeProfileKey === "dp" && stage !== "closed") chips.push(chip("wait", "Digital do colaborador: <b>aguardando</b>", "O colaborador assina com a digital no DP, inclusive depois que a portaria confirmou a saída."));
     }
     return `<div class="sig-chips">${chips.join("")}</div>`;
+  }
+
+  // Dado da liberação (não é assinatura): retroativa / não bateu o ponto, ou só entrada. Fica junto da data,
+  // acima do acompanhamento das assinaturas.
+  function flagLine(release) {
+    const flow = window.portalReleaseFlow;
+    // "Não bateu o ponto" já aparece em "Batida do ponto" (e na coluna Horário): aqui não repete.
+    if (flow.isRetroactive(release) && !flow.hasBothMovements(release)) {
+      return '<small class="row-flag" title="A data da liberação é anterior ao dia em que ela foi criada. Depois do engenheiro, ela já fica registrada; o DP só lança o abono no RM."><b>Retroativa</b> · sem autorização de saída nem portaria</small>';
+    }
+    if (flow.isEntryOnly(release)) {
+      return '<small class="row-flag" title="O colaborador está chegando: o DP autoriza a entrada e não há saída para a portaria confirmar."><b>Só entrada</b> · sem portaria</small>';
+    }
+    return "";
   }
 
   // Botões de ação de cada liberação, conforme o perfil aberto (tudo na tela inicial).
@@ -289,11 +298,25 @@
   }
 
   // Lixeira: cada usuário tem a sua. "Apagar" manda para ela; de lá restaura ou apaga de vez.
-  let trashMode = false;
+  // No computador, Lixeira e Concluídas também são páginas do menu lateral (Portal.html#lixeira / #concluidas,
+  // js/features/portal-dashboard.js): aberto direto nelas, já começa no modo certo.
+  const PAGE_MODE = { lixeira: "trash", concluidas: "done" };
+  const pageMode = () => PAGE_MODE[document.body.dataset.page] || PAGE_MODE[location.hash.replace("#", "")] || "";
+  let trashMode = pageMode() === "trash";
   window.portalIsTrashMode = () => trashMode;
   // Caixa "Concluídas": as liberações com todas as assinaturas (portalReleaseFlow.isConcluded), fora das pendências.
-  let doneMode = false;
+  let doneMode = pageMode() === "done";
   window.portalIsDoneMode = () => doneMode;
+  // Página Lixeira/Concluídas do menu: troca o modo das duas listas ("trash" | "done" | "" = pendências).
+  window.portalSetListMode = async (mode) => {
+    if ((mode === "trash") === trashMode && (mode === "done") === doneMode) return;
+    trashMode = mode === "trash";
+    doneMode = mode === "done";
+    pager().reset();
+    if (!activeProfileKey) return;
+    await renderRecords(activeProfileKey);
+    window.portalCollectivePanel?.render(activeProfileKey);
+  };
   // Últimos números da barra, para a barra recalcular quando as liberações coletivas terminarem de carregar.
   let lastToolbarCounts = [0, 0, 0];
   window.portalToolbarRefresh = () => renderToolbar(...lastToolbarCounts);
@@ -340,6 +363,16 @@
     const canHard = window.portalReleaseActions.canHardDelete(activeProfileKey === "dp");
     const notice = document.querySelector("#trash-notice");
     const toolbar = document.querySelector("#records-toolbar");
+    // Quantas há na Lixeira e em Concluídas, ao lado do nome no menu lateral.
+    const setNavCount = (page, n) => document.querySelectorAll(`[data-dash-page="${page}"] .dash-badge`).forEach((badge) => {
+      badge.textContent = n > 999 ? "999+" : String(n);
+      badge.hidden = !n;
+    });
+    setNavCount("lixeira", trashCount);
+    setNavCount("concluidas", doneCount);
+    // Título da lista diz onde a pessoa está (Lixeira / Concluídas são páginas no computador).
+    const title = document.querySelector("#table-title");
+    if (title) title.textContent = trashMode ? "Lixeira" : doneMode ? "Concluídas · individuais" : profiles[activeProfileKey]?.tableTitle || title.textContent;
     if (doneMode) {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às pendências</button>
@@ -433,7 +466,7 @@
         const stage = flow.stageOf(release);
         return `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${releaseDateLabel(release)}<small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: <b>${escapeHtml(release.requester)}</b></small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${releaseDateLabel(release)}${flagLine(release)}<small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stageLabel(release, stage)}</span></td>
@@ -485,7 +518,7 @@
     const pageRows = pager().slice(visible);
     elements.table.innerHTML = pageRows.length ? pageRows.map(({ release, stage }) => `
       <tr>
-        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: ${escapeHtml(release.requester)}</small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${releaseDateLabel(release)}<small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
+        <td data-label="Colaborador" class="col-who"><strong>${escapeHtml(release.name)}</strong><small class="row-role">${escapeHtml(release.role || "Função não informada")}</small>${reasonLine(release)}<small class="row-who">Solicitante: <b>${escapeHtml(release.requester)}</b></small><small class="row-meta">Eng. ${escapeHtml(engineerLabel(release))}</small>${releaseDateLabel(release)}${flagLine(release)}<small class="row-clock">Batida do ponto: <b>${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : "Não bateu o ponto"}</b></small>${createdLabel(release.createdAt || release.requestedAt)}${signatureChips(release, stage)}</td>
         <td data-label="Engenheiro" class="col-frente">${escapeHtml(engineerLabel(release))}</td>
         <td data-label="Horário" class="col-horario">${release.time && !window.portalReleaseFlow.hasBothMovements(release) ? escapeHtml(release.time) : '<span class="text-muted">Não bateu o ponto</span>'}</td>
         <td data-label="Status" class="col-status"><span class="status-badge status-${flow.stages[stage].tone}">${flow.stageLabel(release, stage)}</span>${release.abonoLaunchedAt ? '<small class="row-launched">Abono lançado no RM</small>' : ""}${!doneMode && flow.isConcluded(release) ? '<small class="row-concluded">✓ Concluída</small>' : ""}</td>
@@ -567,6 +600,11 @@
       return refresh();
     }
     if (kind === "open-trash" || kind === "open-done" || kind === "back") {
+      // Computador: Lixeira e Concluídas são páginas do menu; "Voltar" leva às Individuais.
+      if (window.portalDashboard && window.matchMedia("(min-width: 992px)").matches) {
+        window.portalDashboard.go(kind === "open-trash" ? "lixeira" : kind === "open-done" ? "concluidas" : "individuais");
+        return;
+      }
       trashMode = kind === "open-trash";
       doneMode = kind === "open-done";
       pager().reset();
@@ -1055,8 +1093,9 @@
     elements.adminSwitcher.hidden = isDpDelegate && delegateProfiles.length < 2;
     elements.adminProfile.value = initialProfile;
     elements.adminProfile.addEventListener("change", (event) => {
-      trashMode = false;
-      doneMode = false;
+      // Na página Lixeira/Concluídas do menu, continua nela com o perfil novo.
+      trashMode = pageMode() === "trash";
+      doneMode = pageMode() === "done";
       statFilter = null;
       try { localStorage.setItem(adminProfileKey, event.target.value); } catch (error) { /* armazenamento indisponível */ }
       if (isAdministrator) choosePerson(event.target.value).then(() => renderProfile(event.target.value));

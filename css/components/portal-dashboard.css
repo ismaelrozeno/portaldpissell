@@ -417,3 +417,18 @@ body.dash.dash-loading .dash-page-loading { display: flex; align-items: center; 
 body.dash .demo-switcher { flex-wrap: wrap; }
 body.dash .demo-switcher #admin-person-select { flex: 1 1 100%; width: 100%; max-width: none; }
 body.dash .demo-switcher #admin-person-select[hidden] { display: none; }
+
+/* Lixeira e Concluídas como páginas do menu lateral (só no computador; no celular continuam nos botões da lista).
+   Lixeira: a tabela das individuais mostra também as coletivas apagadas, então a lista das coletivas some.
+   Concluídas: as duas listas, cada uma só com as concluídas. */
+body.dash[data-page="lixeira"] [data-dash]:not([data-dash~="lixeira"]),
+body.dash[data-page="concluidas"] [data-dash]:not([data-dash~="concluidas"]) { display: none !important; }
+body.dash[data-page="lixeira"] #collective-section { display: none !important; }
+body.dash[data-page="concluidas"] #collective-section:not([hidden]) { display: block; }
+/* Contador da Lixeira/Concluídas no menu: informativo, em cinza (o laranja fica para o que espera ação) */
+.dash-badge.dash-badge-muted { color: #c7d3e0; background: rgba(255, 255, 255, .1); }
+@media (min-width: 992px) {
+  /* No computador, Lixeira e Concluídas ficam no menu: os botões da barra da lista saem */
+  body.dash #records-toolbar [data-toolbar="open-trash"],
+  body.dash #records-toolbar [data-toolbar="open-done"] { display: none; }
+}

@@ -1,3 +1,12 @@
+// "Voltar": volta para a página do site de onde a pessoa veio; aberto direto (favorito, link), leva ao Meu portal.
+document.querySelector("#profile-back")?.addEventListener("click", (event) => {
+  const cameFromSite = document.referrer && new URL(document.referrer).origin === location.origin;
+  if (cameFromSite && history.length > 1) {
+    event.preventDefault();
+    history.back();
+  }
+});
+
 (async () => {
   await window.portalAuthDemo.ready();
   const session = window.portalAuthDemo.getSession();
