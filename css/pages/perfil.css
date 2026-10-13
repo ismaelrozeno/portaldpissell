@@ -35,3 +35,20 @@ body.profile-page { background:#f4f7fb; color:#16283d; }.profile-page .site-head
 .avatar-option-premium.is-locked { cursor: not-allowed; }
 .avatar-premium-tag { position: absolute; right: .15rem; bottom: .15rem; display: grid; width: 1.45rem; height: 1.45rem; place-items: center; border-radius: 50%; color: #fff; background: #ef6c00; font-size: .72rem; line-height: 1; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
 .avatar-option-premium.is-locked .avatar-premium-tag { background: #29415b; }
+
+/* Foto do perfil em tela cheia (clicar na foto), como no WhatsApp */
+.profile-avatar-large.is-clickable { cursor: zoom-in; transition: transform .15s, box-shadow .15s; }
+.profile-avatar-large.is-clickable:hover, .profile-avatar-large.is-clickable:focus-visible { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(245, 130, 10, .35); outline: none; }
+.avatar-viewer { position: fixed; z-index: 2100; inset: 0; display: grid; place-items: center; padding: 1rem; background: rgba(0, 12, 28, .9); animation: avatar-viewer-in .18s ease-out; }
+.avatar-viewer[hidden] { display: none; }
+.avatar-viewer__box { position: relative; display: grid; justify-items: center; gap: .9rem; width: min(100%, 440px); }
+.avatar-viewer__close { position: fixed; top: .8rem; right: 1rem; width: 2.6rem; height: 2.6rem; border: 0; border-radius: 50%; color: #fff; background: rgba(255, 255, 255, .12); font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.avatar-viewer__close:hover, .avatar-viewer__close:focus-visible { background: rgba(255, 255, 255, .25); outline: none; }
+.avatar-viewer__photo { display: grid; width: min(80vw, 420px); aspect-ratio: 1; place-items: center; overflow: hidden; border-radius: 50%; background: #fff; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .45); font-size: clamp(4rem, 22vw, 9rem); font-weight: 800; animation: avatar-viewer-zoom .22s cubic-bezier(.2, .9, .3, 1.15); }
+.avatar-viewer__photo img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-viewer__name { margin: 0; color: #fff; font-size: 1.1rem; font-weight: 700; text-align: center; }
+.avatar-viewer__change { padding: .7rem 1.4rem; border: 0; border-radius: 999px; color: #fff; background: #ef6c00; font: inherit; font-weight: 700; cursor: pointer; }
+.avatar-viewer__change:hover, .avatar-viewer__change:focus-visible { background: #d35f00; outline: none; }
+@keyframes avatar-viewer-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes avatar-viewer-zoom { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .avatar-viewer, .avatar-viewer__photo { animation: none; } }

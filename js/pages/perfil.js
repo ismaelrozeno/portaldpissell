@@ -119,6 +119,56 @@ document.querySelector("#profile-back")?.addEventListener("click", (event) => {
     }
   });
   renderAvatar(session);
+
+  // Foto em tela cheia (como no WhatsApp): clicar na foto abre ela grande, com "Escolher outra foto" embaixo.
+  const viewer = document.createElement("div");
+  viewer.className = "avatar-viewer";
+  viewer.hidden = true;
+  viewer.innerHTML = `
+    <div class="avatar-viewer__box" role="dialog" aria-modal="true" aria-label="Foto do perfil">
+      <button type="button" class="avatar-viewer__close" aria-label="Fechar">×</button>
+      <div class="avatar-viewer__photo"></div>
+      <p class="avatar-viewer__name"></p>
+      <button type="button" class="avatar-viewer__change">Escolher outra foto</button>
+    </div>`;
+  document.body.append(viewer);
+  const viewerPhoto = viewer.querySelector(".avatar-viewer__photo");
+  function openViewer() {
+    const current = { ...session, name: name.value.trim() || session.name, avatar: chosen };
+    avatars.render(viewerPhoto, current, "Foto do perfil");
+    viewer.querySelector(".avatar-viewer__name").textContent = current.name || "";
+    viewer.hidden = false;
+    document.body.style.overflow = "hidden";
+    viewer.querySelector(".avatar-viewer__change").focus();
+  }
+  function closeViewer() {
+    if (viewer.hidden) return;
+    viewer.hidden = true;
+    document.body.style.overflow = "";
+    avatar.focus();
+  }
+  avatar.setAttribute("role", "button");
+  avatar.setAttribute("tabindex", "0");
+  avatar.setAttribute("aria-label", "Ver a foto do perfil");
+  avatar.classList.add("is-clickable");
+  avatar.addEventListener("click", openViewer);
+  avatar.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openViewer(); }
+  });
+  viewer.querySelector(".avatar-viewer__close").addEventListener("click", closeViewer);
+  // Clicar fora (em qualquer lugar que não seja a foto, o nome ou o botão) fecha.
+  viewer.addEventListener("click", (event) => {
+    if (!event.target.closest(".avatar-viewer__photo, .avatar-viewer__name, .avatar-viewer__change")) closeViewer();
+  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeViewer(); });
+  viewer.querySelector(".avatar-viewer__change").addEventListener("click", (event) => {
+    // Não deixa o clique "vazar" para o documento (que fecha a grade quando o clique é fora dela).
+    event.stopPropagation();
+    closeViewer();
+    setPickerOpen(true);
+    picker.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
   // "Usar agora" no aviso de presente: o círculo do perfil já mostra a foto nova.
   document.addEventListener("portal:avatar-changed", (event) => {
     if (!event.detail) return;
