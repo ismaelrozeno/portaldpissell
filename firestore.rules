@@ -102,7 +102,8 @@ service cloud.firestore {
       //  - administrador: só a conta fixa do administrador (o perfil dela é recriado no login, se faltar).
       // Ninguém nasce com privilégios, fotos premium ou vínculos de equipe.
       allow create: if request.auth != null && request.auth.uid == userId &&
-        !request.resource.data.keys().hasAny(["privileges", "premiumAvatars", "avatarGifts", "linkedForeman", "linkedForemen", "linkedEngineer", "reviewedAt", "reviewedBy"]) &&
+        !request.resource.data.keys().hasAny(["privileges", "premiumAvatars", "avatarGifts", "linkedForeman", "linkedForemen", "linkedEngineer", "reviewedAt", "reviewedBy",
+          "mustChangePassword", "passwordResetBy", "passwordResetAt"]) &&
         (validPorterSignup() || validStaffSignup() || validFixedAdmin());
       // A própria conta não pode mudar o próprio perfil, os próprios privilégios, a aprovação (status), a matrícula
       // nem as fotos premium ganhas (só o administrador), e só usa uma foto premium ("premium-...") que tenha ganho.
@@ -224,6 +225,12 @@ service cloud.firestore {
         request.resource.data.template.size() < 20000 &&
         request.resource.data.consentAt is string;
       allow delete: if isAdmin() || isDp();
+    }
+
+    // Histórico de senhas redefinidas pelo administrador (gravado só pela Cloud Function "resetUserPassword").
+    match /passwordResets/{resetId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /importRuns/{importId} {

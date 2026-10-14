@@ -225,3 +225,14 @@
   font-size: .9rem;
   line-height: 1.5;
 }
+
+.recovery-status.is-error {
+  border-color: rgba(255, 128, 128, .55);
+  color: #ffd2d2;
+  background: rgba(140, 32, 32, .3);
+}
+
+.recovery-submit:disabled {
+  opacity: .65;
+  cursor: wait;
+}

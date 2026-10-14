@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="O administrador redefine a senha de quem esqueceu.">
+  <title>Redefinir senhas | Obra 369</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/site-overrides.css?v=ff2fe5b2">
+  <link rel="stylesheet" href="css/pages/importar-colaboradores.css?v=893ad2ed">
+  <link rel="stylesheet" href="css/pages/senhas.css?v=a988fe1c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
+  <link rel="stylesheet" href="css/components/portal-dashboard.css?v=25f8fcc7">
+  <link rel="stylesheet" href="css/components/portal-theme.css?v=5168ef8a">
+  <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
+</head>
+<body class="import-page" data-dash-shell="senhas">
+  <div data-site-header></div>
+  <main class="import-content">
+    <div class="container-xl">
+      <a class="import-back" href="Administrador-Portal.html">← Voltar à Administração</a>
+      <section class="import-heading">
+        <div>
+          <p class="import-kicker">Administração · Obra 369</p>
+          <h1>Redefinir senhas</h1>
+          <p>Para quem esqueceu a senha e não recebeu o e-mail de "Esqueceu a senha?".</p>
+        </div>
+      </section>
+
+      <p class="import-notice" id="pw-denied" role="alert" hidden><strong>Sem acesso</strong><span>Esta tela é só do administrador.</span></p>
+
+      <div class="import-layout" id="pw-app" hidden>
+        <section class="import-card">
+          <p class="import-eyebrow">Passo 1</p>
+          <h2>Quem esqueceu a senha?</h2>
+          <p class="import-help">Digite a matrícula ou o e-mail da pessoa. Confira o nome antes de redefinir.</p>
+          <form class="pw-search" id="pw-search" novalidate>
+            <label class="visually-hidden" for="pw-identifier">Matrícula ou e-mail</label>
+            <input class="form-control" id="pw-identifier" type="text" autocomplete="off" placeholder="Ex.: 1234567 ou nome@gmail.com" required>
+            <button class="import-submit" id="pw-find" type="submit">Buscar</button>
+          </form>
+          <p class="import-warning" id="pw-error" role="alert" hidden></p>
+
+          <div class="pw-person" id="pw-person" hidden>
+            <p class="import-eyebrow">Passo 2</p>
+            <h2 id="pw-person-name"></h2>
+            <p class="import-help" id="pw-person-info"></p>
+            <div class="import-actions">
+              <button class="import-secondary" id="pw-cancel" type="button">Não é essa pessoa</button>
+              <button class="import-submit" id="pw-reset" type="button">Redefinir a senha</button>
+            </div>
+          </div>
+
+          <div class="pw-done" id="pw-done" hidden>
+            <p class="import-eyebrow">Pronto</p>
+            <h2>Senha temporária de <span id="pw-done-name"></span></h2>
+            <div class="pw-password"><code id="pw-temp"></code><button class="import-secondary" id="pw-copy" type="button">Copiar</button></div>
+            <p class="import-help">Passe essa senha <strong>só para a própria pessoa</strong> (pessoalmente ou por mensagem direta). Ela entra com a matrícula ou o e-mail e essa senha, e o portal obriga a criar uma senha nova na hora. A senha antiga deixou de valer e a conta saiu dos outros aparelhos.</p>
+            <div class="import-actions"><button class="import-secondary" id="pw-again" type="button">Redefinir outra senha</button></div>
+          </div>
+        </section>
+
+        <aside class="import-card import-policy">
+          <p class="import-eyebrow">Histórico</p>
+          <h2>Últimas senhas redefinidas</h2>
+          <ul class="pw-history" id="pw-history"><li>Carregando…</li></ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="js/core/firebase-config.js?v=5f86e13f"></script>
+  <script src="js/core/firebase-init.js?v=ed313212"></script>
+  <script src="js/core/firebase-schema.js?v=a72de791"></script>
+  <script src="js/core/firebase-auth.js?v=1f48e0bf"></script>
+  <script src="js/core/dom-utils.js?v=d56b53a2"></script>
+  <script src="js/core/shared-components.js?v=3ca5bd18"></script>
+  <script src="js/pages/senhas.js?v=6e2441f4"></script>
+  <script src="js/features/dash-shell.js?v=9a60c9e2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

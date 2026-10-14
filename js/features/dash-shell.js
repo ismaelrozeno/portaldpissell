@@ -18,6 +18,7 @@
     biometria: '<path d="M8.5 19.5c1-2 1.5-4.5 1.5-7.5a2 2 0 0 1 4 0c0 1.5-.1 3-.4 4.4"/><path d="M5.6 16.5c.6-1.4.9-2.9.9-4.5a5.5 5.5 0 0 1 11 0c0 2.4-.3 4.6-1 6.6"/><path d="M4 9.5A8.5 8.5 0 0 1 19.6 7"/><path d="M12 12c0 3-.6 5.7-1.8 8"/>',
     concluidas: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
     lixeira: '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/>',
+    senhas: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2"/>',
     plus: '<path d="M12 5v14M5 12h14"/>'
   };
   const svg = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -42,6 +43,7 @@
     <ul class="dash-nav-more" aria-label="Outras áreas do site">
       ${item("app", "App.html", "Aplicativo")}
       ${item("admin", "Administrador-Portal.html", "Administração").replace("<li", "<li data-dash-admin hidden")}
+      ${item("senhas", "Senhas.html", "Senhas").replace("<li", "<li data-dash-admin hidden")}
     </ul>
     <div class="dash-nav-actions" data-dash-create hidden>
       <a href="Liberacao.html">Nova liberação individual</a>
