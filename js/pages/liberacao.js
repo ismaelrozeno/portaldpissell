@@ -321,7 +321,7 @@
     }
     const isForeman = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue);
     if (existing && isForeman && window.portalReleaseFlow.stageOf(existing) !== "foreman") {
-      errorMessage.textContent = "Esta liberação já está em análise e só pode ser editada se o engenheiro recusar.";
+      errorMessage.textContent = "Esta liberação já está em análise e só pode ser editada se o engenheiro ou o DP recusar.";
       errorMessage.hidden = false;
       releaseButton();
       return;
@@ -363,7 +363,7 @@
           status: "pending",
           stage: "engineer",
           requestedAt: new Date().toISOString(),
-          refusalHistory: [...(existing.refusalHistory || []), { by: existing.refusedBy, at: existing.refusedAt, reason: existing.refusalReason }],
+          refusalHistory: [...(existing.refusalHistory || []), { by: existing.refusedBy, byRole: existing.refusedByRole || "", at: existing.refusedAt, reason: existing.refusalReason }],
           refusedBy: null,
           refusedAt: null,
           refusalReason: null

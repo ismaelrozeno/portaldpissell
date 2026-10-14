@@ -47,6 +47,7 @@
       return String(record.date).slice(0, 10) < `${created.getFullYear()}-${pad(created.getMonth() + 1)}-${pad(created.getDate())}`;
     },
     refusalReasons: Object.freeze([
+      "Ajustar data",
       "Ajustar horário",
       "Ajustar motivo da liberação"
     ]),
