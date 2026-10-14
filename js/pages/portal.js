@@ -377,7 +377,9 @@
     if (doneMode) {
       toolbar.innerHTML = `
         <button class="toolbar-btn" type="button" data-toolbar="back">← Voltar às pendências</button>
-        <span class="toolbar-count">✅ ${doneCount} ${doneCount === 1 ? "concluída" : "concluídas"}</span>`;
+        <span class="toolbar-count">✅ ${doneCount} ${doneCount === 1 ? "concluída" : "concluídas"}</span>
+        <button class="toolbar-btn" type="button" data-toolbar="pdf-individual" ${individualVisible ? "" : "disabled"} title="Todas as individuais concluídas da lista (com busca e filtros) num PDF só, aberto numa aba nova">📄 PDF das individuais (${individualVisible})</button>
+        <button class="toolbar-btn" type="button" data-toolbar="pdf-collective" ${collective.visible ? "" : "disabled"} title="Todas as coletivas concluídas da lista (com busca e filtros) num PDF só, aberto numa aba nova">📄 PDF das coletivas (${collective.visible})</button>`;
       notice.hidden = false;
       notice.className = "trash-notice done-notice";
       notice.innerHTML = "<strong>Concluídas:</strong> engenheiro, DP e portaria assinaram (na retroativa, só o engenheiro), o colaborador assinou com a digital e, se abonada, o abono já foi lançado no RM. Não há mais pendência nelas; continuam contando nos cartões e relatórios.";
@@ -701,6 +703,26 @@
       pager().reset();
       await renderRecords(activeProfileKey);
       window.portalCollectivePanel?.render(activeProfileKey);
+      return;
+    }
+    // Concluídas: as individuais e as coletivas da lista, cada uma no seu PDF, abertos numa aba nova.
+    if (kind === "pdf-individual" || kind === "pdf-collective") {
+      const label = button.textContent;
+      button.disabled = true;
+      button.textContent = "Gerando PDF…";
+      try {
+        if (kind === "pdf-individual") {
+          await window.portalReleasePreview.openPdf([...shownReleases], null, "Obra 369 · Liberações individuais concluídas", "liberacoes-individuais-concluidas-obra-369.pdf");
+        } else {
+          await window.portalCollectiveSheet.openPdf([...(window.portalCollectivePanel?.items() || [])], "liberacoes-coletivas-concluidas-obra-369.pdf");
+        }
+      } catch (error) {
+        console.error("Não foi possível gerar o PDF das concluídas.", error);
+        await window.portalReleaseActions.ask({ title: "Não foi possível gerar o PDF", message: "Verifique a internet e tente de novo.", okText: "OK", cancelText: null });
+      } finally {
+        button.textContent = label;
+        button.disabled = false;
+      }
       return;
     }
     // Uma só lixeira: as liberações coletivas da lista entram junto nas ações em lote.

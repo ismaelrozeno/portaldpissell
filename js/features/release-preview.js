@@ -103,35 +103,60 @@
     if (!window.portalReleasePdf) await loadScript("js/features/release-pdf.js?v=048f3fa5");
   }
 
-  // "Imprimir / salvar PDF": gera o mesmo PDF da exportação em lote (folha na metade de cima de uma A4) e abre
-  // para imprimir ou salvar. Se não der (sem internet, pop-up bloqueado), cai na impressão normal da tela.
-  async function printSheet() {
-    if (!current) return;
-    const button = overlay.querySelector("#print-release-preview");
-    const original = button.textContent;
-    button.disabled = true;
-    button.textContent = "Gerando PDF…";
-    // Abre a aba já no clique (antes do carregamento), para o navegador não bloquear o pop-up.
+  // Função de cada liberação para várias de uma vez: o cadastro é lido uma vez só (findRole leria a cada folha).
+  async function rolesFor(releases) {
+    let employees = [];
+    if (releases.some((release) => !release.role && release.registration)) {
+      try {
+        employees = await window.portalEmployeeStore?.getAll() || [];
+      } catch (error) {
+        console.warn("Não foi possível buscar a função dos colaboradores.", error);
+      }
+    }
+    const byRegistration = new Map(employees.map((item) => [item.matricula, item.funcao]));
+    return (release) => release.role || byRegistration.get(release.registration) || "";
+  }
+
+  // Gera o PDF (duas folhas por página A4, igual à exportação em lote) e abre numa aba nova; sem pop-up, baixa.
+  // A aba é aberta já no clique, antes do carregamento, para o navegador não bloquear. Erro: fecha a aba e repassa.
+  // Sem roleOf, a função de cada colaborador vem do cadastro (rolesFor).
+  async function openPdf(releases, roleOf, label, fileName) {
     const tab = window.open("", "_blank");
     try {
       await ensurePdfTools();
-      const day = String(current.date || current.createdAt?.slice(0, 10) || "").split("-").reverse().join("/");
-      const blob = window.portalReleasePdf.build([current], () => current._role || "", { label: `Obra 369 · Autorização de saída${day ? ` · ${day}` : ""}` });
-      const url = URL.createObjectURL(blob);
+      const role = roleOf || await rolesFor(releases);
+      const url = URL.createObjectURL(window.portalReleasePdf.build(releases, role, { label }));
       if (tab) {
         tab.location.href = url;
       } else {
         const link = document.createElement("a");
         link.href = url;
-        link.download = `liberacao-obra-369_${String(current.name || "folha").normalize("NFD").replace(/[^a-zA-Z0-9]+/g, "-").toUpperCase().slice(0, 30)}.pdf`;
+        link.download = fileName;
         document.body.append(link);
         link.click();
         link.remove();
       }
       setTimeout(() => URL.revokeObjectURL(url), 120000);
     } catch (error) {
-      console.warn("PDF indisponível, usando a impressão da tela.", error);
       if (tab) tab.close();
+      throw error;
+    }
+  }
+
+  // "Imprimir / salvar PDF": o mesmo PDF da exportação em lote (folha na metade de cima de uma A4).
+  // Se não der (sem internet), cai na impressão normal da tela.
+  async function printSheet() {
+    if (!current) return;
+    const button = overlay.querySelector("#print-release-preview");
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Gerando PDF…";
+    try {
+      const day = String(current.date || current.createdAt?.slice(0, 10) || "").split("-").reverse().join("/");
+      await openPdf([current], () => current._role || "", `Obra 369 · Autorização de saída${day ? ` · ${day}` : ""}`,
+        `liberacao-obra-369_${String(current.name || "folha").normalize("NFD").replace(/[^a-zA-Z0-9]+/g, "-").toUpperCase().slice(0, 30)}.pdf`);
+    } catch (error) {
+      console.warn("PDF indisponível, usando a impressão da tela.", error);
       window.print();
     } finally {
       button.disabled = false;
@@ -381,5 +406,5 @@ O carimbo será removido.`)) return;
     }) || null;
   }
 
-  window.portalReleasePreview = Object.freeze({ show, sheetFields });
+  window.portalReleasePreview = Object.freeze({ show, sheetFields, openPdf });
 })();
