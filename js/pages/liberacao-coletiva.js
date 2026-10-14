@@ -57,18 +57,19 @@
       const role = fold(item.funcao);
       if (item.nome && role.includes("encarregado") && !foremen.has(fold(item.nome))) foremen.set(fold(item.nome), item.nome);
     });
-    // O próprio usuário e o encarregado a quem está vinculado sempre aparecem na lista.
+    // O próprio usuário e os encarregados a quem está vinculado sempre aparecem na lista.
     const isChief = ["encarregado", "analista"].includes(session?.roleValue);
+    const myForemen = isChief ? [] : window.portalAuthDemo.linkedForemenOf(session);
     if (isChief && session.name) foremen.set(fold(session.name), session.name);
-    if (!isChief && session?.linkedForeman) foremen.set(fold(session.linkedForeman), session.linkedForeman);
+    myForemen.forEach((name) => foremen.set(fold(name), name));
     const fill = (select, map, placeholder, firstName = "") => {
       // O próprio usuário (encarregado) vem em primeiro lugar na lista.
       const first = fold(firstName);
       const names = [...map.values()].sort((a, b) => (fold(b) === first) - (fold(a) === first) || a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
       select.innerHTML = `<option value="">${placeholder}</option>${names.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join("")}`;
     };
-    fill(foremanSelect, foremen, "Selecione o encarregado", isChief ? session.name : session?.linkedForeman);
-    foremanSelect.value = isChief ? session.name || "" : (session?.linkedForeman || "");
+    fill(foremanSelect, foremen, "Selecione o encarregado", isChief ? session.name : myForemen[0]);
+    foremanSelect.value = isChief ? session.name || "" : (myForemen[0] || "");
     try {
       routing = await window.portalAuthDemo.getEngineerRouting();
       warnNoEngineer();
@@ -86,7 +87,7 @@
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     allEmployees = [...raw];
     if (isForeman) {
-      const owners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""]
+      const owners = [session.name, ...(session.roleValue === "estagiario_engenharia" ? window.portalAuthDemo.linkedForemenOf(session) : [])]
         .map((name) => window.normalizeSearchText(name).trim()).filter(Boolean);
       const isMine = (item) => owners.includes(window.normalizeSearchText(item.encarregado).trim());
       teamEmployees = raw.filter(isMine);

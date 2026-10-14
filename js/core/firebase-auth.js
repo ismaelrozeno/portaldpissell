@@ -22,11 +22,17 @@
 
   // Chefes de equipe: o encarregado e o analista (que funciona como encarregado). Os outros perfis se vinculam a um chefe.
   const teamChiefRoles = ["encarregado", "analista"];
+  // Encarregados a quem a conta está vinculada. O estagiário pode ter vários (campo "linkedForemen"); contas antigas,
+  // o engenheiro e o DP têm um só ("linkedForeman", que continua sendo gravado com o primeiro da lista).
+  function linkedForemenOf(user) {
+    const list = Array.isArray(user?.linkedForemen) && user.linkedForemen.length ? user.linkedForemen : [user?.linkedForeman];
+    return [...new Set(list.map((name) => String(name || "").trim()).filter(Boolean))];
+  }
   function teamDirectoryFrom(snapshot) {
     const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
     return {
       foremen: people.filter((user) => teamChiefRoles.includes(user.roleValue)),
-      interns: people.filter((user) => !teamChiefRoles.includes(user.roleValue) && user.linkedForeman),
+      interns: people.filter((user) => !teamChiefRoles.includes(user.roleValue) && linkedForemenOf(user).length),
       all: people
     };
   }
@@ -40,6 +46,7 @@
       roleValue: profile.roleValue || "",
       especialidade: profile.especialidade || "",
       linkedForeman: profile.linkedForeman || "",
+      linkedForemen: linkedForemenOf(profile),
       // Encarregado: engenheiro de cuja equipe ele faz parte (as liberações dele vão para esse engenheiro).
       linkedEngineer: profile.linkedEngineer || "",
       // Fotos de perfil premium ganhas de presente do administrador, e os presentes ainda não vistos.
@@ -182,6 +189,9 @@
     },
     normalizeIdentity,
     isFixedAdministratorIdentifier,
+    linkedForemenOf,
+    // Até 4 estagiários podem ajudar o mesmo encarregado (cuidar da equipe dele).
+    maxInternsPerForeman: 4,
 
     async login(identifier, password) {
       if (!window.portalFirebaseReady) return false;
@@ -286,7 +296,12 @@
     },
     // Administrador: define (ou tira, com "") o encarregado a quem um estagiário/engenheiro/DP está vinculado.
     async setUserLinkedForeman(userId, foremanName) {
-      await usersRef().doc(userId).update({ linkedForeman: foremanName || "", updatedAt: new Date().toISOString() });
+      await this.setUserLinkedForemen(userId, foremanName ? [foremanName] : []);
+    },
+    // Administrador e DP: define a lista de encarregados de um estagiário (ele pode cuidar de várias equipes).
+    async setUserLinkedForemen(userId, foremanNames) {
+      const names = linkedForemenOf({ linkedForemen: foremanNames });
+      await usersRef().doc(userId).update({ linkedForemen: names, linkedForeman: names[0] || "", updatedAt: new Date().toISOString() });
     },
     // DP, administrador e engenheiro: põe (ou tira, com "") um encarregado na equipe de um engenheiro.
     async setUserLinkedEngineer(userId, engineerName) {
@@ -314,7 +329,7 @@
         forSender(session, employeeForeman = "") {
           if (isEngineerLike(session)) return session.name || "";
           if (isChief(session)) return ofForeman(session.name) || session.linkedEngineer || "";
-          return ofForeman(session?.linkedForeman) || ofForeman(employeeForeman);
+          return linkedForemenOf(session).map(ofForeman).find(Boolean) || ofForeman(employeeForeman);
         }
       };
     },

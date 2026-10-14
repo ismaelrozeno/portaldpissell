@@ -153,6 +153,7 @@
   const foremanRoleValues = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
   // Perfis que trabalham na equipe do encarregado a quem estão vinculados. O analista não: ele é chefe da própria equipe.
   const linkedRoleValues = ["estagiario_engenharia"];
+  const linkedForemenOf = (user) => window.portalAuthDemo.linkedForemenOf(user);
 
   // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar
   // exatamente como ela vê. Sem pessoa escolhida (ou fora do simulador), é a conta de quem está logado.
@@ -182,14 +183,14 @@
     const specialty = session?.roleValue === "encarregado"
       ? specialtyLabels[session.especialidade] || "área não informada"
       : session?.roleValue === "estagiario_engenharia"
-        ? (session.linkedForeman ? `Estagiário de Engenharia · vinculado a ${session.linkedForeman}` : "Estagiário de Engenharia · escolha seu encarregado em Equipes e Excel")
+        ? (linkedForemenOf(session).length ? `Estagiário de Engenharia · vinculado a ${linkedForemenOf(session).join(", ")}` : "Estagiário de Engenharia · escolha seus encarregados em Equipes e Excel")
         : session?.roleValue === "analista"
           ? "Analista · chefe de equipe"
         : session?.roleValue === "seguranca_trabalho"
           ? "Segurança do trabalho"
           : "selecione um cadastro de encarregado para visualizar";
-    // O estagiário cuida da equipe do encarregado a quem está vinculado (além de uma equipe que tenha no próprio nome).
-    const teamOwners = [session?.name, linkedRoleValues.includes(session?.roleValue) ? session?.linkedForeman : ""]
+    // O estagiário cuida das equipes dos encarregados a quem está vinculado (além de uma equipe que tenha no próprio nome).
+    const teamOwners = [session?.name, ...(linkedRoleValues.includes(session?.roleValue) ? linkedForemenOf(session) : [])]
       .map((name) => String(name || "").trim().toLowerCase()).filter(Boolean);
     const team = isActingForeman
       ? employees.filter((employee) => teamOwners.includes(employee.encarregado?.trim().toLowerCase()))
@@ -1143,7 +1144,7 @@
       : allVisible;
     // Mesma regra do quadro "Minha equipe": o administrador abrindo o perfil de encarregado não tem equipe própria.
     const foremanTeam = foremanRoleValues.includes(session?.roleValue)
-      ? employees.filter((employee) => [session.name, linkedRoleValues.includes(session.roleValue) ? session.linkedForeman : ""].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
+      ? employees.filter((employee) => [session.name, ...(linkedRoleValues.includes(session.roleValue) ? linkedForemenOf(session) : [])].some((owner) => owner && employee.encarregado?.trim().toLowerCase() === owner.trim().toLowerCase()))
       : [];
     // Chefe de equipe (encarregado ou analista, inclusive o analista com acesso de DP, que abre o portal como DP):
     // o cartão "Equipe vinculada" é a equipe DELE e abre a janela da equipe, em qualquer painel.
@@ -1303,7 +1304,7 @@
     select.hidden = false;
     window.portalViewAs = chosen ? {
       uid: chosen.id, name: chosen.name, email: chosen.email || "", role: chosen.role || "",
-      roleValue: roleOf(chosen), especialidade: chosen.especialidade || "", linkedForeman: chosen.linkedForeman || "",
+      roleValue: roleOf(chosen), especialidade: chosen.especialidade || "", linkedForeman: chosen.linkedForeman || "", linkedForemen: chosen.linkedForemen || [],
       privileges: Array.isArray(chosen.privileges) ? chosen.privileges : []
     } : null;
   }

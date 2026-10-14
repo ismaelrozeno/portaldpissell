@@ -192,7 +192,18 @@
     // Chefes de equipe a quem estagiário/engenheiro/DP se vinculam: encarregado e analista.
     const helperForemen = users.filter((user) => ["encarregado", "analista"].includes(user.roleValue) && user.status === "approved" && user.name);
     const roleWords = { estagiario_engenharia: "Estagiário", analista: "Analista", engenheiro: "Engenheiro", dp: "DP" };
-    const helperSelect = (user) => `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="${roleWords[user.roleValue] || "Usuário"} vinculado a qual encarregado"><option value="">Sem vínculo com encarregado</option>${helperForemen.map((foreman) => `<option value="${escapeHtml(foreman.name)}"${foreman.name === user.linkedForeman ? " selected" : ""}>${roleWords[user.roleValue] || "Vinculado"} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>`;
+    // Estagiário, engenheiro e DP podem estar em várias equipes: cada vínculo aparece com um "×" para tirar, e o
+    // seletor adiciona mais um encarregado.
+    const helperSelect = (user) => {
+      const linked = window.portalAuthDemo.linkedForemenOf(user);
+      const word = roleWords[user.roleValue] || "Vinculado";
+      const chips = linked.map((name) => `<span class="badge text-bg-light border me-1 mt-1">${word} de ${escapeHtml(name)} <button type="button" class="btn-close ms-1" style="font-size:.55rem" data-unlink-user="${escapeHtml(user.id)}" data-foreman="${escapeHtml(name)}" aria-label="Tirar o vínculo com ${escapeHtml(name)}"></button></span>`).join("");
+      // Até 4 estagiários por encarregado: equipe cheia não aparece para outro estagiário.
+      const max = window.portalAuthDemo.maxInternsPerForeman;
+      const internsOf = (name) => users.filter((other) => other.roleValue === "estagiario_engenharia" && window.portalAuthDemo.linkedForemenOf(other).includes(name)).length;
+      const options = helperForemen.filter((foreman) => !linked.includes(foreman.name) && (user.roleValue !== "estagiario_engenharia" || internsOf(foreman.name) < max));
+      return `<span class="d-block">${chips || '<small class="text-muted">Sem vínculo com encarregado</small>'}</span>${options.length ? `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="Vincular ${word.toLowerCase()} a mais um encarregado"><option value="">${linked.length ? "Vincular a mais um encarregado…" : "Vincular a um encarregado…"}</option>${options.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${word} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>` : ""}`;
+    };
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
     const query = window.normalizeSearchText(registeredUsersSearch?.value || "");
     const visible = pagerFor("usuarios", registeredUsersList, registeredUsersSearch, renderRegisteredUsers).slice(query
@@ -538,18 +549,43 @@
 
   porterSearch?.addEventListener("input", renderPorterRequests);
   registeredUsersSearch?.addEventListener("input", renderRegisteredUsers);
-  // Vínculo (estagiário/engenheiro/DP → encarregado): o mesmo que eles fazem na tela Equipes.
+  // Vínculos (estagiário/engenheiro/DP → encarregados): o mesmo que eles fazem na tela Equipes. Cada pessoa pode
+  // estar em várias equipes: o seletor acrescenta um encarregado e o "×" tira só aquele.
+  async function changeUserForemen(userId, added, removed) {
+    const users = await window.portalAuthDemo.getAllUsers();
+    const person = users.find((user) => user.id === userId);
+    const current = window.portalAuthDemo.linkedForemenOf(person);
+    const max = window.portalAuthDemo.maxInternsPerForeman;
+    if (added && person?.roleValue === "estagiario_engenharia" &&
+      users.filter((user) => user.roleValue === "estagiario_engenharia" && window.portalAuthDemo.linkedForemenOf(user).includes(added)).length >= max) {
+      window.alert(`O encarregado ${added} já tem ${max} estagiários vinculados (o máximo).`);
+      return;
+    }
+    await window.portalAuthDemo.setUserLinkedForemen(userId, [...current.filter((name) => name !== removed), ...(added ? [added] : [])]);
+  }
   registeredUsersList.addEventListener("change", async (event) => {
     const select = event.target.closest("select[data-link-user]");
-    if (!select) return;
+    if (!select || !select.value) return;
     select.disabled = true;
     try {
-      await window.portalAuthDemo.setUserLinkedForeman(select.dataset.linkUser, select.value);
+      await changeUserForemen(select.dataset.linkUser, select.value, "");
     } catch (error) {
       console.error("Falha ao salvar o vínculo com o encarregado.", error);
       window.alert("Não foi possível salvar o vínculo. Tente de novo.");
     }
     select.disabled = false;
+    renderRegisteredUsers();
+  });
+  registeredUsersList.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-unlink-user]");
+    if (!button) return;
+    button.disabled = true;
+    try {
+      await changeUserForemen(button.dataset.unlinkUser, "", button.dataset.foreman);
+    } catch (error) {
+      console.error("Falha ao tirar o vínculo com o encarregado.", error);
+      window.alert("Não foi possível tirar o vínculo. Tente de novo.");
+    }
     renderRegisteredUsers();
   });
   allowedSearch?.addEventListener("input", renderAllowed);
