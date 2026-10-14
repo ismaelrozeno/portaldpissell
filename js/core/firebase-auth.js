@@ -48,6 +48,8 @@
       especialidade: profile.especialidade || "",
       linkedForeman: profile.linkedForeman || "",
       linkedForemen: linkedForemenOf(profile),
+      // Senha temporária dada pelo administrador (Senhas.html): precisa criar uma senha nova antes de usar o portal.
+      mustChangePassword: profile.mustChangePassword === true,
       // Encarregado: engenheiro de cuja equipe ele faz parte (as liberações dele vão para esse engenheiro).
       linkedEngineer: profile.linkedEngineer || "",
       // Fotos de perfil premium ganhas de presente do administrador, e os presentes ainda não vistos.
@@ -148,6 +150,11 @@
         console.error("Não foi possível carregar o perfil do usuário.", error);
         // Falha de leitura não é logout: mantém o usuário logado com a última sessão conhecida.
         currentSession = readSessionCache(user.uid);
+      }
+      // Entrou com a senha temporária: vai direto para a tela de criar a senha nova (e não abre a página pedida).
+      if (currentSession?.mustChangePassword && !/trocar-senha\.html$/i.test(window.location.pathname)) {
+        window.location.replace("Trocar-Senha.html");
+        return;
       }
       resolveReady();
     });
@@ -418,6 +425,37 @@
       const current = await window.portalEmployeeStore?.getAll() || [];
       const employees = matriculas.map((matricula) => current.find((employee) => employee.matricula === matricula) || { matricula, nome: "", funcao: "", setor: "", encarregado: "", status: "ativo" });
       await window.portalEmployeeStore?.replaceAll(employees);
+    },
+
+    // Esqueceu a senha: aceita e-mail ou matrícula (a matrícula vira o e-mail pelo mesmo índice do login) e pede ao
+    // Firebase o e-mail com o link para criar uma senha nova. Devolve o e-mail usado ("" se a matrícula não existe).
+    async sendPasswordReset(identifier) {
+      if (!window.portalFirebaseReady) throw new Error("firebase-unavailable");
+      const trimmed = String(identifier || "").trim();
+      let email = trimmed;
+      if (/^\d{7}$/.test(trimmed)) {
+        const indexDoc = await matriculaIndexRef().doc(trimmed).get();
+        if (!indexDoc.exists) return "";
+        email = indexDoc.data().email;
+      }
+      auth().languageCode = "pt-BR";
+      // Depois de trocar a senha na página do Firebase, o botão "Continuar" volta para a tela de entrar do portal.
+      await auth().sendPasswordResetEmail(email, { url: `${window.location.origin}/Acesso.html#login` }).catch((error) => {
+        // Domínio ainda não autorizado no Firebase para o link de volta: manda sem ele.
+        if (error?.code === "auth/unauthorized-continue-uri" || error?.code === "auth/invalid-continue-uri") return auth().sendPasswordResetEmail(email);
+        throw error;
+      });
+      return email;
+    },
+
+    // Troca a senha temporária (dada pelo administrador) pela senha nova que a própria pessoa escolheu.
+    async changeTemporaryPassword(newPassword) {
+      const user = auth().currentUser;
+      if (!user || !currentSession) throw new Error("not-signed-in");
+      await user.updatePassword(newPassword);
+      await usersRef().doc(user.uid).update({ mustChangePassword: false, updatedAt: new Date().toISOString() });
+      currentSession = { ...currentSession, mustChangePassword: false };
+      writeSessionCache(currentSession);
     },
 
     async updateProfile(changes) {

@@ -1,0 +1,13 @@
+/* Redefinir senhas (Senhas.html): o resto vem de importar-colaboradores.css. */
+.pw-search { display: flex; gap: .6rem; }
+.pw-search input { flex: 1 1 auto; min-width: 0; }
+.pw-person, .pw-done { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px dashed var(--imp-line); }
+.pw-password { display: flex; align-items: center; gap: .75rem; margin: .4rem 0 1rem; }
+.pw-password code { padding: .55rem .9rem; border-radius: .5rem; color: var(--imp-navy); background: #fff2d9; font-size: 1.5rem; font-weight: 700; letter-spacing: .04em; }
+.pw-history { list-style: none; padding-left: 0 !important; }
+.pw-history li { display: grid; gap: .1rem; }
+.pw-history small { color: var(--imp-muted); font-size: .76rem; }
+@media (max-width: 575px) {
+  .pw-search { flex-direction: column; }
+  .pw-password { flex-wrap: wrap; }
+}

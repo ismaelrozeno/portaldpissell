@@ -121,9 +121,12 @@
         }
         // Login certo: o botão continua girando até a próxima página abrir.
         window.portalButtonLoading(loginButton, "Abrindo o portal…");
-        window.location.href = window.portalAuthDemo.getSession()?.roleValue === "administrador-analista"
-          ? "Administrador-Portal.html"
-          : "Portal.html";
+        // Senha temporária (dada pelo administrador): primeiro cria a senha nova.
+        window.location.href = window.portalAuthDemo.getSession()?.mustChangePassword
+          ? "Trocar-Senha.html"
+          : window.portalAuthDemo.getSession()?.roleValue === "administrador-analista"
+            ? "Administrador-Portal.html"
+            : "Portal.html";
       }).catch((error) => {
         console.error("Falha no login demonstrativo.", error);
         showLoginError("Não foi possível concluir o acesso.");

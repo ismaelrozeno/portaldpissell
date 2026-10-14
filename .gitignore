@@ -9,3 +9,6 @@ tools/biometria-agente/publicado/
 # Pacotes grandes do leitor que nenhuma página oferece para baixar (~100 MB)
 downloads/leitor-digital-driver.zip
 downloads/leitor-digital-programa.zip
+
+# Dependências das Cloud Functions (instaladas no deploy)
+functions/node_modules/
