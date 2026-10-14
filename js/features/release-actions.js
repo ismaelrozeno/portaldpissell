@@ -76,15 +76,14 @@
     return !release.bonusStatus || release.engineer === signerName("Engenheiro responsável");
   }
 
-  // Abonar, Não abonar e Recusar são as 3 opções de uma escolha só do engenheiro.
-  // Recusar continua disponível (mesmo depois de o DP autorizar a saída) enquanto o engenheiro AINDA NÃO
-  // decidiu o abono. Depois que ele abonou ou não abonou, Recusar sai. Também não vale para: recusada,
-  // negada, saída já confirmada na portaria ou abono lançado no RM.
-  function engineerCanRefuse(release) {
-    const stage = flow().stageOf(release);
-    if (release.abonoLaunchedAt || release.bonusStatus) return false;
-    return ["engineer", "dp", "gate", "registered", "entered"].includes(stage);
+  // Recusar (devolver ao solicitante para corrigir e reenviar) vale mesmo depois das assinaturas: do engenheiro,
+  // do DP, da portaria e a digital do colaborador (inclusive concluída). Única exceção: abono já lançado no RM —
+  // primeiro desfaz o lançamento no RM, aí o Recusar aparece. Também não vale para recusada ou negada (fluxo antigo).
+  function canRefuse(release) {
+    if (release.abonoLaunchedAt) return false;
+    return ["engineer", "dp", "gate", "exited", "registered", "entered"].includes(flow().stageOf(release));
   }
+  const engineerCanRefuse = canRefuse;
 
   // O engenheiro (e o analista com acesso de engenheiro) assina direto; o Administrador Analista precisa do código
   // físico (uma vez por sessão do navegador).
@@ -155,9 +154,16 @@
     return true;
   }
 
-  // A recusa só devolve ao encarregado com o motivo; ele ajusta e reenvia.
+  // A recusa devolve ao solicitante com o motivo; ele ajusta e reenvia a mesma liberação.
   async function engineerRefuse(release, reasons) {
     await refuseRelease(release, reasons, signerName("Engenheiro responsável"), "Engenheiro");
+  }
+
+  // O DP também recusa devolvendo ao SOLICITANTE (depois que o engenheiro assinou). "Devolver ao engenheiro"
+  // (dpRefuse, abaixo) continua para quando só o abonado / não abonado precisa ser refeito.
+  const dpCanRefuse = (release) => canRefuse(release) && flow().stageOf(release) !== "engineer";
+  async function dpRefuseToRequester(release, reasons) {
+    await refuseRelease(release, reasons, signerName("Departamento Pessoal"), "Departamento Pessoal");
   }
 
   // O DP recusa devolvendo ao ENGENHEIRO (não ao solicitante), com o motivo escrito: a decisão de abono é apagada
@@ -200,6 +206,9 @@
     });
   }
 
+  // Volta ao solicitante com TODAS as assinaturas limpas (engenheiro e abono, DP, portaria e digital do colaborador);
+  // o resto (colaborador, data, horário, movimentação, motivo) fica preenchido para ele corrigir só o que errou.
+  // Depois do reenvio, a liberação passa de novo por todo o fluxo.
   async function refuseRelease(release, reasons, by, byRole) {
     await store().updateRelease(release.id, {
       stage: "foreman",
@@ -207,10 +216,21 @@
       bonusStatus: null,
       hours: "Pendente",
       hoursType: null,
-      // Se o DP já tinha autorizado a saída, essa autorização cai: o DP decide de novo após o reenvio.
+      engineer: null,
+      engineerRole: null,
+      engineerDecisionAt: null,
+      engineerChangedAt: null,
       dpSigner: null,
       dpRole: null,
       dpDecisionAt: null,
+      dpReturnReason: null,
+      dpReturnBy: null,
+      dpReturnAt: null,
+      dpReturnPrevBonus: null,
+      exitConfirmedBy: null,
+      exitConfirmedRole: null,
+      exitConfirmedAt: null,
+      employeeSignature: null,
       refusedBy: by,
       refusedByRole: byRole,
       refusedAt: new Date().toISOString(),
@@ -248,7 +268,7 @@
     const emptyMessage = freeText ? "Escreva o motivo." : "Selecione pelo menos um motivo.";
     const confirmLabel = custom?.confirmText || "Confirmar recusa";
     refuseDialog.querySelector("#refuse-title").textContent = custom?.title || "Recusar liberação";
-    refuseDialog.querySelector("#refuse-prompt").textContent = custom?.prompt || "Escolha o que o encarregado precisa ajustar:";
+    refuseDialog.querySelector("#refuse-prompt").textContent = custom?.prompt || "Escolha o que o solicitante precisa ajustar. A liberação volta para ele com as assinaturas apagadas e o resto preenchido, para corrigir e reenviar:";
     refuseDialog.querySelector("#refuse-target").textContent = custom?.target ?? `${release.name} · solicitado por ${release.requester}`;
     reasonsBox.hidden = freeText;
     textBox.hidden = !freeText;
@@ -520,6 +540,8 @@ Deseja continuar?`;
     dpCanDecide,
     dpDecide,
     dpRefuse,
+    dpCanRefuse,
+    dpRefuseToRequester,
     dpReturnChanges,
     openDpReturnDialog,
     canSignBiometric,

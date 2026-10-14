@@ -284,17 +284,19 @@
       const decide = actions.engineerCanAct(release)
         ? `${btn("row-yes-btn", "approved", release.bonusStatus === "approved" ? "Abonado ✓" : "Abonado")}${btn("row-no-btn", "denied", release.bonusStatus === "denied" ? "Não abonado ✓" : "Não abonado")}`
         : "";
-      // Recusar vale mesmo depois de o DP autorizar a saída.
+      // Recusar vale mesmo depois das assinaturas (volta ao solicitante com elas apagadas).
       const refuse = actions.engineerCanRefuse(release) ? btn("row-no-btn", "refuse", "Recusar") : "";
       return `${decide}${refuse}${view}${del}`;
     }
     if (profile === "dp") {
       const sign = actions.canSignBiometric(release) ? btn("row-bio-btn", "sign-bio", "Assinar com digital") : "";
-      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", window.portalReleaseFlow.isEntryOnly(release) ? "Autorizar entrada" : "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Recusar")}` : "";
+      const decide = actions.dpCanDecide(release) ? `${btn("row-yes-btn", "authorize", window.portalReleaseFlow.isEntryOnly(release) ? "Autorizar entrada" : "Autorizar saída")}${btn("row-no-btn", "dp-refuse", "Devolver ao engenheiro")}` : "";
+      // Recusar: volta ao solicitante para corrigir e reenviar (mesmo depois das assinaturas).
+      const refuse = actions.dpCanRefuse(release) ? btn("row-no-btn", "dp-refuse-requester", "Recusar") : "";
       // O lançamento do abono no RM é feito só na folha de liberação ("Visualizar liberação").
-      return `${sign}${decide}${view}${del}`;
+      return `${sign}${decide}${refuse}${view}${del}`;
     }
-    // Encarregado / estagiário: só edita e reenvia quando o engenheiro recusou. "Apagar" só some do histórico dele.
+    // Encarregado / estagiário: só edita e reenvia quando o engenheiro ou o DP recusou. "Apagar" só some do histórico dele.
     const edit = stage === "foreman" ? `<a class="table-action" href="Liberacao.html?edit=${encodeURIComponent(release.id)}">Editar e reenviar</a>` : "";
     return `${view}${edit}${del}`;
   }
@@ -837,6 +839,11 @@
       } else if (action === "authorize") {
         if (!actions.dpCanDecide(release)) return refresh();
         run = () => actions.dpDecide(release, true);
+      } else if (action === "dp-refuse-requester") {
+        // DP recusa devolvendo ao solicitante, com as assinaturas apagadas, para ele corrigir e reenviar.
+        if (!actions.dpCanRefuse(release)) return refresh();
+        actions.openRefuseDialog(release, refresh, { refuse: (reasons) => actions.dpRefuseToRequester(release, reasons) });
+        return;
       } else if (action === "dp-refuse") {
         // DP recusa devolvendo ao engenheiro, com o motivo escrito, para ele refazer o abonado / não abonado.
         if (!actions.dpCanDecide(release)) return refresh();
