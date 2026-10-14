@@ -40,11 +40,14 @@
   let interns = [];
   // Todos os estagiários/engenheiros/DP aprovados (para o administrador e o DP vincularem a um encarregado).
   let people = [];
-  let linkedForeman = session?.linkedForeman || "";
+  // Encarregados a quem a conta está vinculada: estagiário, engenheiro e DP podem cuidar de várias equipes.
+  const linkedForemenOf = window.portalAuthDemo.linkedForemenOf;
+  let myForemen = linkedForemenOf(session);
   const selected = new Set();
   // true quando o banco não deixou listar os encarregados cadastrados (regras do Firebase ainda sem a permissão).
   let directoryBlocked = false;
-  // Encarregado cuja equipe está aberta na área de colaboradores (DP/administrador escolhem; estagiário/engenheiro usam o vínculo).
+  // Encarregado cuja equipe está aberta na área de colaboradores (DP/administrador escolhem qualquer um;
+  // estagiário/engenheiro, um dos encarregados a quem estão vinculados).
   let openedForeman = "";
 
   async function loadPeople() {
@@ -76,11 +79,19 @@
     return [...names.values()].sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
   }
 
-  const internsOf = (foremanName) => interns.filter((user) => same(user.linkedForeman, foremanName)).map((user) => user.name);
+  const isLinkedTo = (user, foremanName) => linkedForemenOf(user).some((name) => same(name, foremanName));
+  // Limite de estagiários ajudando o mesmo encarregado (engenheiro e DP não contam).
+  const maxInterns = window.portalAuthDemo.maxInternsPerForeman;
+  const internCount = (foremanName) => people.filter((user) => user.roleValue === "estagiario_engenharia" && isLinkedTo(user, foremanName)).length;
+  const isFull = (foremanName) => internCount(foremanName) >= maxInterns;
+  const fullText = (foremanName) => `O encarregado ${foremanName} já tem ${maxInterns} estagiários vinculados (o máximo). Para entrar, alguém precisa sair do vínculo antes.`;
+  const internsOf = (foremanName) => interns.filter((user) => isLinkedTo(user, foremanName)).map((user) => user.name);
   // "Estagiário: NOME · Engenheiro: NOME" para os cartões.
-  const linkedLabel = (foremanName) => interns.filter((user) => same(user.linkedForeman, foremanName)).map((user) => `${roleWord(user)}: ${user.name}`);
+  const linkedLabel = (foremanName) => interns.filter((user) => isLinkedTo(user, foremanName)).map((user) => `${roleWord(user)}: ${user.name}`);
   // Qual equipe está sendo mostrada agora.
-  const currentForeman = () => (isLinked ? linkedForeman : isForeman ? session.name : openedForeman);
+  const currentForeman = () => (isForeman ? session.name
+    : isLinked ? myForemen.find((name) => same(name, openedForeman)) || myForemen[0] || ""
+      : openedForeman);
 
   // ---------- Encarregados (cartões) ----------
   const canAssign = isAdmin || isDp;
@@ -88,16 +99,18 @@
   // Administrador e DP vinculam estagiários (e engenheiros) a um encarregado direto no cartão dele.
   function assignHtml(name) {
     // Encarregado e analista são chefes de equipe: não se vinculam à equipe de outro.
-    const linkedHere = people.filter((user) => !["encarregado", "analista"].includes(user.roleValue) && same(user.linkedForeman, name));
+    const linkedHere = people.filter((user) => !["encarregado", "analista"].includes(user.roleValue) && isLinkedTo(user, name));
     const candidates = people
-      .filter((user) => ["estagiario_engenharia", "engenheiro"].includes(user.roleValue) && !same(user.linkedForeman, name))
+      .filter((user) => ["estagiario_engenharia", "engenheiro"].includes(user.roleValue) && !isLinkedTo(user, name))
+      // Equipe com 4 estagiários: só dá para vincular engenheiro.
+      .filter((user) => user.roleValue !== "estagiario_engenharia" || !isFull(name))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     const safe = escapeHtml(name);
     return `<details class="foreman-assign">
-      <summary class="foreman-assign-title">Estagiário ou engenheiro desta equipe (${linkedHere.length})</summary>
-      ${linkedHere.length ? linkedHere.map((user) => `<div class="foreman-assign-row"><span>${roleWord(user)}: <strong>${escapeHtml(user.name)}</strong></span><button type="button" class="foreman-unlink" data-unassign="${escapeHtml(user.id)}" aria-label="Tirar ${escapeHtml(user.name)}">Tirar</button></div>`).join("") : '<div class="foreman-assign-empty">Nenhum vinculado.</div>'}
+      <summary class="foreman-assign-title">Estagiário ou engenheiro desta equipe (${linkedHere.length}) · estagiários ${internCount(name)}/${maxInterns}</summary>
+      ${linkedHere.length ? linkedHere.map((user) => `<div class="foreman-assign-row"><span>${roleWord(user)}: <strong>${escapeHtml(user.name)}</strong></span><button type="button" class="foreman-unlink" data-unassign="${escapeHtml(user.id)}" data-from="${safe}" aria-label="Tirar ${escapeHtml(user.name)}">Tirar</button></div>`).join("") : '<div class="foreman-assign-empty">Nenhum vinculado.</div>'}
       <div class="foreman-assign-add">
-        <select data-assign-select="${safe}" aria-label="Estagiário ou engenheiro para vincular a ${safe}"><option value="">Vincular estagiário ou engenheiro…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${user.linkedForeman ? ` (hoje: ${escapeHtml(user.linkedForeman)})` : ""}</option>`).join("")}</select>
+        <select data-assign-select="${safe}" aria-label="Estagiário ou engenheiro para vincular a ${safe}"><option value="">Vincular estagiário ou engenheiro…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${linkedForemenOf(user).length ? ` (já em: ${escapeHtml(linkedForemenOf(user).join(", "))})` : ""}</option>`).join("")}</select>
         <button type="button" class="foreman-link" data-assign="${safe}">Vincular</button>
       </div>
     </details>`;
@@ -105,30 +118,31 @@
 
   function renderForemen() {
     const grid = $("#foreman-grid");
-    const mineName = isLinked || isDp ? linkedForeman : "";
+    const mine = (name) => canLink && myForemen.some((item) => same(item, name));
     let names = foremanNames();
     if (isForeman) names = names.filter((name) => same(name, session.name));
-    // Quem está vinculado vê o encarregado dele primeiro; a busca filtra pelo nome.
-    if (mineName) names = [...names.filter((name) => same(name, mineName)), ...names.filter((name) => !same(name, mineName))];
+    // Quem está vinculado vê os encarregados dele primeiro; a busca filtra pelo nome.
+    names = [...names.filter(mine), ...names.filter((name) => !mine(name))];
     const term = fold($("#foreman-search")?.value || "");
     if (term) names = names.filter((name) => fold(name).includes(term));
     $("#foremen-note").textContent = isForeman
       ? "Esta é a sua equipe."
       : canLink
-        ? `Escolha o encarregado de quem você é ${myWord} e toque em \"Me vincular como ${myWord}\". Você passa a ser como um segundo encarregado dessa equipe e pode montá-la no passo 2.`
+        ? `Escolha os encarregados de quem você é ${myWord} e toque em \"Me vincular como ${myWord}\" (pode ser mais de um). Você passa a ser como um segundo encarregado dessas equipes; em \"Montar equipe\" você escolhe qual delas montar no passo 2.`
         : "Escolha o encarregado para montar a equipe dele no passo 2.";
     if (directoryBlocked) $("#foremen-note").textContent += " Atenção: não foi possível listar todos os encarregados cadastrados; a lista abaixo mostra só os que já aparecem nos colaboradores. Se faltar alguém, avise o administrador (regras do Firebase).";
     grid.innerHTML = (names.length ? names.map((name) => {
       const count = employees.filter((employee) => same(employee.encarregado, name)).length;
       const people = linkedLabel(name);
-      const isMine = same(name, mineName);
+      const isMine = mine(name);
       const isOpen = same(name, currentForeman());
       const safe = escapeHtml(name);
-      const badges = `${isMine ? '<span class="foreman-badge foreman-badge-mine">✓ Você está vinculado a este encarregado</span>' : ""}${isOpen && !isLinked && !isForeman ? '<span class="foreman-badge foreman-badge-view">Equipe aberta</span>' : ""}`;
+      const badges = `${isMine ? '<span class="foreman-badge foreman-badge-mine">✓ Você está vinculado a este encarregado</span>' : ""}${isOpen && !isForeman && (!isLinked || myForemen.length > 1) ? '<span class="foreman-badge foreman-badge-view">Equipe aberta</span>' : ""}`;
       const actions = [
-        canLink && !isMine ? `<button class="foreman-link" type="button" data-link-me="${safe}">Me vincular como ${myWord}</button>` : "",
+        canLink && !isMine && isIntern && isFull(name) ? `<button class="foreman-link" type="button" disabled title="${escapeHtml(fullText(name))}">Equipe completa (${maxInterns} estagiários)</button>` : "",
+        canLink && !isMine && !(isIntern && isFull(name)) ? `<button class="foreman-link" type="button" data-link-me="${safe}">Me vincular como ${myWord}</button>` : "",
         // Montar equipe: DP/administrador abrem qualquer uma; quem está vinculado monta a do encarregado a quem está vinculado.
-        ((isAdmin || isDp) && !isOpen) || (canLink && isMine) ? `<button class="foreman-open" type="button" data-open-team="${safe}">Montar equipe</button>` : "",
+        ((isAdmin || isDp) && !isOpen) || (isLinked && isMine) ? `<button class="foreman-open" type="button" data-open-team="${safe}">Montar equipe</button>` : "",
         canLink && isMine ? `<button class="foreman-unlink" type="button" data-unlink-me="${safe}">Sair do vínculo</button>` : ""
       ].join("");
       return `<article class="foreman-card${isMine ? " is-mine" : ""}${isOpen ? " is-selected" : ""}">
@@ -136,25 +150,37 @@
         <div class="foreman-badges">${badges}</div>
         <div class="foreman-meta" title="${count} colaborador(es) na equipe"><strong>${count}</strong> na equipe</div>
         <div class="foreman-linked">${people.length ? escapeHtml(people.join(" · ")) : "Sem estagiário ou engenheiro vinculado"}</div>
+        <div class="foreman-meta" title="Até ${maxInterns} estagiários podem ajudar este encarregado"><strong>${internCount(name)}/${maxInterns}</strong> estagiários</div>
         <div class="foreman-actions">${actions}</div>
         ${canAssign ? assignHtml(name) : ""}
       </article>`;
     }).join("") : '<p class="teams-note">Nenhum encarregado encontrado.</p>');
   }
 
-  async function saveLink(name) {
+  // Entra (added) ou sai (removed) da equipe de um encarregado, mantendo os outros vínculos.
+  async function saveLink(added, removed = "") {
     const result = $("#intern-result");
+    const names = [...myForemen.filter((name) => !same(name, removed) && !same(name, added)), ...(added ? [added] : [])];
     try {
-      const updated = await window.portalAuthDemo.updateProfile({ linkedForeman: name });
-      linkedForeman = updated?.linkedForeman ?? name;
-      if (isDp) openedForeman = name || openedForeman;
-      show(result, name ? `Vínculo salvo: você agora está vinculado ao encarregado ${name}.` : "Vínculo removido.");
+      // Confere o limite com a lista mais nova (outro estagiário pode ter entrado agora há pouco).
+      if (added && isIntern) {
+        await loadPeople();
+        if (isFull(added)) {
+          renderAll();
+          return show(result, fullText(added), true);
+        }
+      }
+      const updated = await window.portalAuthDemo.updateProfile({ linkedForemen: names, linkedForeman: names[0] || "" });
+      myForemen = linkedForemenOf(updated || { linkedForemen: names });
+      if (added) openedForeman = added;
+      else if (same(openedForeman, removed)) openedForeman = isDp ? myForemen[0] || "" : "";
+      show(result, added ? `Vínculo salvo: você agora está vinculado ao encarregado ${added}.` : `Vínculo com ${removed} removido.`);
       selected.clear();
       // Atualiza o diretório para o cartão mostrar você entre os vinculados.
       await loadPeople();
       renderAll();
-      if (name) {
-        show(result, `Você agora está vinculado ao encarregado ${name}. Vincule os colaboradores à equipe dele no passo 2 abaixo.`);
+      if (added) {
+        show(result, `Você agora está vinculado ao encarregado ${added}${myForemen.length > 1 ? ` (e a mais ${myForemen.length - 1})` : ""}. Vincule os colaboradores à equipe dele no passo 2 abaixo.`);
         $("#manage-card").scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } catch (error) {
@@ -163,13 +189,16 @@
     }
   }
 
-  async function assignUser(userId, foremanName) {
+  // Põe (added) ou tira (removed) um estagiário/engenheiro da equipe de um encarregado, mantendo os outros vínculos dele.
+  async function assignUser(userId, added, removed = "") {
     const result = $("#intern-result");
+    const person = people.find((user) => user.id === userId);
+    const names = [...linkedForemenOf(person).filter((name) => !same(name, removed) && !same(name, added)), ...(added ? [added] : [])];
+    if (added && person?.roleValue === "estagiario_engenharia" && isFull(added)) return show(result, fullText(added), true);
     try {
-      await window.portalAuthDemo.setUserLinkedForeman(userId, foremanName);
-      const person = people.find((user) => user.id === userId);
-      if (person) person.linkedForeman = foremanName;
-      show(result, foremanName ? `${person ? `${roleWord(person)} ${person.name}` : "Usuário"} vinculado ao encarregado ${foremanName}.` : "Vínculo removido.");
+      await window.portalAuthDemo.setUserLinkedForemen(userId, names);
+      if (person) Object.assign(person, { linkedForemen: names, linkedForeman: names[0] || "" });
+      show(result, added ? `${person ? `${roleWord(person)} ${person.name}` : "Usuário"} vinculado ao encarregado ${added}.` : `Vínculo com ${removed} removido.`);
       await loadPeople();
       renderAll();
     } catch (error) {
@@ -184,18 +213,16 @@
     if (assign) {
       const select = assign.closest(".foreman-assign").querySelector("select");
       if (!select.value) return show($("#intern-result"), "Escolha o estagiário na lista antes de vincular.", true);
-      const person = people.find((user) => user.id === select.value);
-      if (person?.linkedForeman && !same(person.linkedForeman, assign.dataset.assign) && !window.confirm(`${person.name} já está vinculado ao encarregado ${person.linkedForeman}. Mover para ${assign.dataset.assign}?`)) return;
       return assignUser(select.value, assign.dataset.assign);
     }
-    if (unassign) return assignUser(unassign.dataset.unassign, "");
+    if (unassign) return assignUser(unassign.dataset.unassign, "", unassign.dataset.from);
     const me = event.target.closest("[data-link-me]");
     const leave = event.target.closest("[data-unlink-me]");
     const open = event.target.closest("[data-open-team]");
     if (me) saveLink(me.dataset.linkMe);
-    if (leave && window.confirm("Sair do vínculo com este encarregado?")) saveLink("");
+    if (leave && window.confirm(`Sair do vínculo com o encarregado ${leave.dataset.unlinkMe}?`)) saveLink("", leave.dataset.unlinkMe);
     if (open) {
-      if (!isLinked) openedForeman = open.dataset.openTeam;
+      openedForeman = open.dataset.openTeam;
       selected.clear();
       renderAll();
       $("#manage-card").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -244,9 +271,9 @@
       const mine = same(employee.encarregado, team);
       const tag = isForemanPerson(employee) ? '<span class="team-tag team-tag-other">É encarregado, não entra em equipe</span>' : mine ? '<span class="team-tag team-tag-mine">Na equipe</span>' : employee.encarregado ? `<span class="team-tag team-tag-other">Equipe de ${escapeHtml(employee.encarregado)}</span>` : '<span class="team-tag team-tag-free">Sem equipe</span>';
       const id = escapeHtml(employee.matricula);
-      // O estagiário só mexe em quem está livre ou já é da equipe dele; DP e administrador mexem em qualquer um.
+      // Estagiário/engenheiro só mexem em quem está livre ou já é de uma das equipes deles; DP e administrador, em qualquer um.
       const isBoss = isForemanPerson(employee);
-      const locked = isBoss || (isLinked && employee.encarregado && !mine);
+      const locked = isBoss || (isLinked && employee.encarregado && !myForemen.some((name) => same(name, employee.encarregado)));
       const action = !canManage || locked ? ""
         : mine ? `<button class="team-remove" type="button" data-remove="${id}">Tirar da equipe</button>`
           : `<button class="team-add" type="button" data-add="${id}">${employee.encarregado ? "Mover para a equipe" : "Vincular"}</button>`;
@@ -364,7 +391,7 @@
     $("#team-summary").innerHTML = "";
     return;
   }
-  if (isDp || isAdmin) openedForeman = (isDp && linkedForeman) || "";
+  if (isDp || isAdmin) openedForeman = (isDp && myForemen[0]) || "";
   renderAll();
 
   // ---------- Ao vivo ----------
@@ -391,7 +418,7 @@
       people = directory.all || [];
       // Se o administrador mudou o meu vínculo pela página de Administração, acompanha.
       const me = (directory.all || []).find((user) => user.id === session?.uid);
-      if (me && canLink) linkedForeman = me.linkedForeman || "";
+      if (me && canLink) myForemen = linkedForemenOf(me);
       redraw();
     }, () => {
       directoryBlocked = !isAdmin;

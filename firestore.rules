@@ -58,9 +58,11 @@ service cloud.firestore {
       return hasRole(["encarregado", "seguranca_trabalho", "analista"]);
     }
 
-    // Encarregado a quem o estagiário logado está vinculado (vazio se não estiver).
-    function internForeman() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("linkedForeman", "");
+    // Encarregados a quem o estagiário/engenheiro logado está vinculado (lista vazia se não estiver). O estagiário pode
+    // ter vários ("linkedForemen"); contas antigas têm só "linkedForeman".
+    function linkedTeams() {
+      let profile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return [profile.get("linkedForeman", "")].concat(profile.get("linkedForemen", [])).removeAll([""]);
     }
 
     function validPorterSignup() {
@@ -100,7 +102,7 @@ service cloud.firestore {
       //  - administrador: só a conta fixa do administrador (o perfil dela é recriado no login, se faltar).
       // Ninguém nasce com privilégios, fotos premium ou vínculos de equipe.
       allow create: if request.auth != null && request.auth.uid == userId &&
-        !request.resource.data.keys().hasAny(["privileges", "premiumAvatars", "avatarGifts", "linkedForeman", "linkedEngineer", "reviewedAt", "reviewedBy"]) &&
+        !request.resource.data.keys().hasAny(["privileges", "premiumAvatars", "avatarGifts", "linkedForeman", "linkedForemen", "linkedEngineer", "reviewedAt", "reviewedBy"]) &&
         (validPorterSignup() || validStaffSignup() || validFixedAdmin());
       // A própria conta não pode mudar o próprio perfil, os próprios privilégios, a aprovação (status), a matrícula
       // nem as fotos premium ganhas (só o administrador), e só usa uma foto premium ("premium-...") que tenha ganho.
@@ -108,9 +110,9 @@ service cloud.firestore {
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges", "premiumAvatars", "status", "matricula", "reviewedAt", "reviewedBy", "linkedEngineer"]) &&
           (!request.resource.data.get("avatar", "").matches("premium-.*") ||
             request.resource.data.get("avatar", "") in resource.data.get("premiumAvatars", []))) || isAdmin() ||
-        // O DP só pode vincular estagiário/engenheiro a um encarregado (campo "linkedForeman"), nada além disso.
+        // O DP só pode vincular estagiário/engenheiro a encarregados ("linkedForeman"/"linkedForemen"), nada além disso.
         (isDp() && resource.data.roleValue in ["estagiario_engenharia", "engenheiro"] &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "updatedAt"])) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["linkedForeman", "linkedForemen", "updatedAt"])) ||
         // ...e pôr um encarregado na equipe de um engenheiro (campo "linkedEngineer"), nada além disso.
         // (O engenheiro também monta as equipes dos engenheiros.)
         // Chefes de equipe que entram na equipe de um engenheiro: encarregado e analista.
@@ -136,12 +138,12 @@ service cloud.firestore {
       // Importar o relatório do RM (apaga a lista e grava a nova): administrador, qualquer perfil de DP e analista.
       allow create, delete: if isAdmin() || isDp() || isAnalyst();
       // Administrador, DP e analista mudam qualquer coisa (a importação regrava os colaboradores); o estagiário e o
-      // engenheiro mudam SÓ o campo "encarregado", e só para/da equipe do encarregado a quem estão vinculados.
+      // engenheiro mudam SÓ o campo "encarregado", e só para/das equipes dos encarregados a quem estão vinculados.
       allow update: if isAdmin() || isDp() || isAnalyst() ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["encarregado"]) &&
-          ((isLinker() && internForeman() != "" &&
-              (request.resource.data.encarregado == internForeman() || request.resource.data.encarregado == "") &&
-              (resource.data.encarregado == internForeman() || resource.data.get("encarregado", "") == ""))));
+          isLinker() && linkedTeams().size() > 0 &&
+          (request.resource.data.encarregado == "" || request.resource.data.encarregado in linkedTeams()) &&
+          (resource.data.get("encarregado", "") == "" || resource.data.get("encarregado", "") in linkedTeams()));
     }
 
     match /allowedRegistrations/{matricula} {

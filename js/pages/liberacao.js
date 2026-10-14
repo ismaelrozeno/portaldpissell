@@ -96,7 +96,7 @@
     const employees = [...allEmployeesRaw];
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const teamOwners = [session.name, session.roleValue === "estagiario_engenharia" ? session.linkedForeman : ""].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
+      const teamOwners = [session.name, ...(session.roleValue === "estagiario_engenharia" ? window.portalAuthDemo.linkedForemenOf(session) : [])].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
       const rank = (item) => (teamOwners.includes(normalizeSearchText(item.encarregado).trim()) ? 0 : !item.encarregado ? 1 : 2);
       employees.sort((a, b) => rank(a) - rank(b) || byName(a, b));
     } else {
@@ -153,8 +153,8 @@
   const foremanSelect = document.querySelector("#foreman-name");
   let foremanTouched = false;
   const picksForeman = () => !!routing && !routing.isEngineerLike(me());
-  // Encarregado que vem escolhido ao abrir: o próprio chefe de equipe ou aquele a quem a conta está vinculada.
-  const ownForeman = () => (routing?.isChief(me()) ? me()?.name || "" : me()?.linkedForeman || "");
+  // Encarregado que vem escolhido ao abrir: o próprio chefe de equipe ou o primeiro a quem a conta está vinculada.
+  const ownForeman = () => (routing?.isChief(me()) ? me()?.name || "" : window.portalAuthDemo.linkedForemenOf(me())[0] || "");
   function setForeman(name) {
     if (!name) return;
     const fold = normalizeSearchText;

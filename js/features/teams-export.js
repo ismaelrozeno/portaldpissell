@@ -34,7 +34,7 @@
   async function download() {
     if (typeof ExcelJS === "undefined") throw new Error("excel-unavailable");
     const { employees, foremen, interns, foremanNames } = await collect();
-    const internsOf = (name) => interns.filter((user) => same(user.linkedForeman, name)).map((user) => user.name);
+    const internsOf = (name) => interns.filter((user) => window.portalAuthDemo.linkedForemenOf(user).some((linked) => same(linked, name))).map((user) => user.name);
     // Engenheiro da equipe do encarregado (Equipes dos engenheiros: campo "linkedEngineer" do cadastro do encarregado).
     const engineerOf = (name) => (name ? foremen.find((user) => same(user.name, name) && user.linkedEngineer)?.linkedEngineer || "" : "");
 
