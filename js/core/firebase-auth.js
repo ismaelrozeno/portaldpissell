@@ -32,7 +32,8 @@
     const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter((user) => user.status === "approved" && user.name);
     return {
       foremen: people.filter((user) => teamChiefRoles.includes(user.roleValue)),
-      interns: people.filter((user) => !teamChiefRoles.includes(user.roleValue) && linkedForemenOf(user).length),
+      // Quem ajuda na equipe de um encarregado (o analista também, além de chefiar a própria).
+      interns: people.filter((user) => user.roleValue !== "encarregado" && linkedForemenOf(user).length),
       all: people
     };
   }
@@ -190,8 +191,9 @@
     normalizeIdentity,
     isFixedAdministratorIdentifier,
     linkedForemenOf,
-    // Até 4 estagiários podem ajudar o mesmo encarregado (cuidar da equipe dele).
-    maxInternsPerForeman: 4,
+    // Até 4 pessoas (estagiário, engenheiro, DP ou analista, somados) podem ajudar o mesmo encarregado a cuidar da equipe dele.
+    maxHelpersPerForeman: 4,
+    teamHelperRoles: ["estagiario_engenharia", "engenheiro", "dp", "analista"],
 
     async login(identifier, password) {
       if (!window.portalFirebaseReady) return false;

@@ -96,7 +96,7 @@
     const employees = [...allEmployeesRaw];
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     if (["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"].includes(session?.roleValue)) {
-      const teamOwners = [session.name, ...(session.roleValue === "estagiario_engenharia" ? window.portalAuthDemo.linkedForemenOf(session) : [])].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
+      const teamOwners = [session.name, ...(["estagiario_engenharia", "analista"].includes(session.roleValue) ? window.portalAuthDemo.linkedForemenOf(session) : [])].map(normalizeSearchText).map((name) => name.trim()).filter(Boolean);
       const rank = (item) => (teamOwners.includes(normalizeSearchText(item.encarregado).trim()) ? 0 : !item.encarregado ? 1 : 2);
       employees.sort((a, b) => rank(a) - rank(b) || byName(a, b));
     } else {
