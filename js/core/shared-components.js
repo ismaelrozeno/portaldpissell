@@ -100,7 +100,8 @@ window.portalAvatars = (() => {
 (async function loadSharedComponents() {
   const protectedPages = new Set([
     "Portal.html", "Liberacao.html", "Liberacao-Coletiva.html", "DP-Liberacoes.html", "Portaria.html",
-    "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html", "Backup.html", "Equipes.html", "Biometria.html"
+    "Engenheiro.html", "Importar-Colaboradores.html", "Cadastrar-Colaborador.html", "Administrador-Portal.html", "Fechamento.html", "Perfil.html", "Backup.html", "Equipes.html", "Biometria.html",
+    "Senhas.html", "Trocar-Senha.html"
   ]);
   const currentPage = window.location.pathname.split("/").pop();
 
@@ -132,7 +133,7 @@ window.portalAvatars = (() => {
   };
 
   const components = [
-    ["[data-site-header]", "partials/header.html?v=7a46b7fa"],
+    ["[data-site-header]", "partials/header.html?v=eb85e362"],
     ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
   ];
   let authConfirmed = false;
@@ -171,7 +172,7 @@ window.portalAvatars = (() => {
   // colaborador manualmente.
   const isDpSession = ["dp", "analista"].includes(currentSession?.roleValue) || !!window.portalAuthDemo?.isDpDelegate?.();
   const pageAllowed = ["Importar-Colaboradores.html", "Cadastrar-Colaborador.html"].includes(currentPage) ? isAdminSession || isDpSession : isAdminSession;
-  if (["Cadastrar-Colaborador.html", "Importar-Colaboradores.html", "Administrador-Portal.html"].includes(currentPage) && !pageAllowed) {
+  if (["Cadastrar-Colaborador.html", "Importar-Colaboradores.html", "Administrador-Portal.html", "Senhas.html"].includes(currentPage) && !pageAllowed) {
     window.location.replace("Portal.html");
     return;
   }
