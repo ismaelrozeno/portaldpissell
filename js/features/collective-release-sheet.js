@@ -310,34 +310,45 @@ O carimbo será removido.`)) return;
     if (!window.portalCollectivePdf) await loadScript("js/features/collective-release-pdf.js?v=8ad22df7");
   }
 
-  // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
-  // imprimir ou salvar. Se não der (sem internet, pop-up bloqueado), cai na impressão pela janela própria.
-  async function printSheet() {
-    if (!current) return;
-    const button = overlay.querySelector("#cs-print");
-    const original = button.textContent;
-    button.disabled = true;
-    button.textContent = "Gerando PDF…";
-    // Abre a aba já no clique (antes do carregamento), para o navegador não bloquear o pop-up.
+  // Gera o PDF das folhas (uma lista de presença por página) e abre numa aba nova; sem pop-up, baixa.
+  // A aba é aberta já no clique, antes do carregamento, para o navegador não bloquear. Erro: fecha a aba e repassa.
+  async function openPdf(sheets, fileName) {
     const tab = window.open("", "_blank");
     try {
       await ensurePdfTools();
-      const blob = window.portalCollectivePdf.build(current, pdfFields(current));
+      const blob = sheets.length === 1
+        ? window.portalCollectivePdf.build(sheets[0], pdfFields(sheets[0]))
+        : window.portalCollectivePdf.buildMany(sheets.map((sheet) => [sheet, pdfFields(sheet)]));
       const url = URL.createObjectURL(blob);
       if (tab) {
         tab.location.href = url;
       } else {
         const link = document.createElement("a");
         link.href = url;
-        link.download = `lista-de-presenca-obra-369_${String(current.motive || "folha").normalize("NFD").replace(/[^a-zA-Z0-9]+/g, "-").toUpperCase().slice(0, 30)}.pdf`;
+        link.download = fileName;
         document.body.append(link);
         link.click();
         link.remove();
       }
       setTimeout(() => URL.revokeObjectURL(url), 120000);
     } catch (error) {
-      console.warn("PDF indisponível, usando a impressão pela janela própria.", error);
       if (tab) tab.close();
+      throw error;
+    }
+  }
+
+  // "Imprimir / salvar PDF": gera o PDF da folha e abre numa aba nova (como a folha individual), pronto para
+  // imprimir ou salvar. Se não der (sem internet), cai na impressão pela janela própria.
+  async function printSheet() {
+    if (!current) return;
+    const button = overlay.querySelector("#cs-print");
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Gerando PDF…";
+    try {
+      await openPdf([current], `lista-de-presenca-obra-369_${String(current.motive || "folha").normalize("NFD").replace(/[^a-zA-Z0-9]+/g, "-").toUpperCase().slice(0, 30)}.pdf`);
+    } catch (error) {
+      console.warn("PDF indisponível, usando a impressão pela janela própria.", error);
       printHtmlFallback();
     } finally {
       button.disabled = false;
@@ -417,5 +428,5 @@ O carimbo será removido.`)) return;
     overlay.scrollTop = 0;
   }
 
-  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, stageLabel, isRetroactive, isEntryOnly, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields });
+  window.portalCollectiveSheet = Object.freeze({ show, statusLabel, stageOf, stageLabel, isRetroactive, isEntryOnly, isConcluded, STAGES, signatureOf, signedCount, exitOf, exitedCount, pdfFields, openPdf });
 })();
