@@ -78,6 +78,15 @@
       return new Set(snapshot.docs.map((doc) => doc.id));
     },
 
+    // Matrícula -> quando e por quem a digital foi cadastrada (sem o modelo da digital), para a lista da Biometria.
+    async listEnrollments() {
+      const snapshot = await biometricsCollection().get();
+      return new Map(snapshot.docs.map((doc) => {
+        const { enrolledAt = "", enrolledBy = "" } = doc.data();
+        return [doc.id, { enrolledAt, enrolledBy }];
+      }));
+    },
+
     // Captura a digital no Hamster DX e grava o modelo do colaborador. Só com consentimento registrado.
     async enroll(employee, enrolledBy) {
       const matricula = normalizeRegistration(employee.matricula);

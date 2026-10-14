@@ -7,7 +7,7 @@
   <title>Backup e Excel | Obra 369</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=ff2fe5b2">
-  <link rel="stylesheet" href="css/pages/backup.css?v=db08abea">
+  <link rel="stylesheet" href="css/pages/backup.css?v=02107b08">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
@@ -32,8 +32,13 @@
         <section class="backup-card" aria-labelledby="export-title">
           <span class="backup-eyebrow">Proteção extra</span>
           <h2 id="export-title">Exportar backup dos dados</h2>
-          <p>Gera um arquivo <strong>.json</strong> com todas as liberações (individuais e coletivas) e os colaboradores cadastrados. Guarde em um lugar seguro (pen drive, e-mail, nuvem). Se alguma coisa for apagada por engano, este arquivo recupera.</p>
+          <p>Gera um arquivo <strong>.json</strong> com os dados do portal listados abaixo. Guarde em um lugar seguro e com acesso restrito (pen drive guardado, nuvem da empresa). Se alguma coisa for apagada por engano, este arquivo recupera.</p>
           <ul class="backup-list" id="export-scope"></ul>
+          <div class="backup-sensitive" id="export-biometrics-box" hidden>
+            <label><input type="checkbox" id="export-biometrics"> Incluir as <strong>digitais dos colaboradores</strong> (biometria)</label>
+            <small>Dado pessoal sensível (LGPD, art. 11). Só marque quando for guardar uma cópia de segurança das digitais: o arquivo sai com "COM-BIOMETRIA" no nome e deve ficar em local protegido, sem envio por e-mail ou WhatsApp. Sem a cópia, as digitais perdidas precisam ser cadastradas de novo no leitor.</small>
+          </div>
+          <p class="backup-note">Não entram no backup: as senhas e os logins de acesso (ficam guardados à parte, num banco de dados protegido que não pode ser copiado) e a lista que liga cada matrícula ao seu login.</p>
           <button class="backup-button" id="export-backup" type="button">Baixar backup (.json)</button>
           <p class="backup-result" id="export-result" role="status" hidden></p>
         </section>
@@ -157,7 +162,7 @@
   <script src="js/core/shared-components.js?v=3ca5bd18"></script>
   <script src="js/core/firebase-employee-store.js?v=f775198d"></script>
   <script src="js/core/firebase-release-store.js?v=7a5a797e"></script>
-  <script src="js/features/backup-store.js?v=7ee271e5"></script>
+  <script src="js/features/backup-store.js?v=cd1931c7"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -168,7 +173,7 @@
   <script src="js/features/collective-release-store.js?v=0f9bdfe0"></script>
   <script src="js/features/collective-release-sheet.js?v=305aa27e"></script>
   <script src="js/features/collective-release-pdf.js?v=8ad22df7"></script>
-  <script src="js/pages/backup.js?v=a8db4084"></script>
+  <script src="js/pages/backup.js?v=b686590e"></script>
   <script src="js/features/report-pptx.js?v=a2b840e0"></script>
   <script src="js/features/backup-images.js?v=9ba034fa"></script>
   <!-- Menu do dashboard: barra de abas embaixo no celular e menu lateral no computador -->

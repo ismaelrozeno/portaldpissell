@@ -1,48 +1,52 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
+    // Perfil da conta logada. "Membro" = conta com perfil APROVADO: porteiro aguardando o administrador
+    // (status "pending-dp") ou recusado não entra em nada. Conta de login sem perfil também não.
+    function me() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isMember() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "administrador-analista";
+        me().get("status", "") == "approved";
+    }
+
+    function hasRole(roles) {
+      return isMember() && me().roleValue in roles;
+    }
+
+    function hasPrivilege(privilege) {
+      return isMember() && me().roleValue == "analista" && me().get("privileges", []).hasAny([privilege]);
+    }
+
+    function isAdmin() {
+      return hasRole(["administrador-analista"]);
     }
 
     // DP de verdade, ou analista com o privilégio "dp" dado pelo administrador (campo "privileges" do usuário).
     function isDp() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "dp" ||
-          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "analista" &&
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("privileges", []).hasAny(["dp"])));
+      return hasRole(["dp"]) || hasPrivilege("dp");
     }
 
     function isIntern() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "estagiario_engenharia";
+      return hasRole(["estagiario_engenharia"]);
     }
 
     // Analista: perfil "curinga". Por padrão é chefe de equipe (como o encarregado) e importa o relatório do RM;
     // o administrador pode dar acesso de DP, de engenheiro e de segurança do trabalho (campo "privileges").
     function isAnalyst() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "analista";
+      return hasRole(["analista"]);
     }
 
     // Engenheiro, ou analista com o acesso de engenheiro.
     function isEngineer() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "engenheiro" ||
-          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "analista" &&
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("privileges", []).hasAny(["engenheiro"])));
+      return hasRole(["engenheiro"]) || hasPrivilege("engenheiro");
     }
 
     function isPorter() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue == "porteiro";
+      return hasRole(["porteiro"]);
     }
 
     // Estagiário ou engenheiro: trabalham na equipe do encarregado a quem estão vinculados.
@@ -51,14 +55,35 @@ service cloud.firestore {
     }
 
     function isForeman() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleValue in ["encarregado", "seguranca_trabalho", "analista"];
+      return hasRole(["encarregado", "seguranca_trabalho", "analista"]);
     }
 
     // Encarregado a quem o estagiário logado está vinculado (vazio se não estiver).
     function internForeman() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("linkedForeman", "");
+    }
+
+    function validPorterSignup() {
+      return request.resource.data.roleValue == "porteiro" &&
+        request.resource.data.status == "pending-dp" &&
+        request.resource.data.get("matricula", "") == "";
+    }
+
+    function validStaffSignup() {
+      let matricula = request.resource.data.get("matricula", "");
+      return matricula is string && matricula.matches("[0-9]{7}") &&
+        request.resource.data.status == "approved" &&
+        request.resource.data.roleValue != "administrador-analista" &&
+        exists(/databases/$(database)/documents/allowedRegistrations/$(matricula)) &&
+        get(/databases/$(database)/documents/allowedRegistrations/$(matricula)).data.get("roleValue", "") == request.resource.data.roleValue &&
+        exists(/databases/$(database)/documents/matriculaIndex/$(matricula)) &&
+        get(/databases/$(database)/documents/matriculaIndex/$(matricula)).data.uid == request.auth.uid;
+    }
+
+    function validFixedAdmin() {
+      return request.resource.data.roleValue == "administrador-analista" &&
+        request.resource.data.status == "approved" &&
+        request.auth.token.email == "admin@admdf.site";
     }
 
     match /users/{userId} {
@@ -67,11 +92,20 @@ service cloud.firestore {
       // engenheiros e DP (para montar e exportar equipes).
       allow list: if isAdmin() ||
         ((isDp() || isForeman() || isLinker()) && resource.data.roleValue in ["encarregado", "estagiario_engenharia", "analista", "engenheiro", "dp"]);
-      allow create: if request.auth != null && request.auth.uid == userId;
-      // A própria conta não pode mudar o próprio perfil, os próprios privilégios nem as fotos premium ganhas (só o
-      // administrador), e só usa uma foto premium ("premium-...") que tenha ganho de presente.
-      allow update: if request.auth != null && ((request.auth.uid == userId &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges", "premiumAvatars"]) &&
+      // Cadastro: a própria conta cria o próprio perfil, e o banco confere o cargo (antes só o navegador conferia,
+      // e qualquer um podia se dar o cargo de administrador):
+      //  - porteiro: sem matrícula, aguardando aprovação do administrador;
+      //  - os outros: a matrícula precisa estar nas "matrículas permitidas" com ESSE cargo e já reservada no índice
+      //    para esta mesma conta (o índice só é criado uma vez por matrícula);
+      //  - administrador: só a conta fixa do administrador (o perfil dela é recriado no login, se faltar).
+      // Ninguém nasce com privilégios, fotos premium ou vínculos de equipe.
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        !request.resource.data.keys().hasAny(["privileges", "premiumAvatars", "avatarGifts", "linkedForeman", "linkedEngineer", "reviewedAt", "reviewedBy"]) &&
+        (validPorterSignup() || validStaffSignup() || validFixedAdmin());
+      // A própria conta não pode mudar o próprio perfil, os próprios privilégios, a aprovação (status), a matrícula
+      // nem as fotos premium ganhas (só o administrador), e só usa uma foto premium ("premium-...") que tenha ganho.
+      allow update: if request.auth != null && ((request.auth.uid == userId && resource.data.get("status", "") == "approved" &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roleValue", "privileges", "premiumAvatars", "status", "matricula", "reviewedAt", "reviewedBy", "linkedEngineer"]) &&
           (!request.resource.data.get("avatar", "").matches("premium-.*") ||
             request.resource.data.get("avatar", "") in resource.data.get("premiumAvatars", []))) || isAdmin() ||
         // O DP só pode vincular estagiário/engenheiro a um encarregado (campo "linkedForeman"), nada além disso.
@@ -89,15 +123,16 @@ service cloud.firestore {
       allow get: if true;
       allow list: if false;
       // Uma matrícula = um cadastro. Só dá para criar o índice se ele ainda não existe (regravar por cima é "update").
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid &&
+        request.resource.data.keys().hasOnly(["email", "uid"]) && matricula.matches("[0-9]{7}");
       allow update: if isAdmin();
       // A própria conta pode apagar o índice que acabou de criar (para desfazer um cadastro que falhou no meio).
       allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
 
     match /employees/{employeeId} {
-      allow get: if request.auth != null;
-      allow list: if request.auth != null;
+      allow get: if isMember();
+      allow list: if isMember();
       // Importar o relatório do RM (apaga a lista e grava a nova): administrador, qualquer perfil de DP e analista.
       allow create, delete: if isAdmin() || isDp() || isAnalyst();
       // Administrador, DP e analista mudam qualquer coisa (a importação regrava os colaboradores); o estagiário e o
@@ -130,10 +165,10 @@ service cloud.firestore {
     }
 
     match /releases/{releaseId} {
-      allow read: if request.auth != null;
+      allow read: if isMember();
       // A digital gravada na liberação tem de ser do mesmo colaborador da liberação.
-      allow create: if request.auth != null && signatureMatchesEmployee();
-      allow update: if request.auth != null && onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor") &&
+      allow create: if isMember() && signatureMatchesEmployee();
+      allow update: if isMember() && onlyOwnIdChanged("hiddenFor") && onlyOwnIdChanged("purgedFor") &&
         signatureMatchesEmployee();
       // Só o DP (e o administrador) apaga uma liberação de verdade. Os outros perfis só a escondem do
       // próprio histórico (campo "hiddenFor"), sem apagar o documento.
@@ -143,14 +178,14 @@ service cloud.firestore {
     // Liberação coletiva (lista de presença de uma tarefa do dia). Quem cria só grava em nome próprio;
     // só o DP e o administrador apagam de verdade.
     match /collectiveReleases/{sheetId} {
-      allow read: if request.auth != null;
+      allow read: if isMember();
       // O DP e o administrador também criam ao restaurar um backup (folhas de outras pessoas, com as digitais).
       allow create: if isAdmin() || isDp() ||
-        (request.auth != null && request.resource.data.createdByUid == request.auth.uid &&
+        (isMember() && request.resource.data.createdByUid == request.auth.uid &&
           !request.resource.data.keys().hasAny(["participantSignatures"]));
       // O engenheiro só mexe nos campos da decisão do abono (assinatura dele) e no destino ("targetEngineer"), que
       // muda quando o encarregado entra na equipe de outro engenheiro (Equipes dos engenheiros).
-      allow update: if request.auth != null && (isAdmin() || isDp() || resource.data.createdByUid == request.auth.uid ||
+      allow update: if isMember() && (isAdmin() || isDp() || resource.data.createdByUid == request.auth.uid ||
         (isEngineer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
           ["engineer", "engineerRole", "engineerDecisionAt", "bonusStatus", "hours", "stage", "status", "engineerUndoneAt", "engineerUndoneBy", "targetEngineer",
            "dpSigner", "dpRole", "dpDecisionAt", "refusedBy", "refusedAt", "refusalReasons", "refusalReason"])) ||
@@ -170,9 +205,10 @@ service cloud.firestore {
       allow delete: if isDp() || isAdmin();
     }
 
+    // Fechamentos mensais: só o DP e o administrador gravam (antes, qualquer conta de login).
     match /monthlyClosures/{closureId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isMember();
+      allow write: if isAdmin() || isDp();
     }
 
     // Digitais do Hamster DX (dado pessoal sensível, LGPD art. 11). Quem registra liberação lê uma de cada vez

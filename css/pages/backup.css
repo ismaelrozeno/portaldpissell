@@ -13,6 +13,12 @@ body.backup-page { background:var(--bk-bg); color:#16283d; }
 .backup-card-wide { grid-column:1 / -1; }
 .backup-card h2 { margin:.3rem 0 .6rem; color:var(--bk-navy); font-size:1.2rem; }
 .backup-card p { color:#33475b; font-size:.9rem; }
+.backup-sensitive { display:grid; gap:.3rem; margin:0 0 1rem; padding:.75rem .85rem; border:1px solid #f0d2a4; border-left:4px solid #f5820a; border-radius:.5rem; background:#fff8ec; font-size:.85rem; }
+.backup-sensitive[hidden] { display:none; }
+.backup-sensitive label { display:flex; gap:.45rem; align-items:flex-start; color:#16283d; cursor:pointer; }
+.backup-sensitive input { margin-top:.2rem; }
+.backup-sensitive small { color:#6e5b3d; line-height:1.45; }
+.backup-card .backup-note { margin:0 0 1rem; color:#617188; font-size:.78rem; line-height:1.45; }
 .backup-list { margin:0 0 1rem; padding-left:1.1rem; color:#33475b; font-size:.85rem; }
 .backup-button { padding:.7rem 1.1rem; border:0; border-radius:.5rem; color:#fff; background:var(--bk-blue); font-weight:700; cursor:pointer; }
 .backup-button:hover:not(:disabled) { background:#0f5488; }

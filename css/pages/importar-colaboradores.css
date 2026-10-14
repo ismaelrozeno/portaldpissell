@@ -26,3 +26,22 @@ body.import-page { background:var(--imp-bg); color:#16283d; }.import-page .site-
 @media (max-width:900px) { .bio-install-grid { grid-template-columns:1fr; } .bio-install-buttons, .bio-install-buttons a { width:100%; } }
 
 .bio-install-note { margin: .25rem 0 0; font-size: .8rem; color: #6b7280; }
+
+/* Filtros da lista de colaboradores (mesmo visual da barra de filtros do Meu portal, css/pages/portal.css) */
+.bio-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .9rem; margin:.75rem 0 .25rem; font-size:.82rem; }
+.bio-filters .filter-bar-field { display:inline-flex; align-items:center; gap:.35rem; color:#5b6678; font-weight:600; }
+.bio-filters .filter-bar-select { max-width:100%; padding:.4rem .55rem; border:1px solid #c9d3e0; border-radius:.45rem; font-size:.82rem; color:#16283d; background:#fff; cursor:pointer; }
+.bio-filters .filter-bar-select:focus-visible { outline:2px solid rgba(245,130,13,.55); outline-offset:1px; }
+.bio-filters :is(#bio-filter-role, #bio-filter-foreman) { width:14rem; }
+.bio-filter-range { display:inline-flex; flex-wrap:wrap; gap:.5rem .9rem; }
+.bio-filter-range[hidden], .bio-filters .filter-bar-clear[hidden] { display:none !important; }
+.bio-filters .filter-bar-clear { padding:.4rem .2rem; border:0; background:none; color:#1769aa; font-size:.8rem; font-weight:700; text-decoration:underline; cursor:pointer; }
+/* Exportar .txt: discreto, no canto direito da barra de filtros (no celular, no fim da barra) */
+.bio-filters { position:relative; padding-right:7.5rem; }
+.bio-export { position:absolute; top:.15rem; right:0; display:inline-flex; align-items:center; gap:.3rem; padding:.35rem .6rem; border:1px solid transparent; border-radius:.45rem; color:#5b6678; background:none; font-size:.78rem; font-weight:700; cursor:pointer; }
+.bio-export svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.bio-export:hover:not(:disabled) { border-color:#c9d3e0; color:#16283d; background:#f5f8fb; }
+.bio-export:focus-visible { outline:2px solid rgba(245,130,13,.55); outline-offset:1px; }
+.bio-export:disabled { opacity:.45; cursor:default; }
+.bio-enrolled-at { margin-left:.3rem; font-weight:600; opacity:.85; }
+@media (max-width:560px) { .bio-filters, .bio-filter-range { display:grid; grid-template-columns:1fr; gap:.45rem; } .bio-filters .filter-bar-field { display:grid; grid-template-columns:6.2rem minmax(0,1fr); } .bio-filters .filter-bar-select, .bio-filters :is(#bio-filter-role, #bio-filter-foreman) { width:100%; min-width:0; } .bio-filters .filter-bar-clear { justify-self:start; } .bio-filters { padding-right:0; } .bio-export { position:static; justify-self:end; } }

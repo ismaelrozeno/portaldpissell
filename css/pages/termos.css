@@ -85,6 +85,19 @@
   line-height: 1.7;
 }
 
+.terms-list {
+  display: grid;
+  gap: .55rem;
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+  color: #c4ccd7;
+  line-height: 1.65;
+}
+
+.terms-card strong {
+  color: #fff;
+}
+
 .terms-back-link {
   display: inline-block;
   margin-top: 1.5rem;

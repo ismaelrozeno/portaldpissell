@@ -14,12 +14,27 @@
     return;
   }
 
-  // As regras do banco só deixam o administrador gravar colaboradores e matrículas permitidas (e listar estas últimas).
-  const exportKeys = isAdmin ? ["releases", "collectiveReleases", "employees", "allowedRegistrations"] : ["releases", "collectiveReleases", "employees"];
-  const importKeys = isAdmin ? ["releases", "collectiveReleases", "employees", "allowedRegistrations"] : ["releases", "collectiveReleases"];
-  const labels = { releases: "Liberações individuais", collectiveReleases: "Liberações coletivas", employees: "Colaboradores", allowedRegistrations: "Matrículas permitidas" };
-
   const $ = (selector) => document.querySelector(selector);
+  // O que cada perfil exporta e restaura segue as regras do banco: só o administrador lista/grava matrículas permitidas,
+  // perfis dos usuários e histórico de importações. As digitais (biometria) só entram no backup do administrador, e
+  // só quando ele marca a opção (LGPD: dado sensível, fora do backup se não for preciso).
+  const exportKeys = isAdmin
+    ? ["releases", "collectiveReleases", "employees", "allowedRegistrations", "users", "monthlyClosures", "importRuns"]
+    : ["releases", "collectiveReleases", "employees", "monthlyClosures"];
+  const importKeys = isAdmin
+    ? ["releases", "collectiveReleases", "employees", "allowedRegistrations", "users", "monthlyClosures", "importRuns", "biometrics"]
+    : ["releases", "collectiveReleases", "monthlyClosures"];
+  const labels = {
+    releases: "Liberações individuais",
+    collectiveReleases: "Liberações coletivas",
+    employees: "Colaboradores",
+    allowedRegistrations: "Matrículas permitidas",
+    users: "Perfis dos usuários",
+    monthlyClosures: "Fechamentos mensais",
+    importRuns: "Histórico de importações",
+    biometrics: "Digitais dos colaboradores (biometria)"
+  };
+  const withBiometrics = $("#export-biometrics");
   const show = (element, text, isError) => {
     element.textContent = text;
     element.classList.toggle("is-error", !!isError);
@@ -41,15 +56,20 @@
   };
 
   $("#export-scope").innerHTML = exportKeys.map((key) => `<li>${labels[key]}</li>`).join("");
+  $("#export-biometrics-box").hidden = !isAdmin;
 
   // ---------- Exportar backup ----------
   $("#export-backup").addEventListener("click", async () => {
     const button = $("#export-backup");
+    const biometrics = isAdmin && withBiometrics.checked;
+    if (biometrics && !window.confirm("O arquivo vai levar as DIGITAIS dos colaboradores (dado pessoal sensível, LGPD).\n\n" +
+      "Guarde-o só em local protegido e com acesso restrito, não envie por e-mail ou WhatsApp e apague as cópias antigas.\n\nGerar o backup com as digitais?")) return;
     button.disabled = true;
     try {
-      const backup = await store.exportData(exportKeys, session?.name);
+      const backup = await store.exportData(biometrics ? [...exportKeys, "biometrics"] : exportKeys, session?.name);
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-      download(blob, `backup-portal-obra-369_${stamp()}.json`);
+      download(blob, `backup-portal-obra-369_${stamp()}${biometrics ? "_COM-BIOMETRIA" : ""}.json`);
+      withBiometrics.checked = false;
       const lines = Object.entries(backup.counts).map(([key, total]) => `${labels[key]}: ${total}`);
       const skipped = Object.keys(backup.skipped);
       show($("#export-result"), `Backup gerado.\n${lines.join("\n")}${skipped.length ? `\nNão foi possível ler: ${skipped.map((key) => labels[key]).join(", ")}.` : ""}`);
@@ -107,7 +127,7 @@
     button.disabled = true;
     try {
       const result = await store.restore(loadedBackup, { keys, mode });
-      const lines = Object.entries(result).map(([key, stats]) => `${labels[key]}: ${stats.restored} restaurado(s), ${stats.skipped} já existia(m)${stats.failed ? `, ${stats.failed} com erro (${stats.error})` : ""}`);
+      const lines = Object.entries(result).map(([key, stats]) => `${labels[key]}: ${stats.restored} restaurado(s), ${stats.skipped} já existia(m)${stats.unavailable ? `, ${stats.unavailable} sem conta no portal (o perfil volta quando a pessoa se cadastrar de novo)` : ""}${stats.failed ? `, ${stats.failed} com erro (${stats.error})` : ""}`);
       const failed = Object.values(result).some((stats) => stats.failed);
       show($("#import-result"), `${failed ? "Restauração concluída com erros." : "Restauração concluída."}\n${lines.join("\n")}`, failed);
     } catch (error) {
