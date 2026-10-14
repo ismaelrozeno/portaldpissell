@@ -29,8 +29,9 @@
     search?.addEventListener("input", () => { page = 1; }, true);
 
     bar.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-page]");
-      if (!button || button.disabled) return;
+      // Só os botões da própria barra: o <body> também tem data-page (a aba aberta) e o clique no "por página" subiria até ele.
+      const button = event.target.closest(".pager-btn[data-page]");
+      if (!button || !bar.contains(button) || button.disabled) return;
       page = Number(button.dataset.page);
       onChange();
       // Volta ao topo da lista, para começar a ler a página nova do começo.

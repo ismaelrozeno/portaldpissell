@@ -35,8 +35,8 @@
       ${item("concluidas", "Portal.html#concluidas", "Concluídas", "dash-nav-desktop")}
       ${item("biometria", "Biometria.html", "Biometria", "dash-nav-desktop").replace("<li", "<li data-dash-bio hidden")}
       ${item("indicadores", "Portal.html#indicadores", "BI Dados")}
-      ${item("equipe", "Portal.html#equipe", "Atalhos")}
       ${item("equipes", "Equipes.html", "Equipes", "dash-nav-desktop")}
+      ${item("equipe", "Portal.html#equipe", "Atalhos")}
       ${item("lixeira", "Portal.html#lixeira", "Lixeira", "dash-nav-desktop")}
     </ul>
     <ul class="dash-nav-more" aria-label="Outras áreas do site">
