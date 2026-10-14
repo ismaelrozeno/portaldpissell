@@ -115,5 +115,11 @@
   });
 
   loadHistory();
-  $("#pw-identifier").focus();
+  const preset = new URLSearchParams(window.location.search).get("q");
+  if (preset) {
+    $("#pw-identifier").value = preset;
+    $("#pw-search").requestSubmit();
+  } else {
+    $("#pw-identifier").focus();
+  }
 })();

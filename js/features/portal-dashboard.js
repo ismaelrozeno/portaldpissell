@@ -302,6 +302,9 @@
     const session = window.portalAuthDemo?.getSession();
     const adminItem = $("#dash-nav-admin");
     if (adminItem) adminItem.hidden = !(session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista");
+    // "Senhas" (redefinir a senha de quem esqueceu): também só para o administrador.
+    const senhasItem = $("#dash-nav-senhas");
+    if (senhasItem) senhasItem.hidden = adminItem?.hidden ?? true;
     // Abriu direto no BI Dados (#indicadores): a seção dos indicadores só existe depois dos dados; abre agora.
     const insights = $("#portal-insights");
     if (body.dataset.page === "indicadores" && insights && !insights.open) insights.open = true;

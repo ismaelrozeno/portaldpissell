@@ -174,7 +174,10 @@
     // Fotos de perfil premium: o administrador presenteia (desbloqueia) ou tira, para qualquer perfil.
     const owned = (id) => (user.premiumAvatars || []).includes(id);
     const premiumItems = `<li><hr class="dropdown-divider"></li><li><h6 class="dropdown-header">Fotos de perfil premium</h6></li>${window.portalAvatars.premium.map((item) => `<li><button class="dropdown-item d-flex align-items-center gap-2 ${owned(item.id) ? "text-danger fw-semibold" : ""}" type="button" data-premium-user="${escapeHtml(user.id)}" data-premium-id="${item.id}" data-premium-grant="${owned(item.id) ? "0" : "1"}"><img src="${window.portalAvatars.url(item.id)}" alt="" width="28" height="28" style="border-radius:50%">${owned(item.id) ? `Tirar: ${escapeHtml(item.label)}` : `🎁 Presentear: ${escapeHtml(item.label)}`}</button></li>`).join("")}`;
-    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem;max-height:70vh;overflow-y:auto">${items}${roleItems}${premiumItems}</ul></div>`;
+    // Esqueceu a senha: abre a tela Senhas já com a matrícula (ou o e-mail) da pessoa.
+    const who = user.matricula || user.email || "";
+    const passwordItem = who ? `<li><a class="dropdown-item fw-semibold" href="Senhas.html?q=${encodeURIComponent(who)}">🔑 Redefinir senha</a></li><li><hr class="dropdown-divider"></li>` : "";
+    return `<div class="dropdown"><button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opções de ${escapeHtml(user.name)}">⋮</button><ul class="dropdown-menu dropdown-menu-end" style="min-width:17rem;max-height:70vh;overflow-y:auto">${passwordItem}${items}${roleItems}${premiumItems}</ul></div>`;
   };
   const privilegeBadge = (user) => {
     const given = (PRIVILEGES[user.roleValue] || []).filter((def) => (user.privileges || []).includes(def.key));
