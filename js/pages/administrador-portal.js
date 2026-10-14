@@ -186,6 +186,10 @@
     return badges.length ? `<small class="d-block mt-1">${badges.join("")}</small>` : "";
   };
 
+  // Quantas pessoas (estagiário, engenheiro e DP) estão vinculadas a um encarregado.
+  const helpersOf = (users, foremanName) => users.filter((user) => window.portalAuthDemo.teamHelperRoles.includes(user.roleValue) && user.name !== foremanName &&
+    user.status === "approved" && window.portalAuthDemo.linkedForemenOf(user).includes(foremanName)).length;
+
   async function renderRegisteredUsers() {
     const users = await window.portalAuthDemo.getAllUsers();
     const eligible = users.filter((user) => user.roleValue !== "administrador-analista");
@@ -198,10 +202,8 @@
       const linked = window.portalAuthDemo.linkedForemenOf(user);
       const word = roleWords[user.roleValue] || "Vinculado";
       const chips = linked.map((name) => `<span class="badge text-bg-light border me-1 mt-1">${word} de ${escapeHtml(name)} <button type="button" class="btn-close ms-1" style="font-size:.55rem" data-unlink-user="${escapeHtml(user.id)}" data-foreman="${escapeHtml(name)}" aria-label="Tirar o vínculo com ${escapeHtml(name)}"></button></span>`).join("");
-      // Até 4 estagiários por encarregado: equipe cheia não aparece para outro estagiário.
-      const max = window.portalAuthDemo.maxInternsPerForeman;
-      const internsOf = (name) => users.filter((other) => other.roleValue === "estagiario_engenharia" && window.portalAuthDemo.linkedForemenOf(other).includes(name)).length;
-      const options = helperForemen.filter((foreman) => !linked.includes(foreman.name) && (user.roleValue !== "estagiario_engenharia" || internsOf(foreman.name) < max));
+      // Até 4 pessoas vinculadas por encarregado (estagiário, engenheiro e DP somados): equipe cheia não aparece.
+      const options = helperForemen.filter((foreman) => foreman.id !== user.id && !linked.includes(foreman.name) && helpersOf(users, foreman.name) < window.portalAuthDemo.maxHelpersPerForeman);
       return `<span class="d-block">${chips || '<small class="text-muted">Sem vínculo com encarregado</small>'}</span>${options.length ? `<select class="form-select form-select-sm mt-1" style="width:auto;max-width:100%" data-link-user="${escapeHtml(user.id)}" aria-label="Vincular ${word.toLowerCase()} a mais um encarregado"><option value="">${linked.length ? "Vincular a mais um encarregado…" : "Vincular a um encarregado…"}</option>${options.map((foreman) => `<option value="${escapeHtml(foreman.name)}">${word} de ${escapeHtml(foreman.name)}</option>`).join("")}</select>` : ""}`;
     };
     registeredUsersCount.textContent = `${eligible.length} cadastrados`;
@@ -213,7 +215,7 @@
       ? visible.map((user) => {
         const statusLabel = user.status === "approved" ? "Aprovado" : user.status === "pending-dp" ? "Pendente" : "Reprovado";
         const statusClass = user.status === "approved" ? "text-bg-success" : user.status === "pending-dp" ? "text-bg-warning" : "text-bg-danger";
-        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${privilegeBadge(user)}${["estagiario_engenharia", "engenheiro", "dp"].includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="d-flex align-items-center gap-2"><span class="badge ${statusClass}">${statusLabel}</span>${privilegeMenu(user)}</span></li>`;
+        return `<li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"><span class="registered-user">${window.portalAvatars.html(user)}<span><strong>${escapeHtml(user.name) || "Nome não informado"}</strong><small class="d-block text-muted">${escapeHtml(user.email) || "E-mail não informado"}${user.matricula ? ` · Matrícula: ${escapeHtml(user.matricula)}` : ""} · Perfil: ${escapeHtml(user.role) || "Não informado"}</small>${privilegeBadge(user)}${window.portalAuthDemo.teamHelperRoles.includes(user.roleValue) ? helperSelect(user) : ""}</span></span><span class="d-flex align-items-center gap-2"><span class="badge ${statusClass}">${statusLabel}</span>${privilegeMenu(user)}</span></li>`;
       }).join("")
       : `<li class="list-group-item text-muted">${query ? "Nenhum resultado para a busca." : "Nenhum usuário cadastrado."}</li>`;
   }
@@ -555,10 +557,9 @@
     const users = await window.portalAuthDemo.getAllUsers();
     const person = users.find((user) => user.id === userId);
     const current = window.portalAuthDemo.linkedForemenOf(person);
-    const max = window.portalAuthDemo.maxInternsPerForeman;
-    if (added && person?.roleValue === "estagiario_engenharia" &&
-      users.filter((user) => user.roleValue === "estagiario_engenharia" && window.portalAuthDemo.linkedForemenOf(user).includes(added)).length >= max) {
-      window.alert(`O encarregado ${added} já tem ${max} estagiários vinculados (o máximo).`);
+    const max = window.portalAuthDemo.maxHelpersPerForeman;
+    if (added && helpersOf(users, added) >= max) {
+      window.alert(`O encarregado ${added} já tem ${max} pessoas vinculadas (o máximo, somando estagiários, engenheiros e DP).`);
       return;
     }
     await window.portalAuthDemo.setUserLinkedForemen(userId, [...current.filter((name) => name !== removed), ...(added ? [added] : [])]);

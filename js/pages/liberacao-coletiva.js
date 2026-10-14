@@ -59,7 +59,7 @@
     });
     // O próprio usuário e os encarregados a quem está vinculado sempre aparecem na lista.
     const isChief = ["encarregado", "analista"].includes(session?.roleValue);
-    const myForemen = isChief ? [] : window.portalAuthDemo.linkedForemenOf(session);
+    const myForemen = window.portalAuthDemo.linkedForemenOf(session);
     if (isChief && session.name) foremen.set(fold(session.name), session.name);
     myForemen.forEach((name) => foremen.set(fold(name), name));
     const fill = (select, map, placeholder, firstName = "") => {
@@ -69,6 +69,7 @@
       select.innerHTML = `<option value="">${placeholder}</option>${names.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join("")}`;
     };
     fill(foremanSelect, foremen, "Selecione o encarregado", isChief ? session.name : myForemen[0]);
+    // (O analista também tem os encarregados a quem está vinculado na lista, mas vem com ele mesmo escolhido.)
     foremanSelect.value = isChief ? session.name || "" : (myForemen[0] || "");
     try {
       routing = await window.portalAuthDemo.getEngineerRouting();
@@ -87,7 +88,7 @@
     const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
     allEmployees = [...raw];
     if (isForeman) {
-      const owners = [session.name, ...(session.roleValue === "estagiario_engenharia" ? window.portalAuthDemo.linkedForemenOf(session) : [])]
+      const owners = [session.name, ...(["estagiario_engenharia", "analista"].includes(session.roleValue) ? window.portalAuthDemo.linkedForemenOf(session) : [])]
         .map((name) => window.normalizeSearchText(name).trim()).filter(Boolean);
       const isMine = (item) => owners.includes(window.normalizeSearchText(item.encarregado).trim());
       teamEmployees = raw.filter(isMine);

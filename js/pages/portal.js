@@ -151,8 +151,8 @@
   };
 
   const foremanRoleValues = ["encarregado", "estagiario_engenharia", "analista", "seguranca_trabalho"];
-  // Perfis que trabalham na equipe do encarregado a quem estão vinculados. O analista não: ele é chefe da própria equipe.
-  const linkedRoleValues = ["estagiario_engenharia"];
+  // Perfis que trabalham na equipe dos encarregados a quem estão vinculados. O analista também (além de chefiar a própria).
+  const linkedRoleValues = ["estagiario_engenharia", "analista"];
   const linkedForemenOf = (user) => window.portalAuthDemo.linkedForemenOf(user);
 
   // Simulador do administrador ("Acessar como" + pessoa): a tela usa a conta da pessoa escolhida, para ficar

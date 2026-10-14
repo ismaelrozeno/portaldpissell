@@ -6,13 +6,15 @@
   const isDp = role === "dp" || !!window.portalAuthDemo?.isDpDelegate?.();
   const isIntern = role === "estagiario_engenharia";
   const isEngineer = role === "engenheiro";
-  // Analista é chefe de equipe como o encarregado (se tiver acesso de DP, entra como DP pelo isDp acima).
-  const isForeman = (role === "encarregado" || role === "seguranca_trabalho" || role === "analista") && !isDp;
+  // Analista: chefe da própria equipe e, por ser uma promoção acima do estágio, também se vincula a outros
+  // encarregados e monta a equipe deles, como o estagiário. Os poderes do DP, só com o privilégio "dp" (isDp acima).
+  const isAnalyst = role === "analista" && !isDp;
+  const isForeman = (role === "encarregado" || role === "seguranca_trabalho") && !isDp;
   const $ = (selector) => document.querySelector(selector);
   const fold = (value) => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
   const same = (a, b) => fold(a) === fold(b) && fold(a) !== "";
 
-  if (!isAdmin && !isDp && !isIntern && !isEngineer && !isForeman) {
+  if (!isAdmin && !isDp && !isAnalyst && !isIntern && !isEngineer && !isForeman) {
     $("#teams-denied").hidden = false;
     $("#teams-app").hidden = true;
     $("#export-teams").hidden = true;
@@ -29,10 +31,10 @@
   // o encarregado só consulta a própria equipe.
   // Estagiário e engenheiro trabalham na equipe do encarregado a quem se vinculam ("linked"). O DP também pode se
   // vincular (opcional), mas continua podendo montar a equipe de qualquer encarregado, como o administrador.
-  const isLinked = isIntern || isEngineer;
-  const canLink = isIntern || isEngineer || isDp;
+  const isLinked = isIntern || isEngineer || isAnalyst;
+  const canLink = isLinked || isDp;
   // Como a pessoa se chama nesta equipe (o texto da tela usa o cargo, nunca "ajudante").
-  const myWord = isIntern ? "estagiário" : isEngineer ? "engenheiro" : "DP";
+  const myWord = isIntern ? "estagiário" : isEngineer ? "engenheiro" : isAnalyst ? "analista" : "DP";
   const roleWord = (user) => (user.roleValue === "estagiario_engenharia" ? "Estagiário" : user.roleValue === "analista" ? "Analista" : user.roleValue === "engenheiro" ? "Engenheiro" : "DP");
   const canManage = isAdmin || isDp || isLinked;
   let employees = [];
@@ -80,17 +82,20 @@
   }
 
   const isLinkedTo = (user, foremanName) => linkedForemenOf(user).some((name) => same(name, foremanName));
-  // Limite de estagiários ajudando o mesmo encarregado (engenheiro e DP não contam).
-  const maxInterns = window.portalAuthDemo.maxInternsPerForeman;
-  const internCount = (foremanName) => people.filter((user) => user.roleValue === "estagiario_engenharia" && isLinkedTo(user, foremanName)).length;
-  const isFull = (foremanName) => internCount(foremanName) >= maxInterns;
-  const fullText = (foremanName) => `O encarregado ${foremanName} já tem ${maxInterns} estagiários vinculados (o máximo). Para entrar, alguém precisa sair do vínculo antes.`;
+  // Limite de pessoas ajudando o mesmo encarregado: estagiário, engenheiro e DP, somados.
+  const maxHelpers = window.portalAuthDemo.maxHelpersPerForeman;
+  const helperRoles = window.portalAuthDemo.teamHelperRoles;
+  const helperCount = (foremanName) => people.filter((user) => helperRoles.includes(user.roleValue) && !same(user.name, foremanName) && isLinkedTo(user, foremanName)).length;
+  const isFull = (foremanName) => helperCount(foremanName) >= maxHelpers;
+  const fullText = (foremanName) => `O encarregado ${foremanName} já tem ${maxHelpers} pessoas vinculadas (o máximo, somando estagiários, engenheiros e DP). Para entrar, alguém precisa sair do vínculo antes.`;
   const internsOf = (foremanName) => interns.filter((user) => isLinkedTo(user, foremanName)).map((user) => user.name);
   // "Estagiário: NOME · Engenheiro: NOME" para os cartões.
   const linkedLabel = (foremanName) => interns.filter((user) => isLinkedTo(user, foremanName)).map((user) => `${roleWord(user)}: ${user.name}`);
   // Qual equipe está sendo mostrada agora.
+  // Equipes que a conta monta: as dos encarregados a quem está vinculada (e a própria, no caso do analista).
+  const myTeams = () => (isAnalyst && session?.name ? [session.name, ...myForemen] : myForemen);
   const currentForeman = () => (isForeman ? session.name
-    : isLinked ? myForemen.find((name) => same(name, openedForeman)) || myForemen[0] || ""
+    : isLinked ? myTeams().find((name) => same(name, openedForeman)) || myTeams()[0] || ""
       : openedForeman);
 
   // ---------- Encarregados (cartões) ----------
@@ -98,16 +103,16 @@
 
   // Administrador e DP vinculam estagiários (e engenheiros) a um encarregado direto no cartão dele.
   function assignHtml(name) {
-    // Encarregado e analista são chefes de equipe: não se vinculam à equipe de outro.
-    const linkedHere = people.filter((user) => !["encarregado", "analista"].includes(user.roleValue) && isLinkedTo(user, name));
+    // O encarregado não se vincula à equipe de outro; o analista sim (e ninguém à própria equipe).
+    const linkedHere = people.filter((user) => helperRoles.includes(user.roleValue) && !same(user.name, name) && isLinkedTo(user, name));
     const candidates = people
-      .filter((user) => ["estagiario_engenharia", "engenheiro"].includes(user.roleValue) && !isLinkedTo(user, name))
-      // Equipe com 4 estagiários: só dá para vincular engenheiro.
-      .filter((user) => user.roleValue !== "estagiario_engenharia" || !isFull(name))
+      .filter((user) => ["estagiario_engenharia", "engenheiro", "analista"].includes(user.roleValue) && !same(user.name, name) && !isLinkedTo(user, name))
+      // Equipe com 4 pessoas vinculadas: não entra mais ninguém.
+      .filter(() => !isFull(name))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     const safe = escapeHtml(name);
     return `<details class="foreman-assign">
-      <summary class="foreman-assign-title">Estagiário ou engenheiro desta equipe (${linkedHere.length}) · estagiários ${internCount(name)}/${maxInterns}</summary>
+      <summary class="foreman-assign-title">Estagiário ou engenheiro desta equipe (${linkedHere.length}) · ${helperCount(name)}/${maxHelpers} vagas</summary>
       ${linkedHere.length ? linkedHere.map((user) => `<div class="foreman-assign-row"><span>${roleWord(user)}: <strong>${escapeHtml(user.name)}</strong></span><button type="button" class="foreman-unlink" data-unassign="${escapeHtml(user.id)}" data-from="${safe}" aria-label="Tirar ${escapeHtml(user.name)}">Tirar</button></div>`).join("") : '<div class="foreman-assign-empty">Nenhum vinculado.</div>'}
       <div class="foreman-assign-add">
         <select data-assign-select="${safe}" aria-label="Estagiário ou engenheiro para vincular a ${safe}"><option value="">Vincular estagiário ou engenheiro…</option>${candidates.map((user) => `<option value="${escapeHtml(user.id)}">${roleWord(user)}: ${escapeHtml(user.name)}${linkedForemenOf(user).length ? ` (já em: ${escapeHtml(linkedForemenOf(user).join(", "))})` : ""}</option>`).join("")}</select>
@@ -137,12 +142,14 @@
       const isMine = mine(name);
       const isOpen = same(name, currentForeman());
       const safe = escapeHtml(name);
-      const badges = `${isMine ? '<span class="foreman-badge foreman-badge-mine">✓ Você está vinculado a este encarregado</span>' : ""}${isOpen && !isForeman && (!isLinked || myForemen.length > 1) ? '<span class="foreman-badge foreman-badge-view">Equipe aberta</span>' : ""}`;
+      const badges = `${isMine ? '<span class="foreman-badge foreman-badge-mine">✓ Você está vinculado a este encarregado</span>' : ""}${isOpen && !isForeman && (!isLinked || myTeams().length > 1) ? '<span class="foreman-badge foreman-badge-view">Equipe aberta</span>' : ""}`;
+      // Ninguém se vincula à própria equipe (o analista é chefe da dele).
+      const canLinkHere = canLink && !isMine && !same(name, session?.name);
       const actions = [
-        canLink && !isMine && isIntern && isFull(name) ? `<button class="foreman-link" type="button" disabled title="${escapeHtml(fullText(name))}">Equipe completa (${maxInterns} estagiários)</button>` : "",
-        canLink && !isMine && !(isIntern && isFull(name)) ? `<button class="foreman-link" type="button" data-link-me="${safe}">Me vincular como ${myWord}</button>` : "",
+        canLinkHere && isFull(name) ? `<button class="foreman-link" type="button" disabled title="${escapeHtml(fullText(name))}">Equipe completa (${maxHelpers} vinculados)</button>` : "",
+        canLinkHere && !isFull(name) ? `<button class="foreman-link" type="button" data-link-me="${safe}">Me vincular como ${myWord}</button>` : "",
         // Montar equipe: DP/administrador abrem qualquer uma; quem está vinculado monta a do encarregado a quem está vinculado.
-        ((isAdmin || isDp) && !isOpen) || (isLinked && isMine) ? `<button class="foreman-open" type="button" data-open-team="${safe}">Montar equipe</button>` : "",
+        ((isAdmin || isDp) && !isOpen) || (isLinked && (isMine || (isAnalyst && same(name, session.name)))) ? `<button class="foreman-open" type="button" data-open-team="${safe}">Montar equipe</button>` : "",
         canLink && isMine ? `<button class="foreman-unlink" type="button" data-unlink-me="${safe}">Sair do vínculo</button>` : ""
       ].join("");
       return `<article class="foreman-card${isMine ? " is-mine" : ""}${isOpen ? " is-selected" : ""}">
@@ -150,7 +157,7 @@
         <div class="foreman-badges">${badges}</div>
         <div class="foreman-meta" title="${count} colaborador(es) na equipe"><strong>${count}</strong> na equipe</div>
         <div class="foreman-linked">${people.length ? escapeHtml(people.join(" · ")) : "Sem estagiário ou engenheiro vinculado"}</div>
-        <div class="foreman-meta" title="Até ${maxInterns} estagiários podem ajudar este encarregado"><strong>${internCount(name)}/${maxInterns}</strong> estagiários</div>
+        <div class="foreman-meta" title="Até ${maxHelpers} pessoas (estagiário, engenheiro ou DP) podem ajudar este encarregado"><strong>${helperCount(name)}/${maxHelpers}</strong> vinculados</div>
         <div class="foreman-actions">${actions}</div>
         ${canAssign ? assignHtml(name) : ""}
       </article>`;
@@ -162,8 +169,8 @@
     const result = $("#intern-result");
     const names = [...myForemen.filter((name) => !same(name, removed) && !same(name, added)), ...(added ? [added] : [])];
     try {
-      // Confere o limite com a lista mais nova (outro estagiário pode ter entrado agora há pouco).
-      if (added && isIntern) {
+      // Confere o limite com a lista mais nova (outra pessoa pode ter entrado agora há pouco).
+      if (added) {
         await loadPeople();
         if (isFull(added)) {
           renderAll();
@@ -173,7 +180,7 @@
       const updated = await window.portalAuthDemo.updateProfile({ linkedForemen: names, linkedForeman: names[0] || "" });
       myForemen = linkedForemenOf(updated || { linkedForemen: names });
       if (added) openedForeman = added;
-      else if (same(openedForeman, removed)) openedForeman = isDp ? myForemen[0] || "" : "";
+      else if (same(openedForeman, removed)) openedForeman = isAnalyst ? session.name : isDp ? myForemen[0] || "" : "";
       show(result, added ? `Vínculo salvo: você agora está vinculado ao encarregado ${added}.` : `Vínculo com ${removed} removido.`);
       selected.clear();
       // Atualiza o diretório para o cartão mostrar você entre os vinculados.
@@ -194,7 +201,7 @@
     const result = $("#intern-result");
     const person = people.find((user) => user.id === userId);
     const names = [...linkedForemenOf(person).filter((name) => !same(name, removed) && !same(name, added)), ...(added ? [added] : [])];
-    if (added && person?.roleValue === "estagiario_engenharia" && isFull(added)) return show(result, fullText(added), true);
+    if (added && isFull(added)) return show(result, fullText(added), true);
     try {
       await window.portalAuthDemo.setUserLinkedForemen(userId, names);
       if (person) Object.assign(person, { linkedForemen: names, linkedForeman: names[0] || "" });
@@ -273,7 +280,7 @@
       const id = escapeHtml(employee.matricula);
       // Estagiário/engenheiro só mexem em quem está livre ou já é de uma das equipes deles; DP e administrador, em qualquer um.
       const isBoss = isForemanPerson(employee);
-      const locked = isBoss || (isLinked && employee.encarregado && !myForemen.some((name) => same(name, employee.encarregado)));
+      const locked = isBoss || (isLinked && employee.encarregado && !myTeams().some((name) => same(name, employee.encarregado)));
       const action = !canManage || locked ? ""
         : mine ? `<button class="team-remove" type="button" data-remove="${id}">Tirar da equipe</button>`
           : `<button class="team-add" type="button" data-add="${id}">${employee.encarregado ? "Mover para a equipe" : "Vincular"}</button>`;
@@ -391,6 +398,8 @@
     $("#team-summary").innerHTML = "";
     return;
   }
+  // O analista abre primeiro a própria equipe.
+  if (isAnalyst) openedForeman = session.name || "";
   if (isDp || isAdmin) openedForeman = (isDp && myForemen[0]) || "";
   renderAll();
 
