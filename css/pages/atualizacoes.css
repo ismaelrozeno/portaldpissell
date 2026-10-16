@@ -1,0 +1,116 @@
+/* Atualizações (Atualizacoes.html): usa o cartão da página de termos e acrescenta a lista de avisos. */
+.updates-list {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.update-item {
+  position: relative;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-left: 3px solid var(--issell-orange);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, .03);
+}
+
+.update-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .4rem;
+  color: #bfc8d3;
+  font-size: .85rem;
+}
+
+.update-new {
+  padding: .1rem .55rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--issell-orange);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.terms-card .update-item h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.update-body {
+  margin-top: .6rem;
+  color: #c4ccd7;
+  font-size: .95rem;
+  line-height: 1.6;
+}
+
+.terms-card .update-body p {
+  margin: .5rem 0;
+  line-height: 1.6;
+}
+
+.update-body ul {
+  display: grid;
+  gap: .3rem;
+  margin: .4rem 0;
+  padding-left: 1.2rem;
+}
+
+@media (max-width: 575.98px) {
+  .update-item {
+    padding: 1rem;
+  }
+}
+
+.updates-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.update-announce {
+  margin-top: .9rem;
+  padding: .45rem 1rem;
+  border: 1px solid var(--issell-orange);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--issell-orange);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.updates-heading .update-announce {
+  margin-top: 0;
+}
+
+.update-announce:hover,
+.update-announce:focus-visible {
+  filter: brightness(1.08);
+}
+
+.update-announce.is-danger {
+  border-color: rgba(255, 255, 255, .25);
+  background: transparent;
+}
+
+.update-announce.is-danger:hover,
+.update-announce.is-danger:focus-visible {
+  border-color: #e57373;
+  color: #ffb4b4;
+  filter: none;
+}
+
+.update-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
