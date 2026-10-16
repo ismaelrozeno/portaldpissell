@@ -149,7 +149,25 @@ window.portalUpdates = (() => {
       modal.querySelector("[data-announce-ok]").focus();
     });
   }
-  return { bodyHtml, openModal, escape: esc };
+  // Para quem é o aviso ("audience"): ["todos"] ou perfis. Aviso antigo, sem o campo, é para todos.
+  const audiences = [
+    ["dp", "DP"], ["engenheiro", "Engenheiros"], ["encarregado", "Encarregados"], ["estagiario_engenharia", "Estagiários"],
+    ["analista", "Analistas"], ["seguranca_trabalho", "Segurança do trabalho"], ["porteiro", "Portaria"]
+  ];
+  const audienceOf = (item) => (Array.isArray(item?.audience) && item.audience.length ? item.audience : ["todos"]);
+  // Perfis de quem está logado; o analista com acesso de DP/engenheiro/segurança também recebe os avisos desses perfis.
+  const keysOf = (session) => [session?.roleValue, ...(session?.roleValue === "analista" ? session.privileges || [] : [])].filter(Boolean);
+  const isAdminSession = (session) => session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
+  const isFor = (item, session) => {
+    const audience = audienceOf(item);
+    if (audience.includes("todos") || isAdminSession(session)) return true;
+    return keysOf(session).some((key) => audience.includes(key));
+  };
+  const audienceLabel = (item) => {
+    const audience = audienceOf(item);
+    return audience.includes("todos") ? "Todos" : audiences.filter(([key]) => audience.includes(key)).map(([, label]) => label).join(", ");
+  };
+  return { bodyHtml, openModal, escape: esc, audiences, audienceOf, isFor, audienceLabel };
 })();
 
 (async function loadSharedComponents() {
@@ -333,8 +351,9 @@ window.portalUpdates = (() => {
   const db = window.portalFirebaseDb;
   if (db && session?.status === "approved" && !session.mustChangePassword && !["Acesso.html", "Trocar-Senha.html"].includes(currentPage)) {
     try {
-      const snapshot = await db.collection("announcements").orderBy("postedAt", "desc").limit(1).get();
-      const latest = snapshot.docs[0]?.data();
+      // O mais novo entre os que são para o perfil desta pessoa ("Para quem" do aviso).
+      const snapshot = await db.collection("announcements").orderBy("postedAt", "desc").limit(30).get();
+      const latest = snapshot.docs.map((doc) => doc.data()).find((item) => window.portalUpdates.isFor(item, session));
       if (latest?.postedAt && latest.postedAt > (session.announcementSeenAt || "")) {
         await window.portalUpdates.openModal({ title: latest.title, body: latest.body, okText: "OK" });
         await window.portalAuthDemo.updateProfile({ announcementSeenAt: latest.postedAt });

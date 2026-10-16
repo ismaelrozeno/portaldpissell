@@ -251,3 +251,7 @@ body .site-footer { color: #d6dfeb; background: var(--site-bar); font-family: "B
 .announce-compose input, .announce-compose textarea { display: block; width: 100%; margin-top: .3rem; padding: .55rem .7rem; border: 1px solid #cbd7e5; border-radius: .5rem; color: #00142d; font: inherit; font-size: .92rem; font-weight: 400; }
 .announce-compose textarea { resize: vertical; }
 .announce-compose .announce-compose__error { margin: -.3rem 0 1rem; color: #c62828; }
+.announce-compose__audience { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin-bottom: .9rem; padding: .7rem .8rem; border: 1px solid #cbd7e5; border-radius: .5rem; }
+.announce-compose__audience legend { float: none; width: auto; margin: 0 0 0 -.2rem; padding: 0 .3rem; color: #29415b; font-size: .85rem; font-weight: 700; }
+.announce-compose .announce-compose__audience label { display: inline-flex; align-items: center; gap: .35rem; margin: 0; font-weight: 400; color: #00142d; }
+.announce-compose .announce-compose__audience input { display: inline-block; width: auto; margin: 0; accent-color: #ef6c00; }

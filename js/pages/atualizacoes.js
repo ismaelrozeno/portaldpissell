@@ -1,7 +1,9 @@
 // Página de atualizações: os avisos que o administrador escreve, com palavras simples, sobre o que mudou no portal
 // (principalmente no fluxo), para todo mundo entender. Ficam na coleção "announcements"; o mais novo também aparece
 // numa janela com OK para todas as contas (ver shared-components.js).
-// O administrador tem "+ Novo aviso" e, em cada aviso, "Editar" e "Apagar".
+// O administrador tem "+ Novo aviso" e, em cada aviso, "Editar" e "Apagar", e escolhe para quem é o aviso: todos ou
+// só alguns perfis (DP, engenheiros, encarregados...). Cada pessoa só vê os avisos do perfil dela; quem não entrou na
+// conta vê só os que são para todos. O administrador vê todos, com a etiqueta de para quem foi.
 (function updatesPage() {
   const NEW_DAYS = 3;
 
@@ -13,16 +15,19 @@
   const db = window.portalFirebaseDb;
   let announcements = []; // [{ id, ...dados }]
   let isAdmin = false;
+  let session = null;
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const isNew = (iso) => Date.now() - new Date(iso).getTime() < NEW_DAYS * 24 * 60 * 60 * 1000;
 
   function render() {
-    list.innerHTML = announcements.map((item) => `
+    const visible = announcements.filter((item) => updates.isFor(item, session));
+    list.innerHTML = visible.map((item) => `
       <li class="update-item">
         <div class="update-meta">
           <time datetime="${escape(item.postedAt)}">${escape(formatDate(item.postedAt))}</time>
           ${isNew(item.postedAt) ? '<span class="update-new">Novo</span>' : ""}
+          ${isAdmin || !updates.audienceOf(item).includes("todos") ? `<span class="update-audience">Para: ${escape(updates.audienceLabel(item))}</span>` : ""}
         </div>
         <h2>${escape(item.title)}</h2>
         ${item.body ? `<div class="update-body">${updates.bodyHtml(item.body)}</div>` : ""}
@@ -31,7 +36,7 @@
           <button class="update-announce is-danger" type="button" data-delete="${escape(item.id)}">Apagar</button>
         </div>` : ""}
       </li>`).join("");
-    status.textContent = announcements.length
+    status.textContent = visible.length
       ? "As novidades mais recentes aparecem primeiro."
       : "Nenhuma novidade por enquanto.";
   }
@@ -48,7 +53,7 @@
   }
 
   // Janela do administrador para escrever (ou ajustar) um aviso.
-  function openComposer({ title = "", body = "", editing = null } = {}) {
+  function openComposer({ title = "", body = "", audience = ["todos"], editing = null } = {}) {
     return new Promise((resolve) => {
       const modal = document.createElement("div");
       modal.className = "logout-modal announce-modal";
@@ -56,7 +61,12 @@
         <form class="logout-modal__dialog announce-compose" role="dialog" aria-modal="true" aria-labelledby="announce-compose-title">
           <span class="announce-modal__kicker">${editing ? "Editar aviso" : "Avisar todos os usuários"}</span>
           <h2 id="announce-compose-title">Escreva com palavras simples</h2>
-          <p>Explique como explicaria para um encarregado na obra: o que mudou e o que ele precisa fazer.${editing ? "" : " O aviso aparece numa janela com o botão OK para todas as contas, uma vez."}</p>
+          <p>Explique como explicaria para um encarregado na obra: o que mudou e o que ele precisa fazer.${editing ? "" : " O aviso aparece uma vez, numa janela com o botão OK, para quem você escolher."}</p>
+          <fieldset class="announce-compose__audience">
+            <legend>Para quem</legend>
+            <label><input type="checkbox" name="audience" value="todos"> Todos</label>
+            ${updates.audiences.map(([key, label]) => `<label><input type="checkbox" name="audience" value="${key}"> ${escape(label)}</label>`).join("")}
+          </fieldset>
           <label>Título<input name="title" required maxlength="160" placeholder="Ex.: Agora o DP também pode recusar a liberação"></label>
           <label>Texto <small>(cada linha começando com "- " vira um item)</small><textarea name="body" rows="7" maxlength="3000"></textarea></label>
           <p class="announce-compose__error" role="alert" hidden></p>
@@ -68,6 +78,13 @@
       const form = modal.querySelector("form");
       form.elements.title.value = title;
       form.elements.body.value = body;
+      // "Todos" e perfis não se misturam: marcar um perfil desmarca "Todos", e marcar "Todos" desmarca os perfis.
+      const boxes = [...form.querySelectorAll('[name="audience"]')];
+      boxes.forEach((box) => { box.checked = audience.includes(box.value); });
+      form.querySelector(".announce-compose__audience").addEventListener("change", (event) => {
+        if (!event.target.checked) return;
+        boxes.forEach((box) => { if ((event.target.value === "todos") !== (box.value === "todos")) box.checked = false; });
+      });
       document.body.append(modal);
       form.elements.title.focus();
       const close = (result) => { modal.remove(); resolve(result); };
@@ -76,7 +93,14 @@
         event.preventDefault();
         const stop = window.portalButtonLoading(form.querySelector('[type="submit"]'), editing ? "Salvando…" : "Enviando…");
         const errorBox = form.querySelector(".announce-compose__error");
-        const text = { title: form.elements.title.value.trim(), body: form.elements.body.value.trim() };
+        const chosen = boxes.filter((box) => box.checked).map((box) => box.value);
+        if (!chosen.length) {
+          stop();
+          errorBox.textContent = "Escolha para quem é o aviso.";
+          errorBox.hidden = false;
+          return;
+        }
+        const text = { title: form.elements.title.value.trim(), body: form.elements.body.value.trim(), audience: chosen };
         try {
           if (editing) {
             // Editar não manda a janela de novo para quem já apertou OK.
@@ -106,7 +130,7 @@
     const item = announcements.find((entry) => entry.id === (edit || remove).dataset[edit ? "edit" : "delete"]);
     if (!item) return;
     if (edit) {
-      if (await openComposer({ title: item.title, body: item.body, editing: item.id })) load();
+      if (await openComposer({ title: item.title, body: item.body, audience: updates.audienceOf(item), editing: item.id })) load();
       return;
     }
     const ok = await updates.openModal({ kicker: "Apagar aviso", title: item.title, body: "Este aviso sai da página de atualizações para todos.", okText: "Apagar", cancelText: "Cancelar" });
@@ -126,7 +150,7 @@
       return;
     }
     await window.portalAuthDemo?.ready?.();
-    const session = window.portalAuthDemo?.getSession();
+    session = window.portalAuthDemo?.getSession() || null;
     isAdmin = session?.roleValue === "administrador-analista" || session?.role === "Administrador Analista";
     newButton.hidden = !isAdmin;
     await load();
