@@ -167,7 +167,17 @@ window.portalUpdates = (() => {
     const audience = audienceOf(item);
     return audience.includes("todos") ? "Todos" : audiences.filter(([key]) => audience.includes(key)).map(([, label]) => label).join(", ");
   };
-  return { bodyHtml, openModal, escape: esc, audiences, audienceOf, isFor, audienceLabel };
+  // Data do aviso em milissegundos. Avisos novos guardam a data do servidor (Timestamp); os primeiros guardavam texto
+  // ISO; "announcementSeenAt" do cadastro pode ser número (novo) ou texto (antigo). Vale para todos os formatos.
+  const millisOf = (value) => {
+    if (!value) return 0;
+    if (typeof value === "number") return value;
+    if (typeof value.toMillis === "function") return value.toMillis();
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+  const sortNewest = (items) => [...items].sort((a, b) => millisOf(b.postedAt) - millisOf(a.postedAt));
+  return { bodyHtml, openModal, escape: esc, audiences, audienceOf, isFor, audienceLabel, millisOf, sortNewest };
 })();
 
 (async function loadSharedComponents() {
@@ -351,12 +361,15 @@ window.portalUpdates = (() => {
   const db = window.portalFirebaseDb;
   if (db && session?.status === "approved" && !session.mustChangePassword && !["Acesso.html", "Trocar-Senha.html"].includes(currentPage)) {
     try {
-      // O mais novo entre os que são para o perfil desta pessoa ("Para quem" do aviso).
-      const snapshot = await db.collection("announcements").orderBy("postedAt", "desc").limit(30).get();
-      const latest = snapshot.docs.map((doc) => doc.data()).find((item) => window.portalUpdates.isFor(item, session));
-      if (latest?.postedAt && latest.postedAt > (session.announcementSeenAt || "")) {
+      // O mais novo entre os que são para o perfil desta pessoa ("Para quem" do aviso). Só UMA janela, mesmo que
+      // tenham saído vários avisos desde a última visita.
+      const { sortNewest, millisOf, isFor } = window.portalUpdates;
+      const snapshot = await db.collection("announcements").limit(200).get();
+      const latest = sortNewest(snapshot.docs.map((doc) => doc.data())).find((item) => isFor(item, session));
+      const postedMs = millisOf(latest?.postedAt);
+      if (postedMs && postedMs > millisOf(session.announcementSeenAt)) {
         await window.portalUpdates.openModal({ title: latest.title, body: latest.body, okText: "OK" });
-        await window.portalAuthDemo.updateProfile({ announcementSeenAt: latest.postedAt });
+        await window.portalAuthDemo.updateProfile({ announcementSeenAt: postedMs });
       }
     } catch (error) {
       console.warn("Não foi possível conferir os avisos de atualização.", error);
