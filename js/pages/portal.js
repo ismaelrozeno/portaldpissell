@@ -1197,7 +1197,9 @@
     elements.shortcutList.innerHTML = profile.shortcuts.map((shortcut, index) => {
       const href = (profile.shortcutHrefs && profile.shortcutHrefs[index]) || (foremanRoleValues.includes(profileKey) && index === 0 ? "Liberacao.html" : `#${profileKey}-${index + 1}`);
       return `<a class="shortcut-item" href="${href}"><span class="shortcut-icon">${index + 1}</span>${shortcut}</a>`;
-    }).join("");
+    }).join("")
+      // Para todos os perfis, sempre por último.
+      + `<a class="shortcut-item" href="Atualizacoes.html"><span class="shortcut-icon">${profile.shortcuts.length + 1}</span>Atualizações do portal</a>`;
     await renderRecords(profileKey, allReleases);
     window.portalCollectivePanel?.render(profileKey);
     const recent = releases.slice(0, 3);

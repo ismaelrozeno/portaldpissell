@@ -55,6 +55,8 @@
       // Fotos de perfil premium ganhas de presente do administrador, e os presentes ainda não vistos.
       premiumAvatars: Array.isArray(profile.premiumAvatars) ? profile.premiumAvatars : [],
       avatarGifts: Array.isArray(profile.avatarGifts) ? profile.avatarGifts : [],
+      // Último aviso de atualização que a pessoa já fechou com OK (data do aviso; ver shared-components.js).
+      announcementSeenAt: profile.announcementSeenAt || "",
       // Privilégios dados pelo administrador: "gestor" (engenheiro) e "dp" (analista com acesso de DP).
       privileges: Array.isArray(profile.privileges) ? profile.privileges : [],
       photo: profile.photo || "",

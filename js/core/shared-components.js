@@ -97,6 +97,61 @@ window.portalAvatars = (() => {
   return { list, premium, find, url, isPremium, owns, initials, color, render, html };
 })();
 
+// Avisos de atualização (Atualizacoes.html): o administrador escreve, com palavras simples, o que mudou no portal, e o
+// aviso mais novo aparece para todos numa janela com OK. No texto, "- item" vira lista (linha recuada continua o item)
+// e o resto vira parágrafo.
+window.portalUpdates = (() => {
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  function bodyHtml(body) {
+    const blocks = [];
+    for (const raw of String(body || "").split("\n")) {
+      const line = raw.replace(/\s+$/, "");
+      if (!line.trim()) { blocks.push({ type: "gap" }); continue; }
+      const last = blocks[blocks.length - 1];
+      if (/^\s*[-*•]\s+/.test(line)) {
+        const text = line.replace(/^\s*[-*•]\s+/, "");
+        if (last?.type === "list") last.items.push(text);
+        else blocks.push({ type: "list", items: [text] });
+      } else if (/^\s+/.test(line) && last?.type === "list") {
+        last.items[last.items.length - 1] += ` ${line.trim()}`;
+      } else if (last?.type === "p") {
+        last.text += ` ${line.trim()}`;
+      } else {
+        blocks.push({ type: "p", text: line.trim() });
+      }
+    }
+    return blocks.map((block) => {
+      if (block.type === "list") return `<ul>${block.items.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
+      if (block.type === "p") return `<p>${esc(block.text)}</p>`;
+      return "";
+    }).join("");
+  }
+  // Janela do aviso. Sem "cancelText" só tem o botão OK. Devolve uma promessa: true no botão principal, false ao fechar.
+  function openModal({ kicker = "Atualização do portal", title, body, okText = "OK", cancelText = "" }) {
+    return new Promise((resolve) => {
+      const modal = document.createElement("div");
+      modal.className = "logout-modal announce-modal";
+      modal.innerHTML = `
+        <div class="logout-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="announce-modal-title">
+          <span class="announce-modal__kicker">${esc(kicker)}</span>
+          <h2 id="announce-modal-title">${esc(title)}</h2>
+          ${body ? `<div class="announce-modal__body">${bodyHtml(body)}</div>` : ""}
+          <div class="logout-modal__actions">
+            ${cancelText ? `<button class="logout-modal__cancel" type="button" data-announce-cancel>${esc(cancelText)}</button>` : ""}
+            <button class="logout-modal__confirm announce-modal__ok" type="button" data-announce-ok>${esc(okText)}</button>
+          </div>
+        </div>`;
+      document.body.append(modal);
+      const close = (result) => { modal.remove(); resolve(result); };
+      modal.querySelector("[data-announce-ok]").addEventListener("click", () => close(true));
+      modal.querySelector("[data-announce-cancel]")?.addEventListener("click", () => close(false));
+      if (cancelText) modal.addEventListener("click", (event) => { if (event.target === modal) close(false); });
+      modal.querySelector("[data-announce-ok]").focus();
+    });
+  }
+  return { bodyHtml, openModal, escape: esc };
+})();
+
 (async function loadSharedComponents() {
   const protectedPages = new Set([
     "Portal.html", "Liberacao.html", "Liberacao-Coletiva.html", "DP-Liberacoes.html", "Portaria.html",
@@ -133,8 +188,8 @@ window.portalAvatars = (() => {
   };
 
   const components = [
-    ["[data-site-header]", "partials/header.html?v=eb85e362"],
-    ["[data-site-footer]", "partials/footer.html?v=d87e5e40"]
+    ["[data-site-header]", "partials/header.html?v=6d28ef16"],
+    ["[data-site-footer]", "partials/footer.html?v=e41ce720"]
   ];
   let authConfirmed = false;
   const partialsReady = Promise.all(components.map(async ([selector, file]) => {
@@ -271,6 +326,22 @@ window.portalAvatars = (() => {
     });
     // Mostrado: tira do cadastro, para não aparecer de novo.
     window.portalAuthDemo.updateProfile({ avatarGifts: [] }).catch((error) => console.warn("Não foi possível marcar o presente como visto.", error));
+  }
+
+  // Aviso de atualização mandado pelo administrador (Atualizacoes.html → "Novo aviso"): o último aviso aparece uma
+  // vez para cada conta, em qualquer página, até a pessoa apertar OK ("announcementSeenAt" no cadastro).
+  const db = window.portalFirebaseDb;
+  if (db && session?.status === "approved" && !session.mustChangePassword && !["Acesso.html", "Trocar-Senha.html"].includes(currentPage)) {
+    try {
+      const snapshot = await db.collection("announcements").orderBy("postedAt", "desc").limit(1).get();
+      const latest = snapshot.docs[0]?.data();
+      if (latest?.postedAt && latest.postedAt > (session.announcementSeenAt || "")) {
+        await window.portalUpdates.openModal({ title: latest.title, body: latest.body, okText: "OK" });
+        await window.portalAuthDemo.updateProfile({ announcementSeenAt: latest.postedAt });
+      }
+    } catch (error) {
+      console.warn("Não foi possível conferir os avisos de atualização.", error);
+    }
   }
 
 })().catch((error) => {

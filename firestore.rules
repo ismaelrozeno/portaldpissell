@@ -237,5 +237,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+
+    // Avisos de atualização (Atualizacoes.html): só o administrador escreve. Ficam abertos para todos (inclusive quem
+    // ainda não entrou), porque são as novidades do portal em linguagem simples, sem nada sigiloso.
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

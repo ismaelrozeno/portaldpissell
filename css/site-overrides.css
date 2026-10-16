@@ -232,3 +232,22 @@ body .site-footer { color: #d6dfeb; background: var(--site-bar); font-family: "B
 .gift-modal .gift-modal__use:hover, .gift-modal .gift-modal__use:focus-visible { background: #d35f00; }
 @keyframes gift-pop { from { opacity: 0; transform: scale(.4) rotate(-8deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .gift-modal__photos img { animation: none; } }
+
+/* Links do rodapé (Atualizações, Termos) */
+.site-footer .footer-link { color: #d6dfeb; text-decoration: none; }
+.site-footer .footer-link:hover, .site-footer .footer-link:focus-visible { color: var(--issell-orange); }
+
+/* Aviso de atualização mandado pelo administrador (window.portalUpdates em js/core/shared-components.js) */
+.announce-modal .logout-modal__dialog { width: min(100%, 480px); border-color: #f5cf9f; text-align: left; }
+.announce-modal__kicker { display: block; margin-bottom: .4rem; color: #ef6c00; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.announce-modal__body { max-height: 50vh; margin: .8rem 0 1.4rem; overflow-y: auto; color: #3d4b5c; font-size: .95rem; line-height: 1.55; }
+.announce-modal__body p { margin: 0 0 .6rem; color: #3d4b5c; font-size: .95rem; }
+.announce-modal__body ul { margin: 0 0 .6rem; padding-left: 1.2rem; }
+.announce-modal__body li + li { margin-top: .3rem; }
+.announce-modal .announce-modal__ok { border-color: #ef6c00; background: #ef6c00; }
+.announce-modal .announce-modal__ok:hover, .announce-modal .announce-modal__ok:focus-visible { background: #d35f00; }
+.announce-compose label { display: block; margin-bottom: .9rem; color: #29415b; font-size: .85rem; font-weight: 700; }
+.announce-compose label small { font-weight: 400; color: #718096; }
+.announce-compose input, .announce-compose textarea { display: block; width: 100%; margin-top: .3rem; padding: .55rem .7rem; border: 1px solid #cbd7e5; border-radius: .5rem; color: #00142d; font: inherit; font-size: .92rem; font-weight: 400; }
+.announce-compose textarea { resize: vertical; }
+.announce-compose .announce-compose__error { margin: -.3rem 0 1rem; color: #c62828; }
