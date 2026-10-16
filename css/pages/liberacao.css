@@ -110,3 +110,6 @@ body.release-page { background: var(--release-bg); color: #16283d; }
 .pager-btn.is-current { border-color:#00142d; color:#fff; background:#00142d; cursor:default; }
 .pager-btn:disabled:not(.is-current) { opacity:.45; cursor:default; }
 @media (max-width:600px) { .pager { flex-direction:column; align-items:stretch; } .pager-buttons { justify-content:center; } }
+/* Saída particular: "Abonado" travado no pedido de abono (js/pages/liberacao.js) */
+.release-options label:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.bonus-particular-hint { display: block; margin-top: .35rem; color: #b45309; font-weight: 600; }

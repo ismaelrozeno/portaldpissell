@@ -46,6 +46,12 @@
       const pad = (n) => String(n).padStart(2, "0");
       return String(record.date).slice(0, 10) < `${created.getFullYear()}-${pad(created.getMonth() + 1)}-${pad(created.getDate())}`;
     },
+    // Saída particular nunca é abonada (Liberacao.html já manda "Não abonado"; o engenheiro não consegue abonar).
+    // Liberações antigas sem "reasonType" usavam o texto "Particular" no motivo.
+    isParticular(record) {
+      if (record?.reasonType) return record.reasonType === "particular";
+      return /^particular\b/i.test(String(record?.reason || "").trim());
+    },
     refusalReasons: Object.freeze([
       "Ajustar data",
       "Ajustar horário",

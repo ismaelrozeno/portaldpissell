@@ -855,6 +855,20 @@
       } else {
         // Engenheiro: abonar, não abonar ou recusar (exige a assinatura do engenheiro)
         if (action === "refuse" ? !actions.engineerCanRefuse(release) : !actions.engineerCanAct(release)) return refresh();
+        // Saída particular não é abonada: o engenheiro marca "Não abonado" (e assina) ou recusa para o solicitante
+        // corrigir o motivo para Tarefa, se foi isso que aconteceu.
+        if (action === "approved" && flow.isParticular(release)) {
+          const canRefuse = actions.engineerCanRefuse(release);
+          const fix = await actions.ask({
+            title: "Liberação particular não pode ser abonada",
+            message: `${release.name}\nSaída particular não tem abono: marque "Não abonado".${canRefuse ? "\nSe a saída foi para uma tarefa, recuse a liberação para o solicitante corrigir o motivo para Tarefa." : ""}`,
+            okText: canRefuse ? "Recusar para corrigir" : "OK",
+            cancelText: canRefuse ? "Fechar" : null
+          });
+          if (!fix || !canRefuse || !await actions.ensureEngineerSignature()) return;
+          actions.openRefuseDialog(release, refresh, { preselect: ["Ajustar motivo da liberação"] });
+          return;
+        }
         if (!await actions.ensureEngineerSignature()) return;
         if (action === "refuse") {
           actions.openRefuseDialog(release, refresh);
