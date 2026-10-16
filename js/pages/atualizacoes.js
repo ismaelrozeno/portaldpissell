@@ -116,7 +116,7 @@
             stop();
             const sure = await updates.openModal({
               kicker: "Confirmar envio",
-              title: `Enviar para ${updates.audienceLabel({ audience: chosen }).toLowerCase()}?`,
+              title: `Enviar para ${chosen.includes("todos") ? "todos" : updates.audienceLabel({ audience: chosen }).replace(/, ([^,]*)$/, " e $1")}?`,
               body: "Cada pessoa vai ver este aviso numa janela com o botão OK. Depois de enviado, a janela não pode ser desfeita.",
               okText: "Enviar",
               cancelText: "Voltar"
