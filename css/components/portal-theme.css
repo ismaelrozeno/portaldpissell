@@ -409,3 +409,7 @@ body.dash.import-page .pager-btn.is-current { border-color: var(--d-ink); cursor
 /* Motivo: o texto continua na mesma linha do "Tarefa ·" / "Particular ·" (antes, motivo comprido descia inteiro) */
 body.dash .portal-table .col-who small.row-reason { display: block; }
 body.dash .portal-table .col-who small.row-reason .row-movement { display: block; margin-top: .1rem; }
+/* Atalho no topo da Administração ("Redefinir senhas"), na mesma altura da etiqueta "Perfil fixo" */
+body.dash.import-page .import-heading-action { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; border: 1px solid var(--d-line-strong); border-radius: 2rem; color: var(--d-ink); background: var(--d-surface); box-shadow: var(--d-shadow-sm); font-size: .8rem; font-weight: 700; text-decoration: none; white-space: nowrap; transition: border-color .18s, color .18s, background .18s; }
+body.dash.import-page .import-heading-action svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.dash.import-page .import-heading-action:hover { border-color: var(--d-accent); color: var(--d-accent-hover); background: var(--d-accent-soft); }
