@@ -4,8 +4,12 @@
 // O administrador tem "+ Novo aviso" e, em cada aviso, "Editar" e "Apagar", e escolhe para quem é o aviso: todos ou
 // só alguns perfis (DP, engenheiros, encarregados...). Cada pessoa só vê os avisos do perfil dela; quem não entrou na
 // conta vê só os que são para todos. O administrador vê todos, com a etiqueta de para quem foi.
+// Contra excesso de avisos (cada um abre uma janela para todos): no mínimo 30 minutos entre um e outro e no máximo 3
+// por dia. Quem garante são as regras do banco (firestore.rules, "announcementLimits"); aqui a tela só avisa antes.
 (function updatesPage() {
   const NEW_DAYS = 3;
+  const MIN_GAP_MS = 30 * 60 * 1000;
+  const MAX_PER_DAY = 3;
 
   const list = document.getElementById("updates-list");
   const status = document.getElementById("updates-status");
@@ -17,15 +21,18 @@
   let isAdmin = false;
   let session = null;
 
-  const formatDate = (iso) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const isNew = (iso) => Date.now() - new Date(iso).getTime() < NEW_DAYS * 24 * 60 * 60 * 1000;
+  const { millisOf } = updates;
+  const formatDate = (value) => new Date(millisOf(value)).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const isNew = (value) => Date.now() - millisOf(value) < NEW_DAYS * 24 * 60 * 60 * 1000;
+  const formatTime = (ms) => new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const limitRef = () => db.collection("announcementLimits").doc("geral");
 
   function render() {
     const visible = announcements.filter((item) => updates.isFor(item, session));
     list.innerHTML = visible.map((item) => `
       <li class="update-item">
         <div class="update-meta">
-          <time datetime="${escape(item.postedAt)}">${escape(formatDate(item.postedAt))}</time>
+          <time datetime="${escape(new Date(millisOf(item.postedAt)).toISOString())}">${escape(formatDate(item.postedAt))}</time>
           ${isNew(item.postedAt) ? '<span class="update-new">Novo</span>' : ""}
           ${isAdmin || !updates.audienceOf(item).includes("todos") ? `<span class="update-audience">Para: ${escape(updates.audienceLabel(item))}</span>` : ""}
         </div>
@@ -43,8 +50,8 @@
 
   async function load() {
     try {
-      const snapshot = await db.collection("announcements").orderBy("postedAt", "desc").limit(50).get();
-      announcements = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const snapshot = await db.collection("announcements").limit(200).get();
+      announcements = updates.sortNewest(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       render();
     } catch (error) {
       console.error(error);
@@ -106,23 +113,78 @@
             // Editar não manda a janela de novo para quem já apertou OK.
             await db.collection("announcements").doc(editing).update({ ...text, editedAt: new Date().toISOString() });
           } else {
-            const data = { ...text, postedAt: new Date().toISOString(), postedBy: window.portalAuthDemo.getSession()?.name || "Administrador" };
-            await db.collection("announcements").add(data);
-            // Quem mandou já leu: não precisa ver a própria janela.
-            await window.portalAuthDemo.updateProfile({ announcementSeenAt: data.postedAt }).catch(() => {});
+            stop();
+            const sure = await updates.openModal({
+              kicker: "Confirmar envio",
+              title: `Enviar para ${updates.audienceLabel({ audience: chosen }).toLowerCase()}?`,
+              body: "Cada pessoa vai ver este aviso numa janela com o botão OK. Depois de enviado, a janela não pode ser desfeita.",
+              okText: "Enviar",
+              cancelText: "Voltar"
+            });
+            if (!sure) return;
+            window.portalButtonLoading(form.querySelector('[type="submit"]'), "Enviando…");
+            await sendAnnouncement(text);
           }
           close(true);
         } catch (error) {
           console.error(error);
           stop();
-          errorBox.textContent = "Não foi possível salvar o aviso. Tente de novo.";
+          errorBox.textContent = error.userMessage || "Não foi possível salvar o aviso. Tente de novo.";
           errorBox.hidden = false;
         }
       });
     });
   }
 
-  newButton.addEventListener("click", async () => { if (await openComposer()) load(); });
+  // Limite de avisos: devolve o motivo do bloqueio (texto) ou "" se pode mandar agora. Mesma conta das regras do banco.
+  async function limitBlock() {
+    const snapshot = await limitRef().get();
+    if (!snapshot.exists) return "";
+    const limit = snapshot.data();
+    const last = millisOf(limit.lastAt);
+    if (Date.now() < last + MIN_GAP_MS) return `O último aviso saiu há pouco. O próximo pode ser enviado a partir das ${formatTime(last + MIN_GAP_MS)}.`;
+    const now = new Date();
+    const today = limit.y === now.getUTCFullYear() && limit.m === now.getUTCMonth() + 1 && limit.d === now.getUTCDate();
+    if (today && limit.count >= MAX_PER_DAY) return `Hoje já saíram ${MAX_PER_DAY} avisos, o máximo por dia. Tente amanhã.`;
+    return "";
+  }
+
+  // Grava o aviso e o contador juntos, com o horário do servidor (as regras recusam um sem o outro).
+  async function sendAnnouncement(text) {
+    const serverTime = firebase.firestore.FieldValue.serverTimestamp();
+    const snapshot = await limitRef().get();
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth() + 1;
+    const d = now.getUTCDate();
+    const previous = snapshot.exists ? snapshot.data() : null;
+    const today = previous && previous.y === y && previous.m === m && previous.d === d;
+    const ref = db.collection("announcements").doc();
+    const batch = db.batch();
+    batch.set(ref, { ...text, postedAt: serverTime, postedBy: session?.name || "Administrador" });
+    batch.set(limitRef(), { lastAt: serverTime, y, m, d, count: today ? previous.count + 1 : 1 });
+    try {
+      await batch.commit();
+    } catch (error) {
+      const reason = await limitBlock().catch(() => "");
+      error.userMessage = reason || "Não foi possível enviar o aviso. Tente de novo em alguns minutos.";
+      throw error;
+    }
+    // Quem mandou já leu: não precisa ver a própria janela.
+    const saved = await ref.get();
+    await window.portalAuthDemo.updateProfile({ announcementSeenAt: millisOf(saved.data()?.postedAt) || Date.now() }).catch(() => {});
+  }
+
+  newButton.addEventListener("click", async () => {
+    const stop = window.portalButtonLoading(newButton, "Conferindo…");
+    const reason = await limitBlock().catch(() => "");
+    stop();
+    if (reason) {
+      updates.openModal({ kicker: "Aguarde", title: "Limite de avisos", body: reason });
+      return;
+    }
+    if (await openComposer()) load();
+  });
   list.addEventListener("click", async (event) => {
     const edit = event.target.closest("[data-edit]");
     const remove = event.target.closest("[data-delete]");

@@ -240,9 +240,40 @@ service cloud.firestore {
 
     // Avisos de atualização (Atualizacoes.html): só o administrador escreve. Ficam abertos para todos (inclusive quem
     // ainda não entrou), porque são as novidades do portal em linguagem simples, sem nada sigiloso.
+    // Contra excesso de avisos (cada aviso novo abre uma janela para todos): no mínimo 30 minutos entre um e outro e
+    // no máximo 3 por dia (dia em UTC). Quem conta é o documento "announcementLimits/geral", gravado junto com o aviso
+    // e com o horário do servidor; o aviso só é aceito se esse contador for gravado na mesma operação.
     match /announcements/{announcementId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly(["title", "body", "audience", "postedAt", "postedBy"]) &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 160 &&
+        request.resource.data.get("body", "") is string && request.resource.data.get("body", "").size() <= 3000 &&
+        request.resource.data.postedAt == request.time &&
+        getAfter(/databases/$(database)/documents/announcementLimits/geral).data.lastAt == request.time;
+      // Editar só muda o texto e o "Para quem": a data fica, para a edição não virar um aviso novo.
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["title", "body", "audience", "editedAt"]) &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 160;
+      allow delete: if isAdmin();
+    }
+
+    function announcementToday(data) {
+      return data.y == request.time.year() && data.m == request.time.month() && data.d == request.time.day();
+    }
+
+    function validAnnouncementLimit() {
+      return request.resource.data.keys().hasOnly(["lastAt", "y", "m", "d", "count"]) &&
+        request.resource.data.lastAt == request.time && announcementToday(request.resource.data);
+    }
+
+    match /announcementLimits/{limitId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && limitId == "geral" && validAnnouncementLimit() && request.resource.data.count == 1;
+      allow update: if isAdmin() && limitId == "geral" && validAnnouncementLimit() &&
+        resource.data.lastAt + duration.value(30, "m") <= request.time &&
+        request.resource.data.count == (announcementToday(resource.data) ? resource.data.count + 1 : 1) &&
+        request.resource.data.count <= 3;
     }
   }
 }
