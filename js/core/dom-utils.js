@@ -11,6 +11,12 @@ window.normalizeSearchText = (value) => String(value ?? "")
   .replace(/[̀-ͯ]/g, "")
   .toLowerCase();
 
+// Mesmo nome de pessoa, sem ligar para acentos, maiúsculas e espaços sobrando (ex.: "Fulano  da Silva " = "FULANO DA SILVA").
+window.samePersonName = (a, b) => {
+  const clean = (value) => window.normalizeSearchText(value).replace(/\s+/g, " ").trim();
+  return clean(a) === clean(b);
+};
+
 // Datas "ao vivo": <span data-live-date="long|short"></span> mostra a data de hoje e vira à meia-noite.
 (() => {
   const formats = {
