@@ -114,3 +114,12 @@
   gap: .5rem;
 }
 
+
+.update-audience {
+  padding: .1rem .55rem;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 999px;
+  color: #dfe6ee;
+  font-size: .75rem;
+  font-weight: 600;
+}
