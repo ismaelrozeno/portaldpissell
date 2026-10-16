@@ -275,7 +275,9 @@
     textBox.value = "";
     textBox.placeholder = custom?.placeholder || "";
     textBox.oninput = () => { error.hidden = true; };
-    reasonsBox.innerHTML = freeText ? "" : flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"> ${escapeHtml(reason)}</label>`).join("");
+    // custom.preselect: motivos que já vêm marcados (ex.: "Ajustar motivo da liberação" ao tentar abonar uma particular).
+    const preselect = custom?.preselect || [];
+    reasonsBox.innerHTML = freeText ? "" : flow().refusalReasons.map((reason) => `<label><input type="checkbox" name="refusal-reason" value="${escapeHtml(reason)}"${preselect.includes(reason) ? " checked" : ""}> ${escapeHtml(reason)}</label>`).join("");
     error.textContent = emptyMessage;
     error.hidden = true;
     // Botões recriados a cada abertura para não acumular ouvintes de recusas anteriores.

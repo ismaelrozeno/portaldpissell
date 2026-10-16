@@ -84,6 +84,13 @@
     const isTask = selected.value === "tarefa";
     document.querySelector("#reason-detail-label").innerHTML = `${isTask ? "Qual tarefa foi realizada?" : "Informe o motivo particular"} <span aria-hidden="true">*</span>`;
     particularReason.placeholder = isTask ? "Descreva a tarefa que o colaborador realizou" : "Descreva o motivo da saída";
+    // Saída particular nunca é abonada: o pedido vai como "Não abonado" e o "Abonado" fica travado.
+    const bonusYes = document.querySelector('input[name="bonus-request"][value="abonado"]');
+    const bonusNo = document.querySelector('input[name="bonus-request"][value="nao-abonado"]');
+    const bonusHint = document.querySelector("#bonus-particular-hint");
+    if (bonusYes) bonusYes.disabled = !isTask;
+    if (!isTask && bonusNo) bonusNo.checked = true;
+    if (bonusHint) bonusHint.hidden = isTask;
   }
 
   const movementInputs = () => [...document.querySelectorAll('input[name="movement"]:checked')].map((input) => input.value);
@@ -306,6 +313,14 @@
       return;
     }
 
+    // Saída particular nunca é abonada (a tela já trava o "Abonado"; esta conferência garante no envio).
+    if (document.querySelector('input[name="reason"]:checked')?.value === "particular"
+      && document.querySelector('input[name="bonus-request"]:checked')?.value !== "nao-abonado") {
+      errorMessage.textContent = "Saída particular não pode ser enviada como \"Abonado\". Marque \"Não abonado\" ou, se foi para uma tarefa, escolha \"Tarefa\".";
+      errorMessage.hidden = false;
+      releaseButton();
+      return;
+    }
     stopLoading = window.portalButtonLoading(submitButton, "Enviando liberação…");
     const selectedEmployee = selectedEmployeeName;
     const reason = document.querySelector('input[name="reason"]:checked').value;
