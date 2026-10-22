@@ -176,3 +176,22 @@ body { background: var(--site-bar, #0a1626); }
 .downloads-steps strong { color: #fff; }
 .downloads-group { margin: 0 0 1rem; color: #fff; font-size: 1.3rem; font-weight: 700; }
 @media (max-width: 767.98px) { .downloads-steps { grid-template-columns: 1fr; } }
+
+/* Grupo "Programas" e cartão do Gestão DP (versão e novidades preenchidas por js/pages/planilhas-automaticas.js) */
+.downloads-group--programas { margin-top: 2.5rem; }
+.program-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.program-head img { flex: none; width: 56px; height: 56px; border-radius: .9rem; box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .3); }
+.program-head h2 { margin: 0 !important; }
+.download-card .program-kind { margin: .15rem 0 0; color: var(--issell-orange); font-size: .85rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.program-facts { display: grid; gap: .4rem; margin: 0 0 1.25rem; padding: 0; list-style: none; color: #e7edf5; font-size: .95rem; }
+.program-facts li { position: relative; padding-left: 1.6rem; }
+.program-facts li::before { position: absolute; top: 0; left: 0; color: var(--issell-orange); font-weight: 800; content: "✓"; }
+.program-news { margin: 0 0 1.25rem; border: 1px solid rgba(255, 255, 255, .1); border-radius: .75rem; background: rgba(0, 0, 0, .18); }
+.program-news summary { padding: .7rem 1rem; color: #fff; font-weight: 600; cursor: pointer; }
+.program-news summary:focus-visible { outline: 3px solid var(--issell-orange); outline-offset: 2px; border-radius: .75rem; }
+.program-news > div { padding: 0 1rem .9rem; color: var(--issell-muted); font-size: .92rem; line-height: 1.55; }
+.program-news h3 { margin: .6rem 0 .3rem; color: #fff; font-size: .95rem; font-weight: 700; }
+.program-news ul { margin: 0; padding-left: 1.1rem; }
+.program-news p { margin: 0 0 .4rem !important; }
+.download-card .program-smartscreen { margin: 1rem 0 0; color: #aab4c3; font-size: .85rem; line-height: 1.5; }
+.program-smartscreen strong { color: #e7edf5; }
