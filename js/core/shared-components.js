@@ -216,8 +216,8 @@ window.portalUpdates = (() => {
   };
 
   const components = [
-    ["[data-site-header]", "partials/header.html?v=6d28ef16"],
-    ["[data-site-footer]", "partials/footer.html?v=e41ce720"]
+    ["[data-site-header]", "partials/header.html?v=637a35ec"],
+    ["[data-site-footer]", "partials/footer.html?v=63e1c45a"]
   ];
   let authConfirmed = false;
   const partialsReady = Promise.all(components.map(async ([selector, file]) => {
