@@ -8,7 +8,7 @@
   <title>Ferramentas de Automação | Issell Informática</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/site-overrides.css?v=98a161a4">
-  <link rel="stylesheet" href="css/pages/planilhas-automaticas.css?v=d462abf3" media="screen">
+  <link rel="stylesheet" href="css/pages/planilhas-automaticas.css?v=8a23ce00" media="screen">
   <link rel="icon" type="image/svg+xml" href="images/issel-informatica-simbolo.svg">
   <link rel="apple-touch-icon" href="images/issel-informatica-simbolo.svg">
   <meta name="theme-color" content="#f5820a">
@@ -26,7 +26,7 @@
       <p class="downloads-intro">Arquivos para baixar e usar no computador, que tiram do caminho as tarefas repetitivas do Departamento Pessoal: planilhas prontas, com macros, e programas que fazem o trabalho manual por você. Funcionam fora do portal e não precisam de login.</p>
       <ol class="downloads-steps" aria-label="Como usar">
         <li><strong>Baixe</strong> a ferramenta que você precisa.</li>
-        <li><strong>Abra no computador</strong>: nas planilhas, ative as macros quando o Excel pedir.</li>
+        <li><strong>Abra no computador</strong>: nas planilhas, ative as macros quando o Excel pedir; nos programas, abra o instalador.</li>
         <li><strong>Use no dia a dia</strong>: quando sair uma versão nova, ela aparece aqui com o número atualizado.</li>
       </ol>
       <h2 class="downloads-group">Planilhas</h2>
@@ -45,6 +45,32 @@
         </article>
       </div>
       <p class="macro-notice">As planilhas podem conter macros. Ative-as ao abrir o arquivo.</p>
+      <h2 class="downloads-group downloads-group--programas">Programas</h2>
+      <div class="downloads-grid">
+        <!-- Versão, data e novidades vêm de downloads/gestao-dp.json, gravado pelo publicar.py do Gestão DP a cada
+             versão nova (js/pages/planilhas-automaticas.js). O texto abaixo só aparece se esse arquivo não carregar. -->
+        <article class="download-card program-card" id="gestao-dp">
+          <div class="program-head">
+            <img src="images/gestao-dp.png" alt="" width="56" height="56">
+            <div>
+              <h2>Gestão DP</h2>
+              <p class="program-kind">Programa para Windows</p>
+            </div>
+          </div>
+          <p>Soma horas extras e faltas dos relatórios do ponto, avisa quem está perto do limite e controla o efetivo de cada obra: frequência, batidas e almoço. Exporta as planilhas no padrão do DP.</p>
+          <ul class="program-facts">
+            <li>Instala sem precisar de administrador</li>
+            <li>Avisa e instala sozinho as versões novas</li>
+          </ul>
+          <details class="program-news" data-gdp-novidades hidden>
+            <summary>Novidades da versão <span data-gdp-versao>1.0.0</span></summary>
+            <div data-gdp-notas></div>
+          </details>
+          <p class="download-details"><strong>Formato:</strong> EXE &middot; <strong>Versão:</strong> <span data-gdp-versao>1.0.0</span> &middot; <span data-gdp-data>22/10/2026</span> &middot; <span data-gdp-tamanho>18,2</span> MB</p>
+          <a href="https://github.com/ismaelrozeno/gestao-dp-atualizacoes/releases/latest/download/GestaoDP-Setup.exe" class="download-button" data-gdp-link>Baixar programa (.exe)</a>
+          <p class="program-smartscreen">Se o Windows mostrar <em>"O Windows protegeu o computador"</em>, clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.</p>
+        </article>
+      </div>
       </div>
     </div>
   </main>
@@ -58,6 +84,7 @@
 <script src="js/core/firebase-auth.js?v=7a03d38c"></script>
   <script src="js/core/shared-components.js?v=2e1fa41c"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/pages/planilhas-automaticas.js?v=ab4251e5"></script>
 </body>
 </html>
 
