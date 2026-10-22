@@ -1,7 +1,7 @@
 {
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "data": "22/10/2026",
-  "notas": "### Novidades\n- Calculadora DP e Controle de Efetivo juntos em um só programa: o **Gestão DP**.\n- Visual novo, escuro, com menu lateral (que vira só ícones em telas estreitas).\n- Aba **Atualizações**: avisa quando sai uma versão nova e instala com um clique, sem pedir administrador.\n- Ícone novo.\n\n### Mantido\n- Todas as regras de cálculo de horas extras, faltas e do controle de efetivo continuam iguais.\n- Os dados já salvos (lista de funções, obras, preferências) são aproveitados automaticamente.",
+  "notas": "### Novidades\n- Quando sai uma versão nova, uma janela aparece ao abrir o programa mostrando as novidades, com os botões **Atualizar agora** e **Depois**.",
   "url": "https://github.com/ismaelrozeno/gestao-dp-atualizacoes/releases/latest/download/GestaoDP-Setup.exe",
   "tamanho_mb": 18.2
 }
